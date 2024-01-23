@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.12-nightly.24" />
+    <PackageReference Include="Tsu.TreeSourceGen" Version="0.1.1" />
   </ItemGroup>
 
 </Project>
