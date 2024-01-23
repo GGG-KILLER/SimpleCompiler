@@ -33,7 +33,11 @@ await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAp
 
     var indentedWriter = new IndentedTextWriter(Console.Out);
     var debugWriter = new MirDebugPrinter(indentedWriter);
+    indentedWriter.Write("Global Scope: ");
+    debugWriter.WriteScope(globalScope);
+    indentedWriter.WriteLine();
     debugWriter.Visit(mirRoot);
+    await indentedWriter.FlushAsync(ctx.CancellationToken);
 
     return 0;
 });

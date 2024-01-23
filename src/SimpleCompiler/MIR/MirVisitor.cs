@@ -25,6 +25,11 @@ public abstract class MirWalker : MirVisitor
 
 public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
 {
+    public void WriteScope(ScopeInfo? scopeInfo)
+    {
+        writer.Write($"0x{scopeInfo?.GetHashCode() ?? 0:X} (Variables: [{string.Join(", ", scopeInfo?.DeclaredVariables.Select(s => $"0x{s.GetHashCode():X}") ?? [])}], Scopes: [{string.Join(", ", scopeInfo?.ChildScopes.Select(s => $"0x{s.GetHashCode():X}") ?? [])}])");
+    }
+
     protected override void DefaultVisit(MirNode node)
     {
         writer.WriteLine('{');
@@ -116,7 +121,8 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
 
     public override void VisitStatementList(StatementList statementList)
     {
-        writer.WriteLine($"0x{statementList.ScopeInfo?.GetHashCode() ?? 0:X} (Variables: [{string.Join(", ", statementList.ScopeInfo?.DeclaredVariables.Select(s => $"0x{s.GetHashCode():X}") ?? [])}], Scopes: [{string.Join(", ", statementList.ScopeInfo?.ChildScopes.Select(s => $"0x{s.GetHashCode():X}") ?? [])}]) {{");
+        WriteScope(statementList.ScopeInfo);
+        writer.WriteLine(" {");
         writer.Indent++;
         foreach (var statement in statementList.Statements)
         {
