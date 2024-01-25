@@ -20,9 +20,21 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
 
     public override void VisitAssignment(Assignment assignment)
     {
-        Visit(assignment.Assignee);
+        var first = true;
+        foreach (var assignee in assignment.Assignees)
+        {
+            if (!first) writer.Write(", ");
+            first = false;
+            Visit(assignee);
+        }
         writer.Write(" = ");
-        Visit(assignment.Value);
+        first = true;
+        foreach (var value in assignment.Values)
+        {
+            if (!first) writer.Write(", ");
+            first = false;
+            Visit(value);
+        }
         writer.WriteLine(';');
     }
 
@@ -128,5 +140,10 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
     {
         writer.Write(variable.VariableInfo.Name);
         writer.Write($" (0x{variable.VariableInfo.GetHashCode():X})");
+    }
+
+    public override void VisitDiscard(Discard discard)
+    {
+        writer.Write('_');
     }
 }

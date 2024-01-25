@@ -49,33 +49,68 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         var values = node.EqualsValues?.Values.ToArray() ?? [];
 
         var len = Math.Max(names.Length, values.Length);
-        var statements = ImmutableArray.CreateBuilder<Statement>(len);
+        var assignees = ImmutableArray.CreateBuilder<Expression>(len);
+        var valueNodes = ImmutableArray.CreateBuilder<Expression>(len);
         for (var idx = 0; idx < len; idx++)
         {
             var name = names.Length > idx ? names[idx] : null;
-            var value = values.Length > idx ? values[idx] : null;
+            var value = values.Length > idx ? (Expression)Visit(values[idx])! : Constant.Nil;
 
+            valueNodes.Add(value);
             if (name is not null)
             {
                 var variableInfo = new VariableInfo(_scopes.Peek(), VariableKind.Local, name.IdentifierName.Name);
-                var variable = new Variable(variableInfo);
-
-                Assignment assignment;
-                if (value is not null)
-                    assignment = new Assignment(variable, (Expression)Visit(value)!);
-                else
-                    assignment = new Assignment(variable, Constant.Nil);
-
-                variableInfo.AddWrite(assignment);
-                statements.Add(assignment);
+                assignees.Add(new Variable(variableInfo));
             }
             else
             {
-                statements.Add(new ExpressionStatement((Expression)Visit(value)!));
+                assignees.Add(new Discard());
             }
         }
 
-        return new StatementList(statements.MoveToImmutable(), null);
+        var assignment = new Assignment(assignees.DrainToImmutable(), valueNodes.DrainToImmutable());
+
+        foreach (var variable in assignment.Assignees.OfType<Variable>())
+            variable.VariableInfo.AddWrite(assignment);
+        foreach (var variable in assignment.Values.OfType<Variable>())
+            variable.VariableInfo.AddRead(assignment);
+
+        return assignment;
+    }
+
+    public override MirNode? VisitAssignmentStatement(AssignmentStatementSyntax node)
+    {
+        var assignees = node.Variables.ToArray();
+        var values = node.EqualsValues?.Values.ToArray() ?? [];
+
+        var len = Math.Max(assignees.Length, values.Length);
+        var assigneeNodes = ImmutableArray.CreateBuilder<Expression>(len);
+        var valueNodes = ImmutableArray.CreateBuilder<Expression>(len);
+        for (var idx = 0; idx < len; idx++)
+        {
+            var assignee = assignees.Length > idx ? assignees[idx] : null;
+            var value = values.Length > idx ? (Expression)Visit(values[idx])! : Constant.Nil;
+
+            valueNodes.Add(value);
+            if (assignee is not null)
+            {
+                var assigneeNode = (Expression)Visit(assignee)!;
+                assigneeNodes.Add(assigneeNode);
+            }
+            else
+            {
+                assigneeNodes.Add(new Discard());
+            }
+        }
+
+        var assignment = new Assignment(assigneeNodes.DrainToImmutable(), valueNodes.DrainToImmutable());
+
+        foreach (var variable in assignment.Assignees.OfType<Variable>())
+            variable.VariableInfo.AddWrite(assignment);
+        foreach (var variable in assignment.Values.OfType<Variable>())
+            variable.VariableInfo.AddRead(assignment);
+
+        return assignment;
     }
 
     public override MirNode? VisitFunctionCallExpression(FunctionCallExpressionSyntax node)
@@ -90,33 +125,6 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         };
 
         return new FunctionCall(callee, arguments);
-    }
-
-    public override MirNode? VisitAssignmentStatement(AssignmentStatementSyntax node)
-    {
-        var assignees = node.Variables.Select(x => (Expression)Visit(x)!).ToImmutableArray();
-        var values = node.EqualsValues.Values.Select(x => (Expression)Visit(x)!).ToImmutableArray();
-
-        var len = Math.Max(assignees.Length, values.Length);
-        var statements = ImmutableArray.CreateBuilder<Statement>(len);
-        for (var idx = 0; idx < len; idx++)
-        {
-            var assignee = assignees.Length > idx ? assignees[idx] : null;
-            var value = values.Length > idx ? values[idx] : null;
-
-            if (assignee is not null)
-            {
-                statements.Add(new Assignment(assignee, value is not null ? value : Constant.Nil));
-            }
-            else
-            {
-                if (value is null)
-                    throw ExceptionUtil.Unreachable;
-                statements.Add(new ExpressionStatement(value));
-            }
-        }
-
-        return new StatementList(statements.MoveToImmutable(), null);
     }
 
     public override MirNode? VisitBinaryExpression(BinaryExpressionSyntax node)
