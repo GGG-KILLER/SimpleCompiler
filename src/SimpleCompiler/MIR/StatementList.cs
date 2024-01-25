@@ -6,9 +6,9 @@ namespace SimpleCompiler.MIR;
 public sealed partial class StatementList : Statement
 {
     public ImmutableArray<Statement> Statements { get; }
-    public ScopeInfo ScopeInfo { get; }
+    public ScopeInfo? ScopeInfo { get; }
 
-    public StatementList(IEnumerable<Statement> statements, ScopeInfo scopeInfo)
+    public StatementList(IEnumerable<Statement> statements, ScopeInfo? scopeInfo)
     {
         Statements = statements.ToImmutableArray();
         foreach (var stmt in Statements) stmt.Parent = this;

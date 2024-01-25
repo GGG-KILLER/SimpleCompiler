@@ -35,7 +35,10 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         foreach (var statement in node.Statements)
         {
             var lowered = Visit(statement);
-            statements.Add((Statement)lowered!);
+            if (lowered is StatementList statementList && statementList.ScopeInfo is null)
+                statements.AddRange(statementList.Statements.Select(n => (Statement)n.WithParent(null)));
+            else
+                statements.Add((Statement)lowered!);
         }
         return new StatementList(statements.DrainToImmutable(), scope);
     }
