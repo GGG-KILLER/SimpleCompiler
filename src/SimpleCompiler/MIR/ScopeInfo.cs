@@ -45,7 +45,7 @@ public sealed class ScopeInfo
     {
         for (var scope = this; scope is not null; scope = scope.ParentScope)
         {
-            if (scope._declaredVariables.Find(v => string.Equals(v.Name, name, StringComparison.Ordinal)) is { } variable)
+            if (scope._declaredVariables.FindLast(v => string.Equals(v.Name, name, StringComparison.Ordinal)) is { } variable)
                 return variable;
 
             // Leave if we're about to cross through something we don't want to go outside of
