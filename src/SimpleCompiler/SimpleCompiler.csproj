@@ -1,10 +1,25 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Enable output of generated files back into our Generated directory -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Generated\" />
+
+    <!-- Don't include the output from a previous source generator execution into future runs; the */** trick here ensures that there's
+      at least one subdirectory, which is our key that it's coming from a source generator as opposed to something that is coming from
+      some other tool. -->
+    <Compile Remove="$(CompilerGeneratedFilesOutputPath)/*/**/*.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.12-nightly.24" />
