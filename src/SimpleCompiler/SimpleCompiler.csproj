@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -24,6 +24,14 @@
   <ItemGroup>
     <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.12-nightly.24" />
     <PackageReference Include="Tsu.TreeSourceGen" Version="0.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SimpleCompiler.ClassEnumGen\SimpleCompiler.ClassEnumGen.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>
