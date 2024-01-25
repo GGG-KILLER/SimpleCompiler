@@ -15,7 +15,9 @@ namespace SimpleCompiler.MIR
         [return: MaybeNull]
         TReturn VisitBinaryOperation(SimpleCompiler.MIR.BinaryOperation binaryOperation);
         [return: MaybeNull]
-        TReturn VisitConstant(SimpleCompiler.Constant constant);
+        TReturn VisitConstant(SimpleCompiler.MIR.Constant constant);
+        [return: MaybeNull]
+        TReturn VisitDiscard(SimpleCompiler.MIR.Discard discard);
         [return: MaybeNull]
         TReturn VisitExpressionStatement(SimpleCompiler.MIR.ExpressionStatement expressionStatement);
         [return: MaybeNull]
@@ -27,7 +29,7 @@ namespace SimpleCompiler.MIR
         [return: MaybeNull]
         TReturn VisitUnaryOperation(SimpleCompiler.MIR.UnaryOperation unaryOperation);
         [return: MaybeNull]
-        TReturn VisitVariable(SimpleCompiler.Variable variable);
+        TReturn VisitVariable(SimpleCompiler.MIR.Variable variable);
     }
     
     partial class MirVisitor<TReturn> : IMirVisitor<TReturn> 
@@ -51,7 +53,10 @@ namespace SimpleCompiler.MIR
         public virtual TReturn VisitBinaryOperation(SimpleCompiler.MIR.BinaryOperation binaryOperation) => DefaultVisit(binaryOperation);
         
         [return: MaybeNull]
-        public virtual TReturn VisitConstant(SimpleCompiler.Constant constant) => DefaultVisit(constant);
+        public virtual TReturn VisitConstant(SimpleCompiler.MIR.Constant constant) => DefaultVisit(constant);
+        
+        [return: MaybeNull]
+        public virtual TReturn VisitDiscard(SimpleCompiler.MIR.Discard discard) => DefaultVisit(discard);
         
         [return: MaybeNull]
         public virtual TReturn VisitExpressionStatement(SimpleCompiler.MIR.ExpressionStatement expressionStatement) => DefaultVisit(expressionStatement);
@@ -69,6 +74,6 @@ namespace SimpleCompiler.MIR
         public virtual TReturn VisitUnaryOperation(SimpleCompiler.MIR.UnaryOperation unaryOperation) => DefaultVisit(unaryOperation);
         
         [return: MaybeNull]
-        public virtual TReturn VisitVariable(SimpleCompiler.Variable variable) => DefaultVisit(variable);
+        public virtual TReturn VisitVariable(SimpleCompiler.MIR.Variable variable) => DefaultVisit(variable);
     }
 }

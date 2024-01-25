@@ -36,13 +36,23 @@ namespace SimpleCompiler.MIR
     }
 }
 
-namespace SimpleCompiler
+namespace SimpleCompiler.MIR
 {
     partial class Constant 
     {
         public override void Accept(SimpleCompiler.MIR.MirVisitor visitor) => visitor.VisitConstant(this);
         [return: MaybeNull]
         public override TReturn Accept<TReturn>(SimpleCompiler.MIR.MirVisitor<TReturn> visitor) => visitor.VisitConstant(this);
+    }
+}
+
+namespace SimpleCompiler.MIR
+{
+    partial class Discard 
+    {
+        public override void Accept(SimpleCompiler.MIR.MirVisitor visitor) => visitor.VisitDiscard(this);
+        [return: MaybeNull]
+        public override TReturn Accept<TReturn>(SimpleCompiler.MIR.MirVisitor<TReturn> visitor) => visitor.VisitDiscard(this);
     }
 }
 
@@ -96,7 +106,7 @@ namespace SimpleCompiler.MIR
     }
 }
 
-namespace SimpleCompiler
+namespace SimpleCompiler.MIR
 {
     partial class Variable 
     {

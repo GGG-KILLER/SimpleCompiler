@@ -12,13 +12,14 @@ namespace SimpleCompiler.MIR
     {
         void VisitAssignment(SimpleCompiler.MIR.Assignment assignment);
         void VisitBinaryOperation(SimpleCompiler.MIR.BinaryOperation binaryOperation);
-        void VisitConstant(SimpleCompiler.Constant constant);
+        void VisitConstant(SimpleCompiler.MIR.Constant constant);
+        void VisitDiscard(SimpleCompiler.MIR.Discard discard);
         void VisitExpressionStatement(SimpleCompiler.MIR.ExpressionStatement expressionStatement);
         void VisitFunctionCall(SimpleCompiler.MIR.FunctionCall functionCall);
         void VisitEmptyStatement(SimpleCompiler.MIR.EmptyStatement emptyStatement);
         void VisitStatementList(SimpleCompiler.MIR.StatementList statementList);
         void VisitUnaryOperation(SimpleCompiler.MIR.UnaryOperation unaryOperation);
-        void VisitVariable(SimpleCompiler.Variable variable);
+        void VisitVariable(SimpleCompiler.MIR.Variable variable);
     }
     
     partial class MirVisitor : IMirVisitor 
@@ -37,7 +38,9 @@ namespace SimpleCompiler.MIR
         
         public virtual void VisitBinaryOperation(SimpleCompiler.MIR.BinaryOperation binaryOperation) => DefaultVisit(binaryOperation);
         
-        public virtual void VisitConstant(SimpleCompiler.Constant constant) => DefaultVisit(constant);
+        public virtual void VisitConstant(SimpleCompiler.MIR.Constant constant) => DefaultVisit(constant);
+        
+        public virtual void VisitDiscard(SimpleCompiler.MIR.Discard discard) => DefaultVisit(discard);
         
         public virtual void VisitExpressionStatement(SimpleCompiler.MIR.ExpressionStatement expressionStatement) => DefaultVisit(expressionStatement);
         
@@ -49,6 +52,6 @@ namespace SimpleCompiler.MIR
         
         public virtual void VisitUnaryOperation(SimpleCompiler.MIR.UnaryOperation unaryOperation) => DefaultVisit(unaryOperation);
         
-        public virtual void VisitVariable(SimpleCompiler.Variable variable) => DefaultVisit(variable);
+        public virtual void VisitVariable(SimpleCompiler.MIR.Variable variable) => DefaultVisit(variable);
     }
 }
