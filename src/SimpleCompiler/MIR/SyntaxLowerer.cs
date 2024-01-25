@@ -2,6 +2,7 @@
 using Loretta.CodeAnalysis;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Syntax;
+using SimpleCompiler.Helpers;
 
 namespace SimpleCompiler.MIR;
 

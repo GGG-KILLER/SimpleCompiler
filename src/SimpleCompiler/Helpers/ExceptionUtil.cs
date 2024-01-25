@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace SimpleCompiler;
+namespace SimpleCompiler.Helpers;
 
 public class ExceptionUtil
 {

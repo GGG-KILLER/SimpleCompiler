@@ -1,6 +1,4 @@
-using SimpleCompiler.MIR;
-
-namespace SimpleCompiler;
+namespace SimpleCompiler.MIR;
 
 public enum VariableKind
 {
