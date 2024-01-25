@@ -107,9 +107,12 @@ public class OperationHelper(ScopeStack scopeStack)
         ilGen.Emit(OpCodes.Call, methodCall.Method);
     }
 
-    public void CreateBinOp(TypeBuilder currentType, ILGenerator ilGen, ExpressionType expressionType, LocalBuilder left, LocalBuilder right)
+    public void CreateDynamicOp(TypeBuilder currentType, ILGenerator ilGen, ExpressionType expressionType, Span<LocalBuilder> locals)
     {
-        var callsiteField = scopeStack.Current.CreateCallsiteCache(currentType, [typeof(object), typeof(object)], typeof(object));
+        var callsiteField = scopeStack.Current.CreateCallsiteCache(
+            currentType,
+            Enumerable.Repeat(typeof(object), locals.Length).ToArray(),
+            typeof(object));
         var callsiteT = callsiteField.FieldType;
 
         var ifend = ilGen.DefineLabel();
@@ -118,35 +121,35 @@ public class OperationHelper(ScopeStack scopeStack)
         ilGen.Emit(OpCodes.Brtrue_S, ifend);
         // {
         {
+            // Used for the Binder.BinaryOperation at the end
             // stack = [CSharpBinderFlags.None]
             EmitConstant(ilGen, CSharpBinderFlags.None);
+
+            // Used for the Binder.BinaryOperation at the end
             // stack = [expressionType, CSharpBinderFlags.None]
             EmitConstant(ilGen, expressionType);
+
+            // Used for the Binder.BinaryOperation at the end
             // stack = [typeof(Program), expressionType, CSharpBinderFlags.None]
             ilGen.Emit(OpCodes.Ldtoken, currentType);
             EmitStaticCall(ilGen, () => Type.GetTypeFromHandle(Stack<RuntimeTypeHandle>()));
+
             // stack = [2, typeof(Program), expressionType, CSharpBinderFlags.None]
-            ilGen.Emit(OpCodes.Ldc_I4_2);
+            EmitConstant(ilGen, locals.Length);
             // stack = [CSharpArgumentInfo[null, null], typeof(Program), expressionType, CSharpBinderFlags.None]
             ilGen.Emit(OpCodes.Newarr, typeof(CSharpArgumentInfo));
-            // stack = [*, CSharpArgumentInfo[null, null], typeof(Program), expressionType, CSharpBinderFlags.None]
-            ilGen.Emit(OpCodes.Dup);
-            // stack = [0, *, CSharpArgumentInfo[null, null], typeof(Program), expressionType, CSharpBinderFlags.None]
-            ilGen.Emit(OpCodes.Ldc_I4_0);
-            // stack = [new CSharpArgumentInfo(0, null), 0, *, CSharpArgumentInfo[null, null], typeof(Program), expressionType, CSharpBinderFlags.None]
-            EmitStaticCall(ilGen, () => CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null));
-            // stack = [CSharpArgumentInfo[new CSharpArgumentInfo(0, null), null], typeof(Program), expressionType, CSharpBinderFlags.None]
-            ilGen.Emit(OpCodes.Stind_Ref);
 
-            // stack = [CSharpArgumentInfo[new CSharpArgumentInfo(0, null), null], CSharpArgumentInfo[new CSharpArgumentInfo(0, null), null], typeof(Program), expressionType, CSharpBinderFlags.None]
-            ilGen.Emit(OpCodes.Dup);
-
-            // stack = [1, CSharpArgumentInfo[new CSharpArgumentInfo(0, null), null], CSharpArgumentInfo[new CSharpArgumentInfo(0, null), null], typeof(Program), expressionType, CSharpBinderFlags.None]
-            ilGen.Emit(OpCodes.Ldc_I4_1);
-            // stack = [new CSharpArgumentInfo(0, null), 1, CSharpArgumentInfo[new CSharpArgumentInfo(0, null), null], CSharpArgumentInfo[new CSharpArgumentInfo(0, null), null], typeof(Program), expressionType, CSharpBinderFlags.None]
-            EmitStaticCall(ilGen, () => CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null));
-            // stack = [CSharpArgumentInfo[new CSharpArgumentInfo(0, null), new CSharpArgumentInfo(0, null)], typeof(Program), expressionType, CSharpBinderFlags.None]
-            ilGen.Emit(OpCodes.Stelem_Ref);
+            for (var idx = 0; idx < locals.Length; idx++)
+            {
+                // stack = [*, CSharpArgumentInfo[...], typeof(Program), expressionType, CSharpBinderFlags.None]
+                ilGen.Emit(OpCodes.Dup);
+                // stack = [idx, *, CSharpArgumentInfo[...], typeof(Program), expressionType, CSharpBinderFlags.None]
+                EmitConstant(ilGen, idx);
+                // stack = [new CSharpArgumentInfo(0, null), idx, *, CSharpArgumentInfo[null, null], typeof(Program), expressionType, CSharpBinderFlags.None]
+                EmitStaticCall(ilGen, () => CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null));
+                // stack = [CSharpArgumentInfo[..., new CSharpArgumentInfo(0, null), ...], typeof(Program), expressionType, CSharpBinderFlags.None]
+                ilGen.Emit(OpCodes.Stelem_Ref);
+            }
 
             // stack = [CallSiteBinder]
             EmitStaticCall(ilGen, () => Microsoft.CSharp.RuntimeBinder.Binder.BinaryOperation(
@@ -171,26 +174,16 @@ public class OperationHelper(ScopeStack scopeStack)
         ilGen.Emit(OpCodes.Ldfld, callsiteT.GetField("Target", BindingFlags.Public | BindingFlags.Instance)!);
         // stack = [<>o__N.<>p__C, <>o__N.<>p__C.Target]
         ilGen.Emit(OpCodes.Ldsfld, callsiteField);
-        // stack = [left, <>o__N.<>p__C, <>o__N.<>p__C.Target]
-        ilGen.Emit(OpCodes.Ldloc, left);
-        // stack = [right, left, <>o__N.<>p__C, <>o__N.<>p__C.Target]
-        ilGen.Emit(OpCodes.Ldloc, right);
+        foreach (var local in locals)
+        {
+            ilGen.Emit(OpCodes.Ldloc_S, local);
+        }
         // stack = [<>o__N.<>p__C.Target(<>o__N.<>p__C, left, right)]
-        ilGen.Emit(OpCodes.Callvirt, callsiteT.GetGenericArguments()[0].GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance)!);
+        ilGen.Emit(
+            OpCodes.Callvirt,
+            callsiteT.GetGenericArguments()[0].GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance)!);
     }
 
-    public void CreateAddOp(TypeBuilder currentType, ILGenerator ilGen, LocalBuilder left, LocalBuilder right) =>
-        CreateBinOp(currentType, ilGen, ExpressionType.Add, left, right);
-
-    public void CreateSubOp(TypeBuilder currentType, ILGenerator ilGen, LocalBuilder left, LocalBuilder right) =>
-        CreateBinOp(currentType, ilGen, ExpressionType.Subtract, left, right);
-
-    public void CreateMulOp(TypeBuilder currentType, ILGenerator ilGen, LocalBuilder left, LocalBuilder right) =>
-        CreateBinOp(currentType, ilGen, ExpressionType.Multiply, left, right);
-
-    public void CreateDivOp(TypeBuilder currentType, ILGenerator ilGen, LocalBuilder left, LocalBuilder right) =>
-        CreateBinOp(currentType, ilGen, ExpressionType.Divide, left, right);
-
-    public void CreateModOp(TypeBuilder currentType, ILGenerator ilGen, LocalBuilder left, LocalBuilder right) =>
-        CreateBinOp(currentType, ilGen, ExpressionType.Modulo, left, right);
+    public void CreateBinOp(TypeBuilder currentType, ILGenerator ilGen, ExpressionType expressionType, LocalBuilder left, LocalBuilder right) =>
+        CreateDynamicOp(currentType, ilGen, expressionType, [left, right]);
 }
