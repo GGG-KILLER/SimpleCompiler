@@ -1,4 +1,3 @@
-
 namespace SimpleCompiler.MIR;
 
 public enum BinaryOperationKind

@@ -1,6 +1,4 @@
-﻿using SimpleCompiler.MIR;
-
-namespace SimpleCompiler;
+﻿namespace SimpleCompiler.MIR;
 
 [Tsu.TreeSourceGen.TreeNode(typeof(MirNode))]
 public sealed partial class Variable(VariableInfo variableInfo) : Expression

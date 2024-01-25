@@ -1,4 +1,3 @@
-
 namespace SimpleCompiler.MIR;
 
 [Tsu.TreeSourceGen.TreeNode(typeof(MirNode))]

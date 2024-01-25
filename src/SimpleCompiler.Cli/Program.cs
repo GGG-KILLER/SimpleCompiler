@@ -4,7 +4,6 @@ using System.CodeDom.Compiler;
 using Cocona;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Text;
-using SimpleCompiler;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.MIR;
 
@@ -25,7 +24,7 @@ await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAp
         return 1;
     }
 
-    var globalScope = new ScopeInfo(SimpleCompiler.ScopeKind.Global, null);
+    var globalScope = new ScopeInfo(SimpleCompiler.MIR.ScopeKind.Global, null);
     var syntaxLowerer = new SyntaxLowerer(globalScope);
     var mirRoot = syntaxLowerer.Visit(await tree.GetRootAsync(ctx.CancellationToken))!;
 

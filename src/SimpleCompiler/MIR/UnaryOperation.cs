@@ -1,5 +1,4 @@
-﻿
-namespace SimpleCompiler.MIR;
+﻿namespace SimpleCompiler.MIR;
 
 public enum UnaryOperationKind
 {

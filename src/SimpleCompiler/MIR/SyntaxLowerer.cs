@@ -2,9 +2,8 @@
 using Loretta.CodeAnalysis;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Syntax;
-using SimpleCompiler.MIR;
 
-namespace SimpleCompiler;
+namespace SimpleCompiler.MIR;
 
 /// <summary>
 /// "Lowers" the higher level syntax into a lower level representation.
