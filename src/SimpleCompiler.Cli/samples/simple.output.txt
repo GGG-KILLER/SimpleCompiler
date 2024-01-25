@@ -1,0 +1,68 @@
+MIR:
+    Global Scope: 0x6216E0 (Variables: [0xBE074, 0x75A903], Scopes: [0x1A6DD4A])
+    0x1A6DD4A (Variables: [0x2B02715, 0x7334C6, 0x1735440, 0x275E954, 0x3AC23EB], Scopes: [0x11EF252]) {
+        a (0x2B02715), b (0x7334C6), c (0x1735440), _ = 1, 2, 3, 4;
+        e (0x275E954), f (0x3AC23EB) = 1, nil;
+        b (0x7334C6) = a (0x2B02715) + c (0x1735440);
+        a (0x2B02715) = b (0x7334C6) + c (0x1735440);
+        c (0x1735440) = a (0x2B02715) + b (0x7334C6);
+        e (0x275E954), f (0x3AC23EB) = a (0x2B02715) + b (0x7334C6), b (0x7334C6) + c (0x1735440);
+        0x11EF252 (Variables: [0x389E0CB], Scopes: []) {
+            d (0x389E0CB) = a (0x2B02715) + b (0x7334C6) + c (0x1735440);
+            print (0xBE074)(d (0x389E0CB));
+        }
+        print (0xBE074)(a (0x2B02715), b (0x7334C6), c (0x1735440), d (0x75A903), e (0x275E954), f (0x3AC23EB));
+    }
+
+LIR:
+    PUSHCONS 1
+    PUSHCONS 2
+    PUSHCONS 3
+    PUSHCONS 4
+    STOREVAR a (0x2B02715)
+    STOREVAR b (0x7334C6)
+    STOREVAR c (0x1735440)
+    POP
+    PUSHCONS 1
+    PUSHCONS nil
+    STOREVAR e (0x275E954)
+    STOREVAR f (0x3AC23EB)
+    PUSHVAR a (0x2B02715)
+    PUSHVAR c (0x1735440)
+    ADD
+    STOREVAR b (0x7334C6)
+    PUSHVAR b (0x7334C6)
+    PUSHVAR c (0x1735440)
+    ADD
+    STOREVAR a (0x2B02715)
+    PUSHVAR a (0x2B02715)
+    PUSHVAR b (0x7334C6)
+    ADD
+    STOREVAR c (0x1735440)
+    PUSHVAR a (0x2B02715)
+    PUSHVAR b (0x7334C6)
+    ADD
+    PUSHVAR b (0x7334C6)
+    PUSHVAR c (0x1735440)
+    ADD
+    STOREVAR e (0x275E954)
+    STOREVAR f (0x3AC23EB)
+    PUSHVAR a (0x2B02715)
+    PUSHVAR b (0x7334C6)
+    ADD
+    PUSHVAR c (0x1735440)
+    ADD
+    STOREVAR d (0x389E0CB)
+    PUSHVAR print (0xBE074)
+    PUSHVAR d (0x389E0CB)
+    FCALL 1
+    POP
+    PUSHVAR print (0xBE074)
+    PUSHVAR a (0x2B02715)
+    PUSHVAR b (0x7334C6)
+    PUSHVAR c (0x1735440)
+    PUSHVAR d (0x75A903)
+    PUSHVAR e (0x275E954)
+    PUSHVAR f (0x3AC23EB)
+    FCALL 6
+    POP
