@@ -5,6 +5,7 @@ using Cocona;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Text;
 using SimpleCompiler.Cli.Validation;
+using SimpleCompiler.LIR;
 using SimpleCompiler.MIR;
 
 await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAppContext ctx) =>
@@ -30,13 +31,24 @@ await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAp
 
     await Console.Out.FlushAsync(ctx.CancellationToken);
 
-    var indentedWriter = new IndentedTextWriter(Console.Out);
+    var indentedWriter = new IndentedTextWriter(Console.Out, "    ");
+    indentedWriter.Indent++;
+    indentedWriter.WriteLine("MIR:");
     var debugWriter = new MirDebugPrinter(indentedWriter);
     indentedWriter.Write("Global Scope: ");
     debugWriter.WriteScope(globalScope);
     indentedWriter.WriteLine();
     debugWriter.Visit(mirRoot);
     await indentedWriter.FlushAsync(ctx.CancellationToken);
+
+    Console.WriteLine();
+    Console.WriteLine("LIR:");
+    var instrs = MirLowerer.Lower(mirRoot);
+    foreach (var instr in instrs)
+    {
+        Console.Write("    ");
+        Console.WriteLine(instr.ToRepr());
+    }
 
     return 0;
 });
