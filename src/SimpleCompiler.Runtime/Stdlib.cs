@@ -3,7 +3,7 @@
 // Functions here need the Lua function signature
 public static class Stdlib
 {
-    public static LuaValue PrintImpl(Span<LuaValue> args)
+    public static LuaValue Print(ReadOnlySpan<LuaValue> args)
     {
         var first = true;
         foreach (var value in args)
@@ -15,5 +15,9 @@ public static class Stdlib
         return LuaValue.Nil;
     }
 
-    public static readonly LuaFunction Print = PrintImpl;
+    public static LuaValue ToString(ReadOnlySpan<LuaValue> args)
+    {
+        FunctionHelper.Deconstruct(args, out var value, out _);
+        return new LuaValue(value.ToString());
+    }
 }

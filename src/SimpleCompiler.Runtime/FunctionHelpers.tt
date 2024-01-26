@@ -12,7 +12,7 @@ foreach(var count in Enumerable.Range(1, Max))
 {
     var strArgs = string.Join(", ", Enumerable.Range(1, count).Select(x => "out LuaValue arg" + x));
 #>
-    public static void Deconstruct(Span<LuaValue> args, <#=strArgs#>, out Span<LuaValue> rest)
+    public static void Deconstruct(ReadOnlySpan<LuaValue> args, <#=strArgs#>, out ReadOnlySpan<LuaValue> rest)
     {
 <# for(var idx = 0; idx < count; idx++) { #>
         arg<#=idx + 1#> = args.Length > <#=idx#> ? args[<#=idx#>] : LuaValue.Nil;
