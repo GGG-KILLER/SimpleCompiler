@@ -33,7 +33,7 @@ public sealed class MirLowerer : MirWalker
         _instructions.Add(unaryOperation.UnaryOperationKind switch
         {
             UnaryOperationKind.LogicalNegation => Instruction.Not(),
-            UnaryOperationKind.BitwiseNegation => Instruction.Not(),
+            UnaryOperationKind.BitwiseNegation => Instruction.BNot(),
             UnaryOperationKind.NumericalNegation => Instruction.Neg(),
             UnaryOperationKind.LengthOf => Instruction.Len(),
             _ => throw ExceptionUtil.Unreachable,

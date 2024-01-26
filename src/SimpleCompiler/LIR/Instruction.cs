@@ -36,6 +36,7 @@ public abstract partial record Instruction(LirInstrKind Kind)
 
     public static partial Len Len();
 
+    public static partial BNot BNot();
     public static partial BAnd BAnd();
     public static partial BOr BOr();
     public static partial Xor Xor();
