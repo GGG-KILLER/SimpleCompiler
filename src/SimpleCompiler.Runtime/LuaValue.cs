@@ -6,35 +6,41 @@ namespace SimpleCompiler.Runtime;
 
 public readonly struct LuaValue
 {
-    public static readonly LuaValue Nil = new(ValueKind.Nil, null, default);
+    public static readonly LuaValue Nil = new(ValueKind.Nil, null, null, default);
     public static readonly LuaValue True = new(true);
     public static readonly LuaValue False = new(false);
 
     public readonly ValueKind Kind;
     private readonly string? _strValue;
+    private readonly LuaFunction? _luaFunction;
     private readonly ValueUnion _valueUnion;
 
-    private LuaValue(ValueKind kind, string? strValue, ValueUnion valueUnion)
+    private LuaValue(ValueKind kind, string? strValue, LuaFunction? luaFunction, ValueUnion valueUnion)
     {
         Kind = kind;
         _strValue = strValue;
+        _luaFunction = luaFunction;
         _valueUnion = valueUnion;
     }
 
-    public LuaValue(string value) : this(ValueKind.String, value, default)
+    public LuaValue(string value) : this(ValueKind.String, value, null, default)
     {
         ArgumentNullException.ThrowIfNull(value);
     }
 
-    public LuaValue(bool value) : this(ValueKind.Boolean, null, new ValueUnion { Boolean = value })
+    public LuaValue(bool value) : this(ValueKind.Boolean, null, null, new ValueUnion { Boolean = value })
     {
     }
 
-    public LuaValue(long value) : this(ValueKind.Boolean, null, new ValueUnion { Long = value })
+    public LuaValue(long value) : this(ValueKind.Boolean, null, null, new ValueUnion { Long = value })
     {
     }
 
-    public LuaValue(double value) : this(ValueKind.Boolean, null, new ValueUnion { Double = value })
+    public LuaValue(double value) : this(ValueKind.Boolean, null, null, new ValueUnion { Double = value })
+    {
+    }
+
+    public LuaValue(LuaFunction function) : this(ValueKind.Function, null, function, default)
     {
     }
 
@@ -45,25 +51,26 @@ public readonly struct LuaValue
     public bool IsDouble => Kind == ValueKind.Double;
     public bool IsNumber => IsLong || IsDouble;
     public bool IsTruthy => !(IsNil || (IsBoolean && !_valueUnion.Boolean));
+    public bool IsFunction => Kind == ValueKind.Function;
 
     public bool AsBoolean()
     {
         if (!IsBoolean)
-            throw new InvalidCastException($"Cannot cast a value of type {Kind} to Boolean.");
+            throw new LuaException($"Cannot cast a value of type {Kind} to Boolean.");
         return _valueUnion.Boolean;
     }
 
     public long AsLong()
     {
         if (!IsLong)
-            throw new InvalidCastException($"Cannot cast a value of type {Kind} to Long.");
+            throw new LuaException($"Cannot cast a value of type {Kind} to Long.");
         return _valueUnion.Long;
     }
 
     public double AsDouble()
     {
         if (!IsDouble)
-            throw new InvalidCastException($"Cannot cast a value of type {Kind} to Double.");
+            throw new LuaException($"Cannot cast a value of type {Kind} to Double.");
         return _valueUnion.Double;
     }
 
@@ -79,8 +86,8 @@ public readonly struct LuaValue
                                                 NumberStyles.AllowLeadingSign | NumberStyles.AllowExponent,
                                                 CultureInfo.InvariantCulture, out var num)
                                 ? num
-                                : throw new InvalidCastException($"String '{_strValue}' is not a valid integer."),
-            _ => throw new InvalidCastException($"Cannot cast a value of type {Kind} to an integer.")
+                                : throw new LuaException($"String '{_strValue}' is not a valid integer."),
+            _ => throw new LuaException($"Cannot cast a value of type {Kind} to an integer.")
         };
     }
 
@@ -94,16 +101,23 @@ public readonly struct LuaValue
                                                 NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent,
                                                 CultureInfo.InvariantCulture, out var num)
                                 ? num
-                                : throw new InvalidCastException($"String '{_strValue}' is not a valid number."),
-            _ => throw new InvalidCastException($"Cannot cast a value of type {Kind} to a number.")
+                                : throw new LuaException($"String '{_strValue}' is not a valid number."),
+            _ => throw new LuaException($"Cannot cast a value of type {Kind} to a number.")
         };
     }
 
     public string AsString()
     {
         if (!IsString)
-            throw new InvalidCastException($"Cannot cast a value of type {Kind} to String.");
+            throw new LuaException($"Cannot cast a value of type {Kind} to String.");
         return _strValue!;
+    }
+
+    public LuaFunction AsFunction()
+    {
+        if (!IsFunction)
+            throw new LuaException($"Cannot cast a value of type {Kind} to function.");
+        return _luaFunction!;
     }
 
     public override string ToString()

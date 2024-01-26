@@ -7,4 +7,5 @@ public enum ValueKind
     Long,
     Double,
     String,
+    Function,
 }
