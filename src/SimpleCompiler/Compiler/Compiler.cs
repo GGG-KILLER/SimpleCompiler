@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Lokad.ILPack;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Experimental;
 using SimpleCompiler.LIR;
@@ -15,21 +16,24 @@ namespace SimpleCompiler.Compiler;
 public sealed class Compiler
 {
     private static readonly MethodInfo s_miLuaFunctionInvoke =
-        typeof(LuaFunction).GetMethod(nameof(LuaFunction.Invoke), BindingFlags.Instance | BindingFlags.Public, [typeof(Span<LuaValue>)])!;
+        typeof(LuaFunction).GetMethod(nameof(LuaFunction.Invoke))!
+        ?? throw new InvalidOperationException("Cannot get invoke method");
 
     private readonly ScopeStack _scopeStack;
     private readonly ScopeStack.Scope _rootScope;
+    private readonly AssemblyBuilder _assemblyBuilder;
     private readonly ModuleBuilder _moduleBuilder;
 
     public ScopeInfo GlobalScope { get; }
     public KnownGlobalsSet KnownGlobals { get; }
 
-    public Compiler(ModuleBuilder moduleBuilder)
+    public Compiler(AssemblyBuilder assemblyBuilder, ModuleBuilder moduleBuilder)
     {
         _scopeStack = new(moduleBuilder);
         _rootScope = _scopeStack.NewScope();
         GlobalScope = new ScopeInfo(MIR.ScopeKind.Global, null);
         KnownGlobals = new KnownGlobalsSet(GlobalScope);
+        _assemblyBuilder = assemblyBuilder;
         _moduleBuilder = moduleBuilder;
     }
 
@@ -38,23 +42,16 @@ public sealed class Compiler
 
     public static Compiler Create(AssemblyName assemblyName)
     {
-        // TODO: Use public API when it's available: https://github.com/dotnet/runtime/issues/15704
-        MethodInfo defineDynamicAssembly = _builderType.GetMethod("DefinePersistedAssembly",
-            BindingFlags.NonPublic | BindingFlags.Static,
-            [typeof(AssemblyName), typeof(Assembly), typeof(List<CustomAttributeBuilder>)])
-            ?? throw new InvalidOperationException("Could not find method AssemblyBuilderImpl.DefinePersistedAssembly");
-        var assembly = (AssemblyBuilder?)defineDynamicAssembly.Invoke(null, [assemblyName, typeof(object).Assembly, null])
-                       ?? throw new InvalidOperationException("DefinePersistedAssembly returned null");
-
+        var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
         var module = assembly.DefineDynamicModule(assemblyName.Name + ".dll");
-        return new Compiler(module);
+        return new Compiler(assembly, module);
     }
 
-    public static void Save(AssemblyBuilder assemblyBuilder, Stream stream)
+    public async Task SaveAsync(Stream stream)
     {
-        var save = _builderType.GetMethod("Save", BindingFlags.NonPublic | BindingFlags.Instance, [typeof(Stream)])
-                   ?? throw new InvalidOperationException("Could not find method AssemblyBuilderImpl.Save");
-        save.Invoke(assemblyBuilder, [stream]); // TODO: Use public API when it's available: https://github.com/dotnet/runtime/issues/15704
+        var gen = new AssemblyGenerator();
+        var bytes = gen.GenerateAssemblyBytes(_assemblyBuilder, [typeof(string).Assembly, typeof(LuaValue).Assembly]);
+        await stream.WriteAsync(bytes.AsMemory()).ConfigureAwait(false);
     }
 
     public MirNode LowerSyntax(LuaSyntaxTree syntaxTree)
@@ -70,10 +67,10 @@ public sealed class Compiler
         return MirLowerer.Lower(node);
     }
 
-    public void CompileProgram(IEnumerable<Instruction> instructions)
+    public (Type, MethodInfo) CompileProgram(IEnumerable<Instruction> instructions)
     {
         var type = _moduleBuilder.DefineType("Program", TypeAttributes.Public | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
-        var method = type.DefineMethod("Program", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+        var method = type.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, typeof(void), null);
 
         using var scope = _scopeStack.NewScope();
         var ilGen = method.GetILGenerator();
@@ -178,6 +175,9 @@ public sealed class Compiler
                     throw new UnreachableException();
             }
         }
+
+        var t = type.CreateType();
+        return (t, t.GetMethod("Main")!);
     }
 
     private void PushVar(ILGenerator ilGen, PushVar pushVar)
@@ -248,15 +248,15 @@ public sealed class Compiler
         {
             case ConstantKind.Nil:
                 if (wrapInLuaValue)
-                    ilGen.Emit(OpCodes.Call, PropertyInfo(() => LuaValue.Nil).GetMethod!);
+                    ilGen.Emit(OpCodes.Ldsfld, FieldInfo(() => LuaValue.Nil));
                 else
                     ilGen.Emit(OpCodes.Ldnull);
                 break;
             case ConstantKind.Boolean:
                 if (wrapInLuaValue)
-                    ilGen.Emit(OpCodes.Call, Unsafe.Unbox<bool>(value)
-                        ? PropertyInfo(() => LuaValue.True).GetMethod!
-                        : PropertyInfo(() => LuaValue.False).GetMethod!);
+                    ilGen.Emit(OpCodes.Ldsfld, Unsafe.Unbox<bool>(value)
+                        ? FieldInfo(() => LuaValue.True)
+                        : FieldInfo(() => LuaValue.False));
                 else
                     ilGen.Emit(Unsafe.Unbox<bool>(value) ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                 break;
