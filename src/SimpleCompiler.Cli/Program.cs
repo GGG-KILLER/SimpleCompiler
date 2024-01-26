@@ -1,11 +1,12 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.CodeDom.Compiler;
+using System.Reflection;
 using Cocona;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Text;
 using SimpleCompiler.Cli.Validation;
-using SimpleCompiler.LIR;
+using SimpleCompiler.Compiler;
 using SimpleCompiler.MIR;
 
 await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAppContext ctx) =>
@@ -25,9 +26,10 @@ await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAp
         return 1;
     }
 
-    var globalScope = new ScopeInfo(SimpleCompiler.MIR.ScopeKind.Global, null);
-    var syntaxLowerer = new SyntaxLowerer(globalScope);
-    var mirRoot = syntaxLowerer.Visit(await tree.GetRootAsync(ctx.CancellationToken))!;
+    var name = Path.GetFileNameWithoutExtension(path);
+    var compiler = Compiler.Create(new AssemblyName(name));
+
+    var mirRoot = compiler.LowerSyntax((LuaSyntaxTree)tree);
 
     await Console.Out.FlushAsync(ctx.CancellationToken);
 
@@ -36,18 +38,28 @@ await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAp
     indentedWriter.WriteLine("MIR:");
     var debugWriter = new MirDebugPrinter(indentedWriter);
     indentedWriter.Write("Global Scope: ");
-    debugWriter.WriteScope(globalScope);
+    debugWriter.WriteScope(compiler.GlobalScope);
     indentedWriter.WriteLine();
     debugWriter.Visit(mirRoot);
     await indentedWriter.FlushAsync(ctx.CancellationToken);
 
     Console.WriteLine();
     Console.WriteLine("LIR:");
-    var instrs = MirLowerer.Lower(mirRoot);
+    var instrs = compiler.LowerMir(mirRoot);
     foreach (var instr in instrs)
     {
         Console.Write("    ");
         Console.WriteLine(instr.ToRepr());
+    }
+
+    Console.WriteLine(value: "Compiling...");
+    var (_, m) = compiler.CompileProgram(instrs);
+
+    m.Invoke(null, null);
+
+    using (var stream = File.Open(Path.ChangeExtension(path, ".dll"), FileMode.Create, FileAccess.Write))
+    {
+        await compiler.SaveAsync(stream);
     }
 
     return 0;
