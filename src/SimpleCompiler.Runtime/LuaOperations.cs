@@ -28,4 +28,7 @@ public static partial class LuaOperations
 
         return new LuaValue(left.ToString() + right.ToString());
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static LuaValue BooleanNot(LuaValue operand) => new(!operand.IsTruthy);
 }

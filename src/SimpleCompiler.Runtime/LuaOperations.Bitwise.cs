@@ -5,6 +5,17 @@ namespace SimpleCompiler.Runtime;
 public static partial class LuaOperations
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static LuaValue BitwiseNot(LuaValue operand)
+    {
+        if (!operand.IsNumber)
+        {
+            LuaException.ThrowBitwise(KindToString(operand.Kind));
+        }
+
+        return new LuaValue(~operand.ToInteger());
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static LuaValue BitwiseAnd(LuaValue left, LuaValue right)
     {
         if (!left.IsNumber || !right.IsNumber)

@@ -5,7 +5,7 @@ namespace SimpleCompiler.Runtime;
 public static partial class LuaOperations
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static LuaValue Neg(LuaValue operand)
+    public static LuaValue Negate(LuaValue operand)
     {
         if (!(operand.IsNumber || operand.IsString))
         {
