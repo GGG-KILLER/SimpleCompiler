@@ -184,7 +184,6 @@ public sealed class Compiler
                     }
                     break;
 
-
                 case LirInstrKind.Debug:
                     Emit(ilGen, OpCodes.Call, MethodInfo(() => Console.WriteLine(new object())));
                     break;

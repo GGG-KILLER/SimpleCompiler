@@ -78,7 +78,8 @@ public sealed class MirLowerer : MirWalker
     public override void VisitExpressionStatement(ExpressionStatement expressionStatement)
     {
         Visit(expressionStatement.Expression);
-        _instructions.Add(Instruction.Pop());
+        if (_instructions[^1] is not Debug)
+            _instructions.Add(Instruction.Pop());
     }
 
     public override void VisitFunctionCall(FunctionCall functionCall)
