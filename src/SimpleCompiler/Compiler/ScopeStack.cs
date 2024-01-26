@@ -65,7 +65,7 @@ public sealed class ScopeStack(ModuleBuilder moduleBuilder)
         public Local GetOrCreateLocal(Emit method, VariableInfo variable)
         {
             if (GetLocal(variable) is not { } local)
-                local = Locals[variable] = method.DeclareLocal<LuaValue>();
+                local = Locals[variable] = method.DeclareLocal<LuaValue>($"{variable.Name}_{variable.Scope.GetHashCode():X}");
             return local;
         }
 
