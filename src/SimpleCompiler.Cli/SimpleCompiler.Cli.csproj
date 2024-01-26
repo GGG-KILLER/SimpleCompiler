@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Cocona.Lite" Version="2.2.0" />
+    <PackageReference Include="Tsu" Version="2.2.2" />
   </ItemGroup>
 
   <PropertyGroup>

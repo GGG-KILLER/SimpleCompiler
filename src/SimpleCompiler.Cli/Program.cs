@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.CodeDom.Compiler;
+using System.Diagnostics;
 using System.Reflection;
 using Cocona;
 using Loretta.CodeAnalysis.Lua;
@@ -8,14 +9,53 @@ using Loretta.CodeAnalysis.Text;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.Compiler;
 using SimpleCompiler.MIR;
+using SimpleCompiler.Runtime;
+using Tsu.Numerics;
 
-await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAppContext ctx) =>
+var app = CoconaLiteApp.Create(args);
+
+app.AddCommand("run", (
+    [Argument][FileExists] string path
+) =>
+{
+    var assembly = Assembly.LoadFrom(path);
+    var program = assembly.GetType("Program");
+    if (program is null)
+    {
+        Console.Error.WriteLine("Unable to find Program entry class.");
+        return 1;
+    }
+    var entry = program.GetMethod("Main");
+    if (entry is null)
+    {
+        Console.Error.WriteLine("Unable to find Program.Main entry class.");
+        return 2;
+    }
+
+    try
+    {
+        entry.Invoke(null, null);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex);
+    }
+
+    return 0;
+});
+
+app.AddCommand("build", async (
+    [Argument][FileExists] string path,
+    [Option('d')] bool debug,
+    CoconaAppContext ctx) =>
 {
     SourceText sourceText;
     using (var stream = File.OpenRead(path))
         sourceText = SourceText.From(stream, throwIfBinaryDetected: true);
 
+    var s = Stopwatch.StartNew();
     var tree = LuaSyntaxTree.ParseText(sourceText, new LuaParseOptions(LuaSyntaxOptions.Lua51), path, ctx.CancellationToken);
+    Console.WriteLine($"Parsed input file in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (tree.GetDiagnostics().Any())
     {
@@ -27,40 +67,66 @@ await CoconaLiteApp.RunAsync(async ([Argument][FileExists] string path, CoconaAp
     }
 
     var name = Path.GetFileNameWithoutExtension(path);
-    var compiler = Compiler.Create(new AssemblyName(name));
+    TextWriter? cilDebugWriter = null;
+    if (debug)
+        cilDebugWriter = File.CreateText(Path.ChangeExtension(path, ".cil"));
+    var compiler = Compiler.Create(new AssemblyName(name), cilDebugWriter);
 
+    s.Restart();
     var mirRoot = compiler.LowerSyntax((LuaSyntaxTree)tree);
+    Console.WriteLine($"Syntax lowering done in {Duration.Format(s.Elapsed.Ticks)}");
 
-    await Console.Out.FlushAsync(ctx.CancellationToken);
-
-    var indentedWriter = new IndentedTextWriter(Console.Out, "    ");
-    indentedWriter.Indent++;
-    indentedWriter.WriteLine("MIR:");
-    var debugWriter = new MirDebugPrinter(indentedWriter);
-    indentedWriter.Write("Global Scope: ");
-    debugWriter.WriteScope(compiler.GlobalScope);
-    indentedWriter.WriteLine();
-    debugWriter.Visit(mirRoot);
-    await indentedWriter.FlushAsync(ctx.CancellationToken);
-
-    Console.WriteLine();
-    Console.WriteLine("LIR:");
-    var instrs = compiler.LowerMir(mirRoot);
-    foreach (var instr in instrs)
+    if (debug)
     {
-        Console.Write("    ");
-        Console.WriteLine(instr.ToRepr());
+        using var writer = File.CreateText(Path.ChangeExtension(path, ".mir"));
+
+        var indentedWriter = new IndentedTextWriter(writer, "    ");
+        var debugWriter = new MirDebugPrinter(indentedWriter);
+        indentedWriter.Write("Global Scope: ");
+        debugWriter.WriteScope(compiler.GlobalScope);
+        indentedWriter.WriteLine();
+        debugWriter.Visit(mirRoot);
+
+        await indentedWriter.FlushAsync(ctx.CancellationToken)
+                            .ConfigureAwait(false);
+    }
+
+    s.Restart();
+    var instrs = compiler.LowerMir(mirRoot);
+    Console.WriteLine($"MIR lowering done in {Duration.Format(s.Elapsed.Ticks)}");
+    if (debug)
+    {
+        using var writer = File.CreateText(Path.ChangeExtension(path, ".lir"));
+        foreach (var instr in instrs)
+        {
+            await writer.WriteLineAsync(instr.ToRepr().AsMemory(), ctx.CancellationToken)
+                        .ConfigureAwait(false);
+        }
     }
 
     Console.WriteLine(value: "Compiling...");
-    var (_, m) = compiler.CompileProgram(instrs);
+    s.Restart();
+    compiler.CompileProgram(instrs);
+    Console.WriteLine($"Compiled in {Duration.Format(s.Elapsed.Ticks)}");
+    cilDebugWriter?.Flush();
+    cilDebugWriter?.Dispose();
 
-    m.Invoke(null, null);
-
-    using (var stream = File.Open(Path.ChangeExtension(path, ".dll"), FileMode.Create, FileAccess.Write))
+    var outputDir = Path.GetDirectoryName(path);
+    var dllPath = Path.ChangeExtension(path, ".dll");
+    Console.WriteLine($"Saving to {dllPath}...");
+    using (var stream = File.Open(dllPath, FileMode.Create, FileAccess.Write))
     {
         await compiler.SaveAsync(stream);
     }
 
+    Console.WriteLine("Copying runtime assembly to same directory...");
+    var runtimeAssembly = typeof(LuaValue).Assembly;
+    File.Copy(
+        runtimeAssembly.Location,
+        Path.Combine(outputDir!, Path.GetFileName(runtimeAssembly.Location)),
+        true);
+
     return 0;
 });
+
+await app.RunAsync();
