@@ -1,3 +1,4 @@
+﻿#define PRINT_CIL
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -18,6 +19,9 @@ public sealed class Compiler
     private static readonly MethodInfo s_miLuaFunctionInvoke =
         typeof(LuaFunction).GetMethod(nameof(LuaFunction.Invoke))
         ?? throw new InvalidOperationException("Cannot get LuaFunction.Invoke(...) method.");
+    private static readonly ConstructorInfo s_ciLuaValueReadOnlySpanCtor =
+        typeof(ReadOnlySpan<LuaValue>).GetConstructor([typeof(LuaValue[])])!
+        ?? throw new InvalidOperationException("Cannot get ReadOnlySpan<LuaValue> constructor.");
 
     private readonly ScopeStack _scopeStack;
     private readonly ScopeStack.Scope _rootScope;
@@ -124,23 +128,30 @@ public sealed class Compiler
 
                 case LirInstrKind.MkArgs:
                     {
+                        // Convert the previous lua value to a function
+                        ilGen.EmitCall(OpCodes.Call, MethodInfo<LuaValue>(x => x.AsFunction()), null);
+
                         var mkArgs = Unsafe.As<MkArgs>(instruction);
                         PushConstant(ilGen, ConstantKind.Number, mkArgs.Size, false);
                         Emit(ilGen, OpCodes.Newarr, typeof(LuaValue));
                     }
                     break;
+                case LirInstrKind.BeginArg:
+                    {
+                        var beginArg = Unsafe.As<BeginArg>(instruction);
+                        Emit(ilGen, OpCodes.Dup);
+                        PushConstant(ilGen, ConstantKind.Number, beginArg.Pos, false);
                     }
                     break;
                 case LirInstrKind.StoreArg:
                     {
-                        var storeArg = Unsafe.As<StoreArg>(instruction);
-                        var local = argLocal.Value;
-
-                        StoreLocal(ilGen, local);
-                        ilGen.Emit(OpCodes.Dup);
-                        PushConstant(ilGen, ConstantKind.Number, (long)storeArg.Pos, false);
-                        PushLocal(ilGen, local);
-                        ilGen.Emit(OpCodes.Stelem_Ref);
+                        Emit(ilGen, OpCodes.Stelem_Ref);
+                    }
+                    break;
+                case LirInstrKind.FCall:
+                    {
+                        Emit(ilGen, OpCodes.Newobj, s_ciLuaValueReadOnlySpanCtor);
+                        Emit(ilGen, OpCodes.Callvirt, s_miLuaFunctionInvoke);
                     }
                     break;
 
