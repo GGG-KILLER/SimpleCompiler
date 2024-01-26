@@ -6,22 +6,16 @@ using System.Runtime.CompilerServices;
 using Lokad.ILPack;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Experimental;
+using Sigil;
+using Sigil.NonGeneric;
 using SimpleCompiler.LIR;
 using SimpleCompiler.MIR;
 using SimpleCompiler.Runtime;
-using static SimpleCompiler.Helpers.ExpressionHelper;
 
 namespace SimpleCompiler.Compiler;
 
 public sealed class Compiler
 {
-    private static readonly MethodInfo s_miLuaFunctionInvoke =
-        typeof(LuaFunction).GetMethod(nameof(LuaFunction.Invoke))
-        ?? throw new InvalidOperationException("Cannot get LuaFunction.Invoke(...) method.");
-    private static readonly ConstructorInfo s_ciLuaValueReadOnlySpanCtor =
-        typeof(ReadOnlySpan<LuaValue>).GetConstructor([typeof(LuaValue[])])!
-        ?? throw new InvalidOperationException("Cannot get ReadOnlySpan<LuaValue> constructor.");
-
     private readonly ScopeStack _scopeStack;
     private readonly ScopeStack.Scope _rootScope;
     private readonly AssemblyBuilder _assemblyBuilder;
@@ -75,12 +69,11 @@ public sealed class Compiler
     public (Type, MethodInfo) CompileProgram(IEnumerable<Instruction> instructions)
     {
         var type = _moduleBuilder.DefineType("Program", TypeAttributes.Public | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
-        var method = type.DefineMethod("Main", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, typeof(void), null);
+        var method = Sigil.NonGeneric.Emit.BuildMethod(typeof(void), [], type, "Main", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, CallingConventions.Standard, strictBranchVerification: true);
 
         using var scope = _scopeStack.NewScope();
-        var ilGen = method.GetILGenerator();
 
-        var argLocal = new Lazy<LocalBuilder>(() => ilGen.DeclareLocal(typeof(LuaValue)));
+        var argLocal = new Lazy<Local>(() => method.DeclareLocal<LuaValue>("argTmp"));
 
         foreach (var instruction in instructions)
         {
@@ -89,280 +82,198 @@ public sealed class Compiler
                 case LirInstrKind.PushCons:
                     {
                         var pushCons = Unsafe.As<PushCons>(instruction);
-                        PushConstant(ilGen, pushCons.ConstantKind, pushCons.Value, true);
+                        PushConstant(method, pushCons.ConstantKind, pushCons.Value, true);
                     }
                     break;
-                case LirInstrKind.PushVar: PushVar(ilGen, Unsafe.As<PushVar>(instruction)); break;
-                case LirInstrKind.StoreVar: StoreVar(ilGen, Unsafe.As<StoreVar>(instruction)); break;
-                case LirInstrKind.Pop: Emit(ilGen, OpCodes.Pop); break;
+                case LirInstrKind.PushVar: PushVar(method, Unsafe.As<PushVar>(instruction)); break;
+                case LirInstrKind.StoreVar: StoreVar(method, Unsafe.As<StoreVar>(instruction)); break;
+                case LirInstrKind.Pop: method.Pop(); break;
 
-                case LirInstrKind.Ret: Emit(ilGen, OpCodes.Ret); break;
+                case LirInstrKind.Ret: method.Return(); break;
                 case LirInstrKind.MultiRet: throw new NotImplementedException();
 
-                case LirInstrKind.Neg: PushCall(ilGen, LuaOperations.Negate); break;
-                case LirInstrKind.Add: PushCall(ilGen, LuaOperations.Add); break;
-                case LirInstrKind.Sub: PushCall(ilGen, LuaOperations.Subtract); break;
-                case LirInstrKind.Mul: PushCall(ilGen, LuaOperations.Multiply); break;
-                case LirInstrKind.Div: PushCall(ilGen, LuaOperations.Divide); break;
-                case LirInstrKind.IntDiv: PushCall(ilGen, LuaOperations.IntegerDivide); break;
-                case LirInstrKind.Pow: PushCall(ilGen, LuaOperations.Exponentiate); break;
-                case LirInstrKind.Mod: PushCall(ilGen, LuaOperations.Modulo); break;
-                case LirInstrKind.Concat: PushCall(ilGen, LuaOperations.Concatenate); break;
+                case LirInstrKind.Neg: PushCall(method, LuaOperations.Negate); break;
+                case LirInstrKind.Add: PushCall(method, LuaOperations.Add); break;
+                case LirInstrKind.Sub: PushCall(method, LuaOperations.Subtract); break;
+                case LirInstrKind.Mul: PushCall(method, LuaOperations.Multiply); break;
+                case LirInstrKind.Div: PushCall(method, LuaOperations.Divide); break;
+                case LirInstrKind.IntDiv: PushCall(method, LuaOperations.IntegerDivide); break;
+                case LirInstrKind.Pow: PushCall(method, LuaOperations.Exponentiate); break;
+                case LirInstrKind.Mod: PushCall(method, LuaOperations.Modulo); break;
+                case LirInstrKind.Concat: PushCall(method, LuaOperations.Concatenate); break;
 
                 case LirInstrKind.Not: throw new NotImplementedException();
 
-                case LirInstrKind.BNot: PushCall(ilGen, LuaOperations.BitwiseNot); break;
-                case LirInstrKind.BAnd: PushCall(ilGen, LuaOperations.BitwiseAnd); break;
-                case LirInstrKind.BOr: PushCall(ilGen, LuaOperations.BitwiseOr); break;
-                case LirInstrKind.Xor: PushCall(ilGen, LuaOperations.BitwiseXor); break;
-                case LirInstrKind.LShift: PushCall(ilGen, LuaOperations.ShiftLeft); break;
-                case LirInstrKind.RShift: PushCall(ilGen, LuaOperations.ShiftRight); break;
+                case LirInstrKind.BNot: PushCall(method, LuaOperations.BitwiseNot); break;
+                case LirInstrKind.BAnd: PushCall(method, LuaOperations.BitwiseAnd); break;
+                case LirInstrKind.BOr: PushCall(method, LuaOperations.BitwiseOr); break;
+                case LirInstrKind.Xor: PushCall(method, LuaOperations.BitwiseXor); break;
+                case LirInstrKind.LShift: PushCall(method, LuaOperations.ShiftLeft); break;
+                case LirInstrKind.RShift: PushCall(method, LuaOperations.ShiftRight); break;
 
-                case LirInstrKind.Eq: PushCall(ilGen, LuaOperations.Equals); break;
-                case LirInstrKind.Neq: PushCall(ilGen, LuaOperations.NotEquals); break;
-                case LirInstrKind.Lt: PushCall(ilGen, LuaOperations.LessThan); break;
-                case LirInstrKind.Lte: PushCall(ilGen, LuaOperations.LessThanOrEqual); break;
-                case LirInstrKind.Gt: PushCall(ilGen, LuaOperations.GreaterThan); break;
-                case LirInstrKind.Gte: PushCall(ilGen, LuaOperations.GreaterThanOrEqual); break;
+                case LirInstrKind.Eq: PushCall(method, LuaOperations.Equals); break;
+                case LirInstrKind.Neq: PushCall(method, LuaOperations.NotEquals); break;
+                case LirInstrKind.Lt: PushCall(method, LuaOperations.LessThan); break;
+                case LirInstrKind.Lte: PushCall(method, LuaOperations.LessThanOrEqual); break;
+                case LirInstrKind.Gt: PushCall(method, LuaOperations.GreaterThan); break;
+                case LirInstrKind.Gte: PushCall(method, LuaOperations.GreaterThanOrEqual); break;
 
                 case LirInstrKind.Len: throw new NotImplementedException();
 
                 case LirInstrKind.MkArgs:
                     {
                         // Convert the previous lua value to a function
-                        ilGen.EmitCall(OpCodes.Call, MethodInfo<LuaValue>(x => x.AsFunction()), null);
+                        method.Call(ReflectionData.LuaValue_AsFunction);
 
                         var mkArgs = Unsafe.As<MkArgs>(instruction);
-                        PushConstant(ilGen, ConstantKind.Number, mkArgs.Size, false);
-                        Emit(ilGen, OpCodes.Newarr, typeof(LuaValue));
+                        method.LoadConstant(mkArgs.Size);
+                        method.NewArray<LuaValue>();
                     }
                     break;
                 case LirInstrKind.BeginArg:
                     {
                         var beginArg = Unsafe.As<BeginArg>(instruction);
-                        Emit(ilGen, OpCodes.Dup);
-                        PushConstant(ilGen, ConstantKind.Number, beginArg.Pos, false);
+                        method.Duplicate();
+                        method.LoadConstant(beginArg.Pos);
                     }
                     break;
                 case LirInstrKind.StoreArg:
-                    {
-                        Emit(ilGen, OpCodes.Stelem_Ref);
-                    }
+                    method.StoreElement<LuaValue>();
                     break;
                 case LirInstrKind.FCall:
-                    {
-                        Emit(ilGen, OpCodes.Newobj, s_ciLuaValueReadOnlySpanCtor);
-                        Emit(ilGen, OpCodes.Callvirt, s_miLuaFunctionInvoke);
-                    }
+                    method.Call(ReflectionData.ReadOnlySpan_LuaValue_ctor_LuaValueArr);
+                    method.Call(ReflectionData.LuaFunction_Invoke);
                     break;
 
                 case LirInstrKind.Loc:
                     {
                         var loc = Unsafe.As<Loc>(instruction);
-                        _scopeStack.Current.AssignLabel(loc.Location, ilGen.DefineLabel());
+                        _scopeStack.Current.AssignLabel(loc.Location, method.DefineLabel());
                     }
                     break;
                 case LirInstrKind.Br:
                     {
                         var br = Unsafe.As<Br>(instruction);
-                        var label = _scopeStack.Current.GetOrCreateLabel(ilGen, br.Location);
-                        Emit(ilGen, OpCodes.Br, label);
+                        var label = _scopeStack.Current.GetOrCreateLabel(method, br.Location);
+                        method.Branch(label);
                     }
                     break;
                 case LirInstrKind.BrFalse:
                     {
                         var br = Unsafe.As<BrFalse>(instruction);
-                        var label = _scopeStack.Current.GetOrCreateLabel(ilGen, br.Location);
-                        Emit(ilGen, OpCodes.Brfalse, label);
+                        var label = _scopeStack.Current.GetOrCreateLabel(method, br.Location);
+                        method.BranchIfFalse(label);
                     }
                     break;
                 case LirInstrKind.BrTrue:
                     {
                         var br = Unsafe.As<BrTrue>(instruction);
-                        var label = _scopeStack.Current.GetOrCreateLabel(ilGen, br.Location);
-                        Emit(ilGen, OpCodes.Brtrue, label);
+                        var label = _scopeStack.Current.GetOrCreateLabel(method, br.Location);
+                        method.BranchIfTrue(label);
                     }
                     break;
 
                 case LirInstrKind.Debug:
-                    Emit(ilGen, OpCodes.Call, MethodInfo(() => Console.WriteLine(new object())));
+                    method.Box(typeof(object));
+                    method.Call(ReflectionData.Console_WriteLine_object);
                     break;
 
                 default:
                     throw new UnreachableException();
             }
         }
-        Emit(ilGen, OpCodes.Ret);
+        method.Return();
+
+        _cilDebugWriter?.WriteLine(method.Instructions());
 
         var t = type.CreateType();
         return (t, t.GetMethod("Main")!);
     }
 
-    private void PushVar(ILGenerator ilGen, PushVar pushVar)
+    private void PushVar(Emit method, PushVar pushVar)
     {
         if (pushVar.Variable == KnownGlobals.Print)
         {
-            Emit(ilGen, OpCodes.Ldsfld, FieldInfo(() => StockGlobals.Print));
+            method.LoadField(ReflectionData.StockGlobal_Print);
         }
         else if (pushVar.Variable == KnownGlobals.ToString)
         {
-            Emit(ilGen, OpCodes.Ldsfld, FieldInfo(() => StockGlobals.ToString));
+            method.LoadField(ReflectionData.StockGlobal_ToString);
         }
         else
         {
-            var variable = _scopeStack.Current.GetOrCreateLocal(ilGen, pushVar.Variable);
-            PushLocal(ilGen, variable);
+            var local = _scopeStack.Current.GetOrCreateLocal(method, pushVar.Variable);
+            method.LoadLocal(local);
         }
     }
 
-    private void StoreVar(ILGenerator ilGen, StoreVar storeVar)
+    private void StoreVar(Emit method, StoreVar storeVar)
     {
         if (storeVar.Variable == KnownGlobals.Print)
         {
-            Emit(ilGen, OpCodes.Stsfld, FieldInfo(() => StockGlobals.Print));
+            method.StoreField(ReflectionData.StockGlobal_Print);
         }
         else if (storeVar.Variable == KnownGlobals.ToString)
         {
-            Emit(ilGen, OpCodes.Stsfld, FieldInfo(() => StockGlobals.ToString));
+            method.StoreField(ReflectionData.StockGlobal_ToString);
         }
         else
         {
-            var variable = _scopeStack.Current.GetOrCreateLocal(ilGen, storeVar.Variable);
-            StoreLocal(ilGen, variable);
+            var local = _scopeStack.Current.GetOrCreateLocal(method, storeVar.Variable);
+            method.StoreLocal(local);
         }
     }
 
-    private void PushLocal(ILGenerator ilGen, LocalBuilder local)
-    {
-        switch (local.LocalIndex)
-        {
-            case 0: Emit(ilGen, OpCodes.Ldloc_0); break;
-            case 1: Emit(ilGen, OpCodes.Ldloc_1); break;
-            case 2: Emit(ilGen, OpCodes.Ldloc_2); break;
-            case 3: Emit(ilGen, OpCodes.Ldloc_3); break;
-            case 4: Emit(ilGen, OpCodes.Ldloc_S); break;
-            case < 256: Emit(ilGen, OpCodes.Ldloc_S, local); break;
-            default: Emit(ilGen, OpCodes.Ldloc, local); break;
-        }
-    }
-
-    private void StoreLocal(ILGenerator ilGen, LocalBuilder local)
-    {
-        switch (local.LocalIndex)
-        {
-            case 0: Emit(ilGen, OpCodes.Stloc_0); break;
-            case 1: Emit(ilGen, OpCodes.Stloc_1); break;
-            case 2: Emit(ilGen, OpCodes.Stloc_2); break;
-            case 3: Emit(ilGen, OpCodes.Stloc_3); break;
-            case 4: Emit(ilGen, OpCodes.Stloc_S); break;
-            case < 256: Emit(ilGen, OpCodes.Stloc_S, local); break;
-            default: Emit(ilGen, OpCodes.Stloc, local); break;
-        }
-    }
-
-    private void PushConstant(ILGenerator ilGen, ConstantKind kind, object value, bool wrapInLuaValue = true)
+    private void PushConstant(Emit method, ConstantKind kind, object value, bool wrapInLuaValue = true)
     {
         switch (kind)
         {
             case ConstantKind.Nil:
                 if (wrapInLuaValue)
-                    Emit(ilGen, OpCodes.Ldsfld, FieldInfo(() => LuaValue.Nil));
+                    method.Call(ReflectionData.LuaValue_ctor);
                 else
-                    Emit(ilGen, OpCodes.Ldnull);
+                    method.LoadNull();
                 break;
             case ConstantKind.Boolean:
+                method.LoadConstant(Unsafe.Unbox<bool>(value));
                 if (wrapInLuaValue)
-                    Emit(ilGen, OpCodes.Ldsfld, Unsafe.Unbox<bool>(value)
-                        ? FieldInfo(() => LuaValue.True)
-                        : FieldInfo(() => LuaValue.False));
-                else
-                    Emit(ilGen, Unsafe.Unbox<bool>(value) ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                    method.Call(ReflectionData.LuaValue_ctor_bool);
                 break;
             case ConstantKind.Number:
                 if (value is int i32)
                 {
-                    switch (i32)
-                    {
-                        case 0: Emit(ilGen, OpCodes.Ldc_I4_0); break;
-                        case 1: Emit(ilGen, OpCodes.Ldc_I4_1); break;
-                        case 2: Emit(ilGen, OpCodes.Ldc_I4_2); break;
-                        case 3: Emit(ilGen, OpCodes.Ldc_I4_3); break;
-                        case 4: Emit(ilGen, OpCodes.Ldc_I4_4); break;
-                        case 5: Emit(ilGen, OpCodes.Ldc_I4_5); break;
-                        case 6: Emit(ilGen, OpCodes.Ldc_I4_6); break;
-                        case 7: Emit(ilGen, OpCodes.Ldc_I4_7); break;
-                        case 8: Emit(ilGen, OpCodes.Ldc_I4_8); break;
-                        case -1: Emit(ilGen, OpCodes.Ldc_I4_M1); break;
-                        case <= sbyte.MaxValue and >= sbyte.MinValue: Emit(ilGen, OpCodes.Ldc_I4_S, i32); break;
-                        default: Emit(ilGen, OpCodes.Ldc_I4, i32); break;
-                    }
+                    method.LoadConstant(i32);
                     if (wrapInLuaValue) throw new NotSupportedException();
                 }
                 else if (value is long i64)
                 {
-                    switch (i64)
-                    {
-                        case 0: Emit(ilGen, OpCodes.Ldc_I4_0); break;
-                        case 1: Emit(ilGen, OpCodes.Ldc_I4_1); break;
-                        case 2: Emit(ilGen, OpCodes.Ldc_I4_2); break;
-                        case 3: Emit(ilGen, OpCodes.Ldc_I4_3); break;
-                        case 4: Emit(ilGen, OpCodes.Ldc_I4_4); break;
-                        case 5: Emit(ilGen, OpCodes.Ldc_I4_5); break;
-                        case 6: Emit(ilGen, OpCodes.Ldc_I4_6); break;
-                        case 7: Emit(ilGen, OpCodes.Ldc_I4_7); break;
-                        case 8: Emit(ilGen, OpCodes.Ldc_I4_8); break;
-                        case -1: Emit(ilGen, OpCodes.Ldc_I4_M1); break;
-                        case <= sbyte.MaxValue and >= sbyte.MinValue: Emit(ilGen, OpCodes.Ldc_I4_S, i64); break;
-                        case <= int.MaxValue and >= int.MinValue: Emit(ilGen, OpCodes.Ldc_I4, i64); break;
-                        default: Emit(ilGen, OpCodes.Ldc_I8, i64); goto skipConv;
-                    }
-                    Emit(ilGen, OpCodes.Conv_I8);
-                skipConv:;
+                    method.LoadConstant(i64);
                     if (wrapInLuaValue)
-                        Emit(ilGen, OpCodes.Newobj, ConstructorInfo(() => new LuaValue(24L)));
+                        method.Call(ReflectionData.LuaValue_ctor_long);
                 }
                 else
                 {
-                    Emit(ilGen, OpCodes.Ldc_R8, Unsafe.Unbox<double>(value));
+                    method.LoadConstant(Unsafe.Unbox<double>(value));
                     if (wrapInLuaValue)
-                        Emit(ilGen, OpCodes.Newobj, ConstructorInfo(() => new LuaValue(2.0)));
+                        method.Call(ReflectionData.LuaValue_ctor_double);
                 }
                 break;
             case ConstantKind.String:
-                Emit(ilGen, OpCodes.Ldstr, Unsafe.As<string>(value));
+                method.LoadConstant(Unsafe.As<string>(value));
                 if (wrapInLuaValue)
-                    Emit(ilGen, OpCodes.Newobj, ConstructorInfo(() => new LuaValue("")));
+                    method.Call(ReflectionData.LuaValue_ctor_string);
                 break;
         }
     }
 
-    private void PushCall(ILGenerator ilGen, Func<LuaValue, LuaValue> func)
+    private static void PushCall(Emit method, Func<LuaValue, LuaValue, LuaValue> func)
     {
-        Emit(ilGen, OpCodes.Call, func.Method);
+        method.Call(func.Method);
     }
 
-    private void PushCall(ILGenerator ilGen, Func<LuaValue, LuaValue, LuaValue> func)
+    private static void PushCall(Emit method, Delegate func)
     {
-        Emit(ilGen, OpCodes.Call, func.Method);
-    }
-
-    private void Emit(ILGenerator gen, OpCode opCode)
-    {
-        _cilDebugWriter?.WriteLine($"    {opCode.Name}");
-        gen.Emit(opCode);
-    }
-
-    private void Emit(ILGenerator gen, OpCode opCode, dynamic value)
-    {
-        if (value is ConstructorInfo ctor)
-        {
-            _cilDebugWriter?.WriteLine($"    {opCode.Name} {ctor.DeclaringType} {ctor}");
-        }
-        else
-        {
-            _cilDebugWriter?.WriteLine($"    {opCode.Name} {value}");
-        }
-        gen.Emit(opCode, value);
+        method.Call(func.Method);
     }
 
     public sealed class KnownGlobalsSet

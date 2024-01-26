@@ -1,10 +1,13 @@
 ﻿using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Sigil;
+using Sigil.NonGeneric;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.LIR;
 using SimpleCompiler.MIR;
 using SimpleCompiler.Runtime;
+using Label = Sigil.Label;
 
 namespace SimpleCompiler.Compiler;
 
@@ -35,7 +38,7 @@ public sealed class ScopeStack(ModuleBuilder moduleBuilder)
         private int _counter;
 
         public Dictionary<Location, Label> Labels { get; } = [];
-        public Dictionary<VariableInfo, LocalBuilder> Locals { get; } = [];
+        public Dictionary<VariableInfo, Local> Locals { get; } = [];
         private TypeBuilder? _callsiteCache;
 
         internal Scope(ModuleBuilder moduleBuilder, Stack<Scope> stack, IReference<int> counter, Scope? parent)
@@ -49,20 +52,20 @@ public sealed class ScopeStack(ModuleBuilder moduleBuilder)
         public void AssignLabel(Location location, Label label) =>
             Labels.Add(location, label);
 
-        public Label GetOrCreateLabel(ILGenerator ilGen, Location location)
+        public Label GetOrCreateLabel(Emit method, Location location)
         {
             if (!Labels.TryGetValue(location, out var label))
-                Labels[location] = label = ilGen.DefineLabel();
+                Labels[location] = label = method.DefineLabel();
             return label;
         }
 
-        public LocalBuilder? GetLocal(VariableInfo variable) =>
+        public Local? GetLocal(VariableInfo variable) =>
             Locals.GetValueOrDefault(variable) ?? _parent?.GetLocal(variable);
 
-        public LocalBuilder GetOrCreateLocal(ILGenerator ilGen, VariableInfo variable)
+        public Local GetOrCreateLocal(Emit method, VariableInfo variable)
         {
             if (GetLocal(variable) is not { } local)
-                local = Locals[variable] = ilGen.DeclareLocal(typeof(LuaValue));
+                local = Locals[variable] = method.DeclareLocal<LuaValue>();
             return local;
         }
 
