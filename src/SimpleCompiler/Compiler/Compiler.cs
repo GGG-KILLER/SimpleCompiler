@@ -1,5 +1,4 @@
-﻿#define PRINT_CIL
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -27,11 +26,12 @@ public sealed class Compiler
     private readonly ScopeStack.Scope _rootScope;
     private readonly AssemblyBuilder _assemblyBuilder;
     private readonly ModuleBuilder _moduleBuilder;
+    private readonly TextWriter? _cilDebugWriter;
 
     public ScopeInfo GlobalScope { get; }
     public KnownGlobalsSet KnownGlobals { get; }
 
-    public Compiler(AssemblyBuilder assemblyBuilder, ModuleBuilder moduleBuilder)
+    public Compiler(AssemblyBuilder assemblyBuilder, ModuleBuilder moduleBuilder, TextWriter? cilDebugWriter)
     {
         _scopeStack = new(moduleBuilder);
         _rootScope = _scopeStack.NewScope();
@@ -39,16 +39,17 @@ public sealed class Compiler
         KnownGlobals = new KnownGlobalsSet(GlobalScope);
         _assemblyBuilder = assemblyBuilder;
         _moduleBuilder = moduleBuilder;
+        _cilDebugWriter = cilDebugWriter;
     }
 
     // TODO: Use public API when it's available: https://github.com/dotnet/runtime/issues/15704
     private static readonly Type _builderType = Type.GetType("System.Reflection.Emit.AssemblyBuilderImpl, System.Reflection.Emit", throwOnError: true)!;
 
-    public static Compiler Create(AssemblyName assemblyName)
+    public static Compiler Create(AssemblyName assemblyName, TextWriter? cilDebugWriter)
     {
         var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
         var module = assembly.DefineDynamicModule(assemblyName.Name + ".dll");
-        return new Compiler(assembly, module);
+        return new Compiler(assembly, module, cilDebugWriter);
     }
 
     public async Task SaveAsync(Stream stream)
@@ -227,7 +228,7 @@ public sealed class Compiler
         }
     }
 
-    private static void PushLocal(ILGenerator ilGen, LocalBuilder local)
+    private void PushLocal(ILGenerator ilGen, LocalBuilder local)
     {
         switch (local.LocalIndex)
         {
@@ -241,7 +242,7 @@ public sealed class Compiler
         }
     }
 
-    private static void StoreLocal(ILGenerator ilGen, LocalBuilder local)
+    private void StoreLocal(ILGenerator ilGen, LocalBuilder local)
     {
         switch (local.LocalIndex)
         {
@@ -255,7 +256,7 @@ public sealed class Compiler
         }
     }
 
-    private static void PushConstant(ILGenerator ilGen, ConstantKind kind, object value, bool wrapInLuaValue = true)
+    private void PushConstant(ILGenerator ilGen, ConstantKind kind, object value, bool wrapInLuaValue = true)
     {
         switch (kind)
         {
@@ -331,36 +332,32 @@ public sealed class Compiler
         }
     }
 
-    private static void PushCall(ILGenerator ilGen, Func<LuaValue, LuaValue> func)
+    private void PushCall(ILGenerator ilGen, Func<LuaValue, LuaValue> func)
     {
         Emit(ilGen, OpCodes.Call, func.Method);
     }
 
-    private static void PushCall(ILGenerator ilGen, Func<LuaValue, LuaValue, LuaValue> func)
+    private void PushCall(ILGenerator ilGen, Func<LuaValue, LuaValue, LuaValue> func)
     {
         Emit(ilGen, OpCodes.Call, func.Method);
     }
 
-    private static void Emit(ILGenerator gen, OpCode opCode)
+    private void Emit(ILGenerator gen, OpCode opCode)
     {
-#if PRINT_CIL
-        Console.WriteLine($"    {opCode.Name}");
-#endif // PRINT_CIL
+        _cilDebugWriter?.WriteLine($"    {opCode.Name}");
         gen.Emit(opCode);
     }
 
-    private static void Emit(ILGenerator gen, OpCode opCode, dynamic value)
+    private void Emit(ILGenerator gen, OpCode opCode, dynamic value)
     {
-#if PRINT_CIL
         if (value is ConstructorInfo ctor)
         {
-            Console.WriteLine($"    {opCode.Name} {ctor.DeclaringType} {ctor}");
+            _cilDebugWriter?.WriteLine($"    {opCode.Name} {ctor.DeclaringType} {ctor}");
         }
         else
         {
-            Console.WriteLine($"    {opCode.Name} {value}");
+            _cilDebugWriter?.WriteLine($"    {opCode.Name} {value}");
         }
-#endif // PRINT_CIL
         gen.Emit(opCode, value);
     }
 
