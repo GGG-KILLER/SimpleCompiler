@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.12-nightly.24" />
+    <PackageReference Include="Loretta.CodeAnalysis.Lua.Experimental" Version="0.2.12-nightly.24" />
     <PackageReference Include="Tsu.TreeSourceGen" Version="0.1.1" />
   </ItemGroup>
 
@@ -32,6 +33,7 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
     </ProjectReference>
+    <ProjectReference Include="..\SimpleCompiler.Runtime\SimpleCompiler.Runtime.csproj" />
   </ItemGroup>
 
 </Project>
