@@ -122,12 +122,6 @@ public sealed class Compiler
 
                 case LirInstrKind.MkArgs:
                     {
-                        // Convert the previous lua value to a function
-                        var f = fnLocal.Value;
-                        method.StoreLocal(f);
-                        method.LoadLocalAddress(f);
-                        method.CallVirtual(ReflectionData.LuaValue_AsFunction);
-
                         var mkArgs = Unsafe.As<MkArgs>(instruction);
                         method.LoadConstant(mkArgs.Size);
                         method.NewArray<LuaValue>();
@@ -145,7 +139,7 @@ public sealed class Compiler
                     break;
                 case LirInstrKind.FCall:
                     method.NewObject(typeof(ReadOnlySpan<LuaValue>), [typeof(LuaValue[])]);
-                    method.Call(ReflectionData.LuaFunction_Invoke);
+                    PushCall(method, LuaOperations.Call);
                     break;
 
                 case LirInstrKind.Loc:

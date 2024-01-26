@@ -31,4 +31,7 @@ public static partial class LuaOperations
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static LuaValue BooleanNot(LuaValue operand) => new(!operand.IsTruthy);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static LuaValue Call(LuaValue callee, ReadOnlySpan<LuaValue> args) => callee.AsFunction()(args);
 }
