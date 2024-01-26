@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.LIR;
 using SimpleCompiler.MIR;
+using SimpleCompiler.Runtime;
 
 namespace SimpleCompiler.Compiler;
 
@@ -61,7 +62,7 @@ public sealed class ScopeStack(ModuleBuilder moduleBuilder)
         public LocalBuilder GetOrCreateLocal(ILGenerator ilGen, VariableInfo variable)
         {
             if (GetLocal(variable) is not { } local)
-                local = Locals[variable] = ilGen.DeclareLocal(typeof(object));
+                local = Locals[variable] = ilGen.DeclareLocal(typeof(LuaValue));
             return local;
         }
 
