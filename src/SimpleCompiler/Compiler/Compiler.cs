@@ -69,11 +69,11 @@ public sealed class Compiler
     public (Type, MethodInfo) CompileProgram(IEnumerable<Instruction> instructions)
     {
         var type = _moduleBuilder.DefineType("Program", TypeAttributes.Public | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
-        var method = Sigil.NonGeneric.Emit.BuildMethod(typeof(void), [], type, "Main", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, CallingConventions.Standard, strictBranchVerification: true);
+        var method = Emit.BuildStaticMethod(typeof(void), [], type, "Main", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, strictBranchVerification: true);
 
         using var scope = _scopeStack.NewScope();
 
-        var argLocal = new Lazy<Local>(() => method.DeclareLocal<LuaValue>("argTmp"));
+        var fnLocal = new Lazy<Local>(() => method.DeclareLocal<LuaValue>("fn"));
 
         foreach (var instruction in instructions)
         {
@@ -123,7 +123,10 @@ public sealed class Compiler
                 case LirInstrKind.MkArgs:
                     {
                         // Convert the previous lua value to a function
-                        method.Call(ReflectionData.LuaValue_AsFunction);
+                        var f = fnLocal.Value;
+                        method.StoreLocal(f);
+                        method.LoadLocalAddress(f);
+                        method.CallVirtual(ReflectionData.LuaValue_AsFunction);
 
                         var mkArgs = Unsafe.As<MkArgs>(instruction);
                         method.LoadConstant(mkArgs.Size);
@@ -141,7 +144,7 @@ public sealed class Compiler
                     method.StoreElement<LuaValue>();
                     break;
                 case LirInstrKind.FCall:
-                    method.Call(ReflectionData.ReadOnlySpan_LuaValue_ctor_LuaValueArr);
+                    method.NewObject(typeof(ReadOnlySpan<LuaValue>), [typeof(LuaValue[])]);
                     method.Call(ReflectionData.LuaFunction_Invoke);
                     break;
 
@@ -174,7 +177,7 @@ public sealed class Compiler
                     break;
 
                 case LirInstrKind.Debug:
-                    method.Box(typeof(object));
+                    method.Box<LuaValue>();
                     method.Call(ReflectionData.Console_WriteLine_object);
                     break;
 
@@ -186,7 +189,9 @@ public sealed class Compiler
 
         _cilDebugWriter?.WriteLine(method.Instructions());
 
+        method.CreateMethod(OptimizationOptions.All);
         var t = type.CreateType();
+
         return (t, t.GetMethod("Main")!);
     }
 
@@ -224,44 +229,45 @@ public sealed class Compiler
         }
     }
 
-    private void PushConstant(Emit method, ConstantKind kind, object value, bool wrapInLuaValue = true)
+    private static void PushConstant(Emit method, ConstantKind kind, object value, bool wrapInLuaValue = true)
     {
         switch (kind)
         {
             case ConstantKind.Nil:
                 if (wrapInLuaValue)
-                    method.Call(ReflectionData.LuaValue_ctor);
+                    method.NewObject<LuaValue>();
                 else
                     method.LoadNull();
-                break;
+                return;
             case ConstantKind.Boolean:
                 method.LoadConstant(Unsafe.Unbox<bool>(value));
                 if (wrapInLuaValue)
-                    method.Call(ReflectionData.LuaValue_ctor_bool);
+                    method.NewObject<LuaValue, bool>();
                 break;
             case ConstantKind.Number:
                 if (value is int i32)
                 {
                     method.LoadConstant(i32);
                     if (wrapInLuaValue) throw new NotSupportedException();
+                    return;
                 }
                 else if (value is long i64)
                 {
                     method.LoadConstant(i64);
                     if (wrapInLuaValue)
-                        method.Call(ReflectionData.LuaValue_ctor_long);
+                        method.NewObject<LuaValue, long>();
                 }
                 else
                 {
                     method.LoadConstant(Unsafe.Unbox<double>(value));
                     if (wrapInLuaValue)
-                        method.Call(ReflectionData.LuaValue_ctor_double);
+                        method.NewObject<LuaValue, double>();
                 }
                 break;
             case ConstantKind.String:
                 method.LoadConstant(Unsafe.As<string>(value));
                 if (wrapInLuaValue)
-                    method.Call(ReflectionData.LuaValue_ctor_string);
+                    method.NewObject<LuaValue, string>();
                 break;
         }
     }
