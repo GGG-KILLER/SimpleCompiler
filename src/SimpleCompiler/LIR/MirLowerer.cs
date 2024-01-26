@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.MIR;
 
@@ -88,8 +88,9 @@ public sealed class MirLowerer : MirWalker
         var idx = 0;
         foreach (var arg in functionCall.Arguments)
         {
+            _instructions.Add(Instruction.BeginArg(idx++));
             Visit(arg);
-            _instructions.Add(Instruction.StoreArg(idx++));
+            _instructions.Add(Instruction.StoreArg());
         }
         _instructions.Add(Instruction.FCall());
     }

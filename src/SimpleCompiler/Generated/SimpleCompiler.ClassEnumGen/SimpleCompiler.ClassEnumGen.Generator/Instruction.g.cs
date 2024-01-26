@@ -39,6 +39,7 @@ public enum LirInstrKind
     Gt,
     Gte,
     MkArgs,
+    BeginArg,
     StoreArg,
     FCall,
 }
@@ -79,7 +80,8 @@ partial record Instruction
     public static partial Gt Gt() => global::SimpleCompiler.LIR.Gt.Instance;
     public static partial Gte Gte() => global::SimpleCompiler.LIR.Gte.Instance;
     public static partial MkArgs MkArgs(int size) => new(size);
-    public static partial StoreArg StoreArg(int pos) => new(pos);
+    public static partial BeginArg BeginArg(int pos) => new(pos);
+    public static partial StoreArg StoreArg() => global::SimpleCompiler.LIR.StoreArg.Instance;
     public static partial FCall FCall() => global::SimpleCompiler.LIR.FCall.Instance;
 }
 
@@ -226,7 +228,12 @@ public sealed partial record Gte() : global::SimpleCompiler.LIR.Instruction(glob
 
 public sealed partial record MkArgs(int Size) : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.MkArgs);
 
-public sealed partial record StoreArg(int Pos) : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.StoreArg);
+public sealed partial record BeginArg(int Pos) : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.BeginArg);
+
+public sealed partial record StoreArg() : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.StoreArg)
+{
+    public static readonly StoreArg Instance = new();
+}
 
 public sealed partial record FCall() : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.FCall)
 {

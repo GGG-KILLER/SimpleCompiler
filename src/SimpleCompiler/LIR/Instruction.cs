@@ -51,7 +51,8 @@ public abstract partial record Instruction(LirInstrKind Kind)
     public static partial Gte Gte();
 
     public static partial MkArgs MkArgs(int size);
-    public static partial StoreArg StoreArg(int pos);
+    public static partial BeginArg BeginArg(int pos);
+    public static partial StoreArg StoreArg();
     public static partial FCall FCall();
 
     public string ToRepr()
