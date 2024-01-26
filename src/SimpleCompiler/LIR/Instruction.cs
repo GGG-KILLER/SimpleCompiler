@@ -55,6 +55,8 @@ public abstract partial record Instruction(LirInstrKind Kind)
     public static partial StoreArg StoreArg();
     public static partial FCall FCall();
 
+    public static partial Debug Debug();
+
     public string ToRepr()
     {
         return this switch

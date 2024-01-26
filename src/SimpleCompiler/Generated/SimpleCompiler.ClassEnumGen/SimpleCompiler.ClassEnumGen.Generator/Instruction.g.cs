@@ -42,6 +42,7 @@ public enum LirInstrKind
     BeginArg,
     StoreArg,
     FCall,
+    Debug,
 }
 
 partial record Instruction
@@ -83,6 +84,7 @@ partial record Instruction
     public static partial BeginArg BeginArg(int pos) => new(pos);
     public static partial StoreArg StoreArg() => global::SimpleCompiler.LIR.StoreArg.Instance;
     public static partial FCall FCall() => global::SimpleCompiler.LIR.FCall.Instance;
+    public static partial Debug Debug() => global::SimpleCompiler.LIR.Debug.Instance;
 }
 
 public sealed partial record PushVar(global::SimpleCompiler.MIR.VariableInfo Variable) : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.PushVar);
@@ -238,4 +240,9 @@ public sealed partial record StoreArg() : global::SimpleCompiler.LIR.Instruction
 public sealed partial record FCall() : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.FCall)
 {
     public static readonly FCall Instance = new();
+}
+
+public sealed partial record Debug() : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.Debug)
+{
+    public static readonly Debug Instance = new();
 }

@@ -45,7 +45,7 @@ public sealed class Compiler
     // TODO: Use public API when it's available: https://github.com/dotnet/runtime/issues/15704
     private static readonly Type _builderType = Type.GetType("System.Reflection.Emit.AssemblyBuilderImpl, System.Reflection.Emit", throwOnError: true)!;
 
-    public static Compiler Create(AssemblyName assemblyName, TextWriter? cilDebugWriter)
+    public static Compiler Create(AssemblyName assemblyName, TextWriter? cilDebugWriter = null)
     {
         var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
         var module = assembly.DefineDynamicModule(assemblyName.Name + ".dll");
@@ -182,6 +182,11 @@ public sealed class Compiler
                         var label = _scopeStack.Current.GetOrCreateLabel(ilGen, br.Location);
                         Emit(ilGen, OpCodes.Brtrue, label);
                     }
+                    break;
+
+
+                case LirInstrKind.Debug:
+                    Emit(ilGen, OpCodes.Call, MethodInfo(() => Console.WriteLine(new object())));
                     break;
 
                 default:

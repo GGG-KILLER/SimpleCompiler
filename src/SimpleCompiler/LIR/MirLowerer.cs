@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.MIR;
 
@@ -83,6 +83,12 @@ public sealed class MirLowerer : MirWalker
 
     public override void VisitFunctionCall(FunctionCall functionCall)
     {
+        if (functionCall.Callee is Variable { VariableInfo.Name: "debug" })
+        {
+            Visit(functionCall.Arguments.Single());
+            _instructions.Add(Instruction.Debug());
+            return;
+        }
         Visit(functionCall.Callee);
         _instructions.Add(Instruction.MkArgs(functionCall.Arguments.Length));
         var idx = 0;
