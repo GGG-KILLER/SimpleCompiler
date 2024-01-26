@@ -84,9 +84,14 @@ public sealed class MirLowerer : MirWalker
     public override void VisitFunctionCall(FunctionCall functionCall)
     {
         Visit(functionCall.Callee);
+        _instructions.Add(Instruction.MkArgs(functionCall.Arguments.Length));
+        var idx = 0;
         foreach (var arg in functionCall.Arguments)
+        {
             Visit(arg);
-        _instructions.Add(Instruction.FCall(functionCall.Arguments.Length));
+            _instructions.Add(Instruction.StoreArg(idx++));
+        }
+        _instructions.Add(Instruction.FCall());
     }
 
     public override void VisitAssignment(Assignment assignment)

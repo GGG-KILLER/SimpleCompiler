@@ -7,9 +7,9 @@ public enum BinaryOperationKind
     Multiplication,
     Division,
     IntegerDivision,
+    Exponentiation,
     Modulo,
     Concatenation,
-    Exponentiation,
 
     BooleanAnd,
     BooleanOr,

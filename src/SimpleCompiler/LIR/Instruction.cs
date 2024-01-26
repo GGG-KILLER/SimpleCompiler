@@ -49,7 +49,9 @@ public abstract partial record Instruction(LirInstrKind Kind)
     public static partial Gt Gt();
     public static partial Gte Gte();
 
-    public static partial FCall FCall(int argCount);
+    public static partial MkArgs MkArgs(int size);
+    public static partial StoreArg StoreArg(int pos);
+    public static partial FCall FCall();
 
     public string ToRepr()
     {
@@ -95,7 +97,9 @@ public abstract partial record Instruction(LirInstrKind Kind)
             Gt _ => "GT",
             Gte _ => "GTE",
 
-            FCall f => $"FCALL {f.ArgCount}",
+            MkArgs m => $"MKARGS {m.Size}",
+            StoreArg s => $"STOREARG {s.Pos}",
+            FCall _ => "FCALL",
             _ => throw new InvalidOperationException()
         };
     }
