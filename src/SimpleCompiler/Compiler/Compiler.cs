@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -16,8 +16,8 @@ namespace SimpleCompiler.Compiler;
 public sealed class Compiler
 {
     private static readonly MethodInfo s_miLuaFunctionInvoke =
-        typeof(LuaFunction).GetMethod(nameof(LuaFunction.Invoke))!
-        ?? throw new InvalidOperationException("Cannot get invoke method");
+        typeof(LuaFunction).GetMethod(nameof(LuaFunction.Invoke))
+        ?? throw new InvalidOperationException("Cannot get LuaFunction.Invoke(...) method.");
 
     private readonly ScopeStack _scopeStack;
     private readonly ScopeStack.Scope _rootScope;
@@ -89,9 +89,9 @@ public sealed class Compiler
                     break;
                 case LirInstrKind.PushVar: PushVar(ilGen, Unsafe.As<PushVar>(instruction)); break;
                 case LirInstrKind.StoreVar: StoreVar(ilGen, Unsafe.As<StoreVar>(instruction)); break;
-                case LirInstrKind.Pop: ilGen.Emit(OpCodes.Pop); break;
+                case LirInstrKind.Pop: Emit(ilGen, OpCodes.Pop); break;
 
-                case LirInstrKind.Ret: ilGen.Emit(OpCodes.Ret); break;
+                case LirInstrKind.Ret: Emit(ilGen, OpCodes.Ret); break;
                 case LirInstrKind.MultiRet: throw new NotImplementedException();
 
                 case LirInstrKind.Neg: PushCall(ilGen, LuaOperations.Negate); break;
@@ -125,8 +125,10 @@ public sealed class Compiler
                 case LirInstrKind.MkArgs:
                     {
                         var mkArgs = Unsafe.As<MkArgs>(instruction);
-                        PushConstant(ilGen, ConstantKind.Number, (long)mkArgs.Size, false);
-                        ilGen.Emit(OpCodes.Newarr, typeof(LuaValue));
+                        PushConstant(ilGen, ConstantKind.Number, mkArgs.Size, false);
+                        Emit(ilGen, OpCodes.Newarr, typeof(LuaValue));
+                    }
+                    break;
                     }
                     break;
                 case LirInstrKind.StoreArg:
@@ -141,7 +143,6 @@ public sealed class Compiler
                         ilGen.Emit(OpCodes.Stelem_Ref);
                     }
                     break;
-                case LirInstrKind.FCall: ilGen.Emit(OpCodes.Callvirt, s_miLuaFunctionInvoke); break;
 
                 case LirInstrKind.Loc:
                     {
@@ -153,21 +154,21 @@ public sealed class Compiler
                     {
                         var br = Unsafe.As<Br>(instruction);
                         var label = _scopeStack.Current.GetOrCreateLabel(ilGen, br.Location);
-                        ilGen.Emit(OpCodes.Br, label);
+                        Emit(ilGen, OpCodes.Br, label);
                     }
                     break;
                 case LirInstrKind.BrFalse:
                     {
                         var br = Unsafe.As<BrFalse>(instruction);
                         var label = _scopeStack.Current.GetOrCreateLabel(ilGen, br.Location);
-                        ilGen.Emit(OpCodes.Brfalse, label);
+                        Emit(ilGen, OpCodes.Brfalse, label);
                     }
                     break;
                 case LirInstrKind.BrTrue:
                     {
                         var br = Unsafe.As<BrTrue>(instruction);
                         var label = _scopeStack.Current.GetOrCreateLabel(ilGen, br.Location);
-                        ilGen.Emit(OpCodes.Brtrue, label);
+                        Emit(ilGen, OpCodes.Brtrue, label);
                     }
                     break;
 
@@ -175,6 +176,7 @@ public sealed class Compiler
                     throw new UnreachableException();
             }
         }
+        Emit(ilGen, OpCodes.Ret);
 
         var t = type.CreateType();
         return (t, t.GetMethod("Main")!);
@@ -184,11 +186,11 @@ public sealed class Compiler
     {
         if (pushVar.Variable == KnownGlobals.Print)
         {
-            ilGen.Emit(OpCodes.Ldsfld, FieldInfo(() => StockGlobals.Print));
+            Emit(ilGen, OpCodes.Ldsfld, FieldInfo(() => StockGlobals.Print));
         }
         else if (pushVar.Variable == KnownGlobals.ToString)
         {
-            ilGen.Emit(OpCodes.Ldsfld, FieldInfo(() => StockGlobals.ToString));
+            Emit(ilGen, OpCodes.Ldsfld, FieldInfo(() => StockGlobals.ToString));
         }
         else
         {
@@ -201,11 +203,11 @@ public sealed class Compiler
     {
         if (storeVar.Variable == KnownGlobals.Print)
         {
-            ilGen.Emit(OpCodes.Stsfld, FieldInfo(() => StockGlobals.Print));
+            Emit(ilGen, OpCodes.Stsfld, FieldInfo(() => StockGlobals.Print));
         }
         else if (storeVar.Variable == KnownGlobals.ToString)
         {
-            ilGen.Emit(OpCodes.Stsfld, FieldInfo(() => StockGlobals.ToString));
+            Emit(ilGen, OpCodes.Stsfld, FieldInfo(() => StockGlobals.ToString));
         }
         else
         {
@@ -218,13 +220,13 @@ public sealed class Compiler
     {
         switch (local.LocalIndex)
         {
-            case 0: ilGen.Emit(OpCodes.Ldloc_0); break;
-            case 1: ilGen.Emit(OpCodes.Ldloc_1); break;
-            case 2: ilGen.Emit(OpCodes.Ldloc_2); break;
-            case 3: ilGen.Emit(OpCodes.Ldloc_3); break;
-            case 4: ilGen.Emit(OpCodes.Ldloc_S); break;
-            case < 256: ilGen.Emit(OpCodes.Ldloc_S, local); break;
-            default: ilGen.Emit(OpCodes.Ldloc, local); break;
+            case 0: Emit(ilGen, OpCodes.Ldloc_0); break;
+            case 1: Emit(ilGen, OpCodes.Ldloc_1); break;
+            case 2: Emit(ilGen, OpCodes.Ldloc_2); break;
+            case 3: Emit(ilGen, OpCodes.Ldloc_3); break;
+            case 4: Emit(ilGen, OpCodes.Ldloc_S); break;
+            case < 256: Emit(ilGen, OpCodes.Ldloc_S, local); break;
+            default: Emit(ilGen, OpCodes.Ldloc, local); break;
         }
     }
 
@@ -232,13 +234,13 @@ public sealed class Compiler
     {
         switch (local.LocalIndex)
         {
-            case 0: ilGen.Emit(OpCodes.Stloc_0); break;
-            case 1: ilGen.Emit(OpCodes.Stloc_1); break;
-            case 2: ilGen.Emit(OpCodes.Stloc_2); break;
-            case 3: ilGen.Emit(OpCodes.Stloc_3); break;
-            case 4: ilGen.Emit(OpCodes.Stloc_S); break;
-            case < 256: ilGen.Emit(OpCodes.Stloc_S, local); break;
-            default: ilGen.Emit(OpCodes.Stloc, local); break;
+            case 0: Emit(ilGen, OpCodes.Stloc_0); break;
+            case 1: Emit(ilGen, OpCodes.Stloc_1); break;
+            case 2: Emit(ilGen, OpCodes.Stloc_2); break;
+            case 3: Emit(ilGen, OpCodes.Stloc_3); break;
+            case 4: Emit(ilGen, OpCodes.Stloc_S); break;
+            case < 256: Emit(ilGen, OpCodes.Stloc_S, local); break;
+            default: Emit(ilGen, OpCodes.Stloc, local); break;
         }
     }
 
@@ -248,65 +250,107 @@ public sealed class Compiler
         {
             case ConstantKind.Nil:
                 if (wrapInLuaValue)
-                    ilGen.Emit(OpCodes.Ldsfld, FieldInfo(() => LuaValue.Nil));
+                    Emit(ilGen, OpCodes.Ldsfld, FieldInfo(() => LuaValue.Nil));
                 else
-                    ilGen.Emit(OpCodes.Ldnull);
+                    Emit(ilGen, OpCodes.Ldnull);
                 break;
             case ConstantKind.Boolean:
                 if (wrapInLuaValue)
-                    ilGen.Emit(OpCodes.Ldsfld, Unsafe.Unbox<bool>(value)
+                    Emit(ilGen, OpCodes.Ldsfld, Unsafe.Unbox<bool>(value)
                         ? FieldInfo(() => LuaValue.True)
                         : FieldInfo(() => LuaValue.False));
                 else
-                    ilGen.Emit(Unsafe.Unbox<bool>(value) ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                    Emit(ilGen, Unsafe.Unbox<bool>(value) ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                 break;
             case ConstantKind.Number:
-                if (value is long i64)
+                if (value is int i32)
+                {
+                    switch (i32)
+                    {
+                        case 0: Emit(ilGen, OpCodes.Ldc_I4_0); break;
+                        case 1: Emit(ilGen, OpCodes.Ldc_I4_1); break;
+                        case 2: Emit(ilGen, OpCodes.Ldc_I4_2); break;
+                        case 3: Emit(ilGen, OpCodes.Ldc_I4_3); break;
+                        case 4: Emit(ilGen, OpCodes.Ldc_I4_4); break;
+                        case 5: Emit(ilGen, OpCodes.Ldc_I4_5); break;
+                        case 6: Emit(ilGen, OpCodes.Ldc_I4_6); break;
+                        case 7: Emit(ilGen, OpCodes.Ldc_I4_7); break;
+                        case 8: Emit(ilGen, OpCodes.Ldc_I4_8); break;
+                        case -1: Emit(ilGen, OpCodes.Ldc_I4_M1); break;
+                        case <= sbyte.MaxValue and >= sbyte.MinValue: Emit(ilGen, OpCodes.Ldc_I4_S, i32); break;
+                        default: Emit(ilGen, OpCodes.Ldc_I4, i32); break;
+                    }
+                    if (wrapInLuaValue) throw new NotSupportedException();
+                }
+                else if (value is long i64)
                 {
                     switch (i64)
                     {
-                        case 0: ilGen.Emit(OpCodes.Ldc_I4_0); break;
-                        case 1: ilGen.Emit(OpCodes.Ldc_I4_1); break;
-                        case 2: ilGen.Emit(OpCodes.Ldc_I4_2); break;
-                        case 3: ilGen.Emit(OpCodes.Ldc_I4_3); break;
-                        case 4: ilGen.Emit(OpCodes.Ldc_I4_4); break;
-                        case 5: ilGen.Emit(OpCodes.Ldc_I4_5); break;
-                        case 6: ilGen.Emit(OpCodes.Ldc_I4_6); break;
-                        case 7: ilGen.Emit(OpCodes.Ldc_I4_7); break;
-                        case 8: ilGen.Emit(OpCodes.Ldc_I4_8); break;
-                        case -1: ilGen.Emit(OpCodes.Ldc_I4_M1); break;
-                        case <= sbyte.MaxValue and >= sbyte.MinValue: ilGen.Emit(OpCodes.Ldc_I4_S, i64); break;
-                        case <= int.MaxValue and >= int.MinValue: ilGen.Emit(OpCodes.Ldc_I4, i64); break;
-                        default: ilGen.Emit(OpCodes.Ldc_I8, i64); goto skipConv;
+                        case 0: Emit(ilGen, OpCodes.Ldc_I4_0); break;
+                        case 1: Emit(ilGen, OpCodes.Ldc_I4_1); break;
+                        case 2: Emit(ilGen, OpCodes.Ldc_I4_2); break;
+                        case 3: Emit(ilGen, OpCodes.Ldc_I4_3); break;
+                        case 4: Emit(ilGen, OpCodes.Ldc_I4_4); break;
+                        case 5: Emit(ilGen, OpCodes.Ldc_I4_5); break;
+                        case 6: Emit(ilGen, OpCodes.Ldc_I4_6); break;
+                        case 7: Emit(ilGen, OpCodes.Ldc_I4_7); break;
+                        case 8: Emit(ilGen, OpCodes.Ldc_I4_8); break;
+                        case -1: Emit(ilGen, OpCodes.Ldc_I4_M1); break;
+                        case <= sbyte.MaxValue and >= sbyte.MinValue: Emit(ilGen, OpCodes.Ldc_I4_S, i64); break;
+                        case <= int.MaxValue and >= int.MinValue: Emit(ilGen, OpCodes.Ldc_I4, i64); break;
+                        default: Emit(ilGen, OpCodes.Ldc_I8, i64); goto skipConv;
                     }
-                    ilGen.Emit(OpCodes.Conv_I8);
+                    Emit(ilGen, OpCodes.Conv_I8);
                 skipConv:;
                     if (wrapInLuaValue)
-                        ilGen.Emit(OpCodes.Newobj, ConstructorInfo(() => new LuaValue(24L)));
+                        Emit(ilGen, OpCodes.Newobj, ConstructorInfo(() => new LuaValue(24L)));
                 }
                 else
                 {
-                    ilGen.Emit(OpCodes.Ldc_R8, Unsafe.Unbox<double>(value));
+                    Emit(ilGen, OpCodes.Ldc_R8, Unsafe.Unbox<double>(value));
                     if (wrapInLuaValue)
-                        ilGen.Emit(OpCodes.Newobj, ConstructorInfo(() => new LuaValue(2.0)));
+                        Emit(ilGen, OpCodes.Newobj, ConstructorInfo(() => new LuaValue(2.0)));
                 }
                 break;
             case ConstantKind.String:
-                ilGen.Emit(OpCodes.Ldstr, Unsafe.As<string>(value));
+                Emit(ilGen, OpCodes.Ldstr, Unsafe.As<string>(value));
                 if (wrapInLuaValue)
-                    ilGen.Emit(OpCodes.Newobj, ConstructorInfo(() => new LuaValue("")));
+                    Emit(ilGen, OpCodes.Newobj, ConstructorInfo(() => new LuaValue("")));
                 break;
         }
     }
 
     private static void PushCall(ILGenerator ilGen, Func<LuaValue, LuaValue> func)
     {
-        ilGen.Emit(OpCodes.Call, func.Method);
+        Emit(ilGen, OpCodes.Call, func.Method);
     }
 
     private static void PushCall(ILGenerator ilGen, Func<LuaValue, LuaValue, LuaValue> func)
     {
-        ilGen.Emit(OpCodes.Call, func.Method);
+        Emit(ilGen, OpCodes.Call, func.Method);
+    }
+
+    private static void Emit(ILGenerator gen, OpCode opCode)
+    {
+#if PRINT_CIL
+        Console.WriteLine($"    {opCode.Name}");
+#endif // PRINT_CIL
+        gen.Emit(opCode);
+    }
+
+    private static void Emit(ILGenerator gen, OpCode opCode, dynamic value)
+    {
+#if PRINT_CIL
+        if (value is ConstructorInfo ctor)
+        {
+            Console.WriteLine($"    {opCode.Name} {ctor.DeclaringType} {ctor}");
+        }
+        else
+        {
+            Console.WriteLine($"    {opCode.Name} {value}");
+        }
+#endif // PRINT_CIL
+        gen.Emit(opCode, value);
     }
 
     public sealed class KnownGlobalsSet
