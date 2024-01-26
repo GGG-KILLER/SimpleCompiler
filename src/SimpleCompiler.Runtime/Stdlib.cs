@@ -12,6 +12,7 @@ public static class Stdlib
             first = false;
             Console.Write(value.ToString());
         }
+        Console.WriteLine();
         return LuaValue.Nil;
     }
 
