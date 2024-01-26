@@ -102,8 +102,12 @@ public abstract partial record Instruction(LirInstrKind Kind)
             Gte _ => "GTE",
 
             MkArgs m => $"MKARGS {m.Size}",
-            StoreArg s => $"STOREARG {s.Pos}",
+            BeginArg b => $"BEGINARG {b.Pos}",
+            StoreArg _ => "STOREARG",
             FCall _ => "FCALL",
+
+            Debug _ => "DEBUG",
+
             _ => throw new InvalidOperationException()
         };
     }
