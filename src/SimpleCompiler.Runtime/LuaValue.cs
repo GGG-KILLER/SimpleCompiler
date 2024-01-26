@@ -23,6 +23,10 @@ public readonly struct LuaValue
         _valueUnion = valueUnion;
     }
 
+    public LuaValue() : this(ValueKind.Nil, null, null, default)
+    {
+    }
+
     public LuaValue(string value) : this(ValueKind.String, value, null, default)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -32,11 +36,11 @@ public readonly struct LuaValue
     {
     }
 
-    public LuaValue(long value) : this(ValueKind.Boolean, null, null, new ValueUnion { Long = value })
+    public LuaValue(long value) : this(ValueKind.Long, null, null, new ValueUnion { Long = value })
     {
     }
 
-    public LuaValue(double value) : this(ValueKind.Boolean, null, null, new ValueUnion { Double = value })
+    public LuaValue(double value) : this(ValueKind.Double, null, null, new ValueUnion { Double = value })
     {
     }
 
