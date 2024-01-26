@@ -1,0 +1,91 @@
+ldc.r8 1
+newobj Void .ctor(Double)
+ldc.r8 2
+newobj Void .ctor(Double)
+ldc.r8 3
+newobj Void .ctor(Double)
+ldc.r8 4
+newobj Void .ctor(Double)
+
+stloc.0 // SimpleCompiler.Runtime.LuaValue a_1699518
+
+stloc.1 // SimpleCompiler.Runtime.LuaValue b_1699518
+
+stloc.2 // SimpleCompiler.Runtime.LuaValue c_1699518
+pop
+ldc.r8 1
+newobj Void .ctor(Double)
+newobj Void .ctor()
+
+stloc.3 // SimpleCompiler.Runtime.LuaValue e_1699518
+
+stloc.s 4 // SimpleCompiler.Runtime.LuaValue f_1699518
+ldloc.0 // SimpleCompiler.Runtime.LuaValue a_1699518
+ldloc.2 // SimpleCompiler.Runtime.LuaValue c_1699518
+call SimpleCompiler.Runtime.LuaValue Add(SimpleCompiler.Runtime.LuaValue, SimpleCompiler.Runtime.LuaValue)
+stloc.1 // SimpleCompiler.Runtime.LuaValue b_1699518
+ldloc.1 // SimpleCompiler.Runtime.LuaValue b_1699518
+ldloc.2 // SimpleCompiler.Runtime.LuaValue c_1699518
+call SimpleCompiler.Runtime.LuaValue Add(SimpleCompiler.Runtime.LuaValue, SimpleCompiler.Runtime.LuaValue)
+stloc.0 // SimpleCompiler.Runtime.LuaValue a_1699518
+ldloc.0 // SimpleCompiler.Runtime.LuaValue a_1699518
+ldloc.1 // SimpleCompiler.Runtime.LuaValue b_1699518
+call SimpleCompiler.Runtime.LuaValue Add(SimpleCompiler.Runtime.LuaValue, SimpleCompiler.Runtime.LuaValue)
+stloc.2 // SimpleCompiler.Runtime.LuaValue c_1699518
+ldloc.0 // SimpleCompiler.Runtime.LuaValue a_1699518
+ldloc.1 // SimpleCompiler.Runtime.LuaValue b_1699518
+call SimpleCompiler.Runtime.LuaValue Add(SimpleCompiler.Runtime.LuaValue, SimpleCompiler.Runtime.LuaValue)
+ldloc.1 // SimpleCompiler.Runtime.LuaValue b_1699518
+ldloc.2 // SimpleCompiler.Runtime.LuaValue c_1699518
+call SimpleCompiler.Runtime.LuaValue Add(SimpleCompiler.Runtime.LuaValue, SimpleCompiler.Runtime.LuaValue)
+stloc.3 // SimpleCompiler.Runtime.LuaValue e_1699518
+stloc.s 4 // SimpleCompiler.Runtime.LuaValue f_1699518
+ldloc.0 // SimpleCompiler.Runtime.LuaValue a_1699518
+ldloc.1 // SimpleCompiler.Runtime.LuaValue b_1699518
+call SimpleCompiler.Runtime.LuaValue Add(SimpleCompiler.Runtime.LuaValue, SimpleCompiler.Runtime.LuaValue)
+ldloc.2 // SimpleCompiler.Runtime.LuaValue c_1699518
+call SimpleCompiler.Runtime.LuaValue Add(SimpleCompiler.Runtime.LuaValue, SimpleCompiler.Runtime.LuaValue)
+
+stloc.s 5 // SimpleCompiler.Runtime.LuaValue d_15B92BF
+ldsfld SimpleCompiler.Runtime.LuaValue Print
+ldc.i4.1
+newarr SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.0
+ldloc.s 5 // SimpleCompiler.Runtime.LuaValue d_15B92BF
+stelem SimpleCompiler.Runtime.LuaValue
+newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
+call SimpleCompiler.Runtime.LuaValue Call(SimpleCompiler.Runtime.LuaValue, System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
+pop
+ldsfld SimpleCompiler.Runtime.LuaValue Print
+ldc.i4.6
+newarr SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.0
+ldloc.0 // SimpleCompiler.Runtime.LuaValue a_1699518
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.1
+ldloc.1 // SimpleCompiler.Runtime.LuaValue b_1699518
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.2
+ldloc.2 // SimpleCompiler.Runtime.LuaValue c_1699518
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.3
+
+ldloc.s 6 // SimpleCompiler.Runtime.LuaValue d_3CF7E92
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.4
+ldloc.3 // SimpleCompiler.Runtime.LuaValue e_1699518
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.5
+ldloc.s 4 // SimpleCompiler.Runtime.LuaValue f_1699518
+stelem SimpleCompiler.Runtime.LuaValue
+newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
+call SimpleCompiler.Runtime.LuaValue Call(SimpleCompiler.Runtime.LuaValue, System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
+pop
+ret
