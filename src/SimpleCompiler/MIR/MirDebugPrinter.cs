@@ -19,7 +19,7 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
         writer.WriteLine('}');
     }
 
-    public override void VisitAssignment(Assignment assignment)
+    public override void VisitAssignmentStatement(AssignmentStatement assignment)
     {
         var first = true;
         foreach (var assignee in assignment.Assignees)
@@ -39,7 +39,7 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
         writer.WriteLine(';');
     }
 
-    public override void VisitBinaryOperation(BinaryOperation binaryOperation)
+    public override void VisitBinaryOperationExpression(BinaryOperationExpression binaryOperation)
     {
         Visit(binaryOperation.Left);
         writer.Write(binaryOperation.BinaryOperationKind switch
@@ -70,7 +70,7 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
         Visit(binaryOperation.Right);
     }
 
-    public override void VisitConstant(Constant constant)
+    public override void VisitConstantExpression(ConstantExpression constant)
     {
         writer.Write(constant.ConstantKind switch
         {
@@ -91,7 +91,7 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
         writer.WriteLine(';');
     }
 
-    public override void VisitFunctionCall(FunctionCall functionCall)
+    public override void VisitFunctionCallExpression(FunctionCallExpression functionCall)
     {
         Visit(functionCall.Callee);
         writer.Write('(');
@@ -124,7 +124,7 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
         writer.WriteLine('}');
     }
 
-    public override void VisitUnaryOperation(UnaryOperation unaryOperation)
+    public override void VisitUnaryOperationExpression(UnaryOperationExpression unaryOperation)
     {
         writer.Write(unaryOperation.UnaryOperationKind switch
         {
@@ -137,13 +137,13 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
         Visit(unaryOperation.Operand);
     }
 
-    public override void VisitVariable(Variable variable)
+    public override void VisitVariableExpression(VariableExpression variable)
     {
         writer.Write(variable.VariableInfo.Name);
         writer.Write($" (0x{variable.VariableInfo.GetHashCode():X})");
     }
 
-    public override void VisitDiscard(Discard discard)
+    public override void VisitDiscardExpression(DiscardExpression discard)
     {
         writer.Write('_');
     }

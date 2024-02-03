@@ -7,11 +7,11 @@ namespace SimpleCompiler.LIR;
 public abstract partial record Instruction(LirInstrKind Kind)
 {
     public static partial PushVar PushVar(VariableInfo variable);
-    public static PushVar PushVar(Variable variable) => PushVar(variable.VariableInfo);
+    public static PushVar PushVar(VariableExpression variable) => PushVar(variable.VariableInfo);
     public static partial StoreVar StoreVar(VariableInfo variable);
-    public static StoreVar StoreVar(Variable variable) => StoreVar(variable.VariableInfo);
+    public static StoreVar StoreVar(VariableExpression variable) => StoreVar(variable.VariableInfo);
     public static partial PushCons PushCons(ConstantKind constantKind, object value);
-    public static PushCons PushCons(Constant constant) => PushCons(constant.ConstantKind, constant.Value);
+    public static PushCons PushCons(ConstantExpression constant) => PushCons(constant.ConstantKind, constant.Value);
     public static partial Pop Pop();
 
     public static partial Loc Loc(Location location);

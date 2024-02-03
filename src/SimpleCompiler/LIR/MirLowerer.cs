@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.MIR;
 
@@ -12,22 +13,22 @@ public sealed class MirLowerer : MirWalker
     {
     }
 
-    public override void VisitVariable(Variable variable)
+    public override void VisitVariableExpression(VariableExpression variable)
     {
         _instructions.Add(Instruction.PushVar(variable));
     }
 
-    public override void VisitConstant(Constant constant)
+    public override void VisitConstantExpression(ConstantExpression constant)
     {
         _instructions.Add(Instruction.PushCons(constant));
     }
 
-    public override void VisitDiscard(Discard discard)
+    public override void VisitDiscardExpression(DiscardExpression discard)
     {
         throw ExceptionUtil.Unreachable;
     }
 
-    public override void VisitUnaryOperation(UnaryOperation unaryOperation)
+    public override void VisitUnaryOperationExpression(UnaryOperationExpression unaryOperation)
     {
         Visit(unaryOperation.Operand);
         _instructions.Add(unaryOperation.UnaryOperationKind switch
@@ -40,7 +41,7 @@ public sealed class MirLowerer : MirWalker
         });
     }
 
-    public override void VisitBinaryOperation(BinaryOperation binaryOperation)
+    public override void VisitBinaryOperationExpression(BinaryOperationExpression binaryOperation)
     {
         Visit(binaryOperation.Left);
         Visit(binaryOperation.Right);
@@ -82,16 +83,16 @@ public sealed class MirLowerer : MirWalker
             _instructions.Add(Instruction.Pop());
     }
 
-    public override void VisitFunctionCall(FunctionCall functionCall)
+    public override void VisitFunctionCallExpression(FunctionCallExpression functionCall)
     {
-        if (functionCall.Callee is Variable { VariableInfo.Name: "debug" })
+        if (functionCall.Callee is VariableExpression { VariableInfo.Name: "debug" })
         {
             Visit(functionCall.Arguments.Single());
             _instructions.Add(Instruction.Debug());
             return;
         }
         Visit(functionCall.Callee);
-        _instructions.Add(Instruction.MkArgs(functionCall.Arguments.Length));
+        _instructions.Add(Instruction.MkArgs(functionCall.Arguments.Count));
         var idx = 0;
         foreach (var arg in functionCall.Arguments)
         {
@@ -102,18 +103,18 @@ public sealed class MirLowerer : MirWalker
         _instructions.Add(Instruction.FCall());
     }
 
-    public override void VisitAssignment(Assignment assignment)
+    public override void VisitAssignmentStatement(AssignmentStatement assignment)
     {
         foreach (var value in assignment.Values)
             Visit(value);
         foreach (var assignee in assignment.Assignees)
         {
-            switch (assignee)
+            switch (assignee.Kind)
             {
-                case Variable v:
-                    _instructions.Add(Instruction.StoreVar(v));
+                case MirKind.VariableExpression:
+                    _instructions.Add(Instruction.StoreVar(Unsafe.As<VariableExpression>(assignee)));
                     break;
-                case Discard:
+                case MirKind.DiscardExpression:
                     _instructions.Add(Instruction.Pop());
                     break;
                 default:

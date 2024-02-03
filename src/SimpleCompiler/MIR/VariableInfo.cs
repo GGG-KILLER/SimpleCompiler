@@ -1,13 +1,5 @@
 namespace SimpleCompiler.MIR;
 
-public enum VariableKind
-{
-    Iteration,
-    Local,
-    Parameter,
-    Global
-}
-
 public sealed class VariableInfo
 {
     private readonly List<MirNode> _reads = [], _writes = [];
