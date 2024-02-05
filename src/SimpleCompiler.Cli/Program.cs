@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 
 using System.CodeDom.Compiler;
 using System.Diagnostics;
@@ -118,6 +118,7 @@ app.AddCommand("build", async (
     {
         await compiler.SaveAsync(stream);
     }
+    await WriteRuntimeConfig(path);
 
     Console.WriteLine("Copying runtime assembly to same directory...");
     var runtimeAssembly = typeof(LuaValue).Assembly;
@@ -130,3 +131,21 @@ app.AddCommand("build", async (
 });
 
 await app.RunAsync();
+
+static Task WriteRuntimeConfig(string path)
+{
+    return File.WriteAllTextAsync(Path.ChangeExtension(path, ".runtimeconfig.json"), $$"""
+    {
+      "runtimeOptions": {
+        "tfm": "net{{Environment.Version.ToString(2)}}",
+        "framework": {
+          "name": "Microsoft.NETCore.App",
+          "version": "{{Environment.Version.ToString(3)}}"
+        },
+        "configProperties": {
+          "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false
+        }
+      }
+    }
+    """);
+}

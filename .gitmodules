@@ -1,0 +1,3 @@
+[submodule "src/ILPack"]
+	path = src/ILPack
+	url = https://github.com/GGG-KILLER/ILPack.git

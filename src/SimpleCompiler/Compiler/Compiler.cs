@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -21,6 +21,7 @@ public sealed class Compiler
     private readonly AssemblyBuilder _assemblyBuilder;
     private readonly ModuleBuilder _moduleBuilder;
     private readonly TextWriter? _cilDebugWriter;
+    private MethodInfo? _entryPoint;
 
     public ScopeInfo GlobalScope { get; }
     public KnownGlobalsSet KnownGlobals { get; }
@@ -49,7 +50,10 @@ public sealed class Compiler
     public async Task SaveAsync(Stream stream)
     {
         var gen = new AssemblyGenerator();
-        var bytes = gen.GenerateAssemblyBytes(_assemblyBuilder, [typeof(string).Assembly, typeof(LuaValue).Assembly]);
+        var bytes = gen.GenerateAssemblyBytes(
+            _assemblyBuilder,
+            [typeof(string).Assembly, typeof(LuaValue).Assembly],
+            _entryPoint);
         await stream.WriteAsync(bytes.AsMemory()).ConfigureAwait(false);
     }
 
@@ -68,6 +72,9 @@ public sealed class Compiler
 
     public (Type, MethodInfo) CompileProgram(IEnumerable<Instruction> instructions)
     {
+        if (_entryPoint is not null)
+            throw new InvalidOperationException("Program has already been compiled.");
+
         var type = _moduleBuilder.DefineType("Program", TypeAttributes.Public | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
         var method = Emit.BuildStaticMethod(typeof(void), [], type, "Main", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static, strictBranchVerification: true);
 
@@ -185,8 +192,9 @@ public sealed class Compiler
 
         method.CreateMethod(OptimizationOptions.All);
         var t = type.CreateType();
+        _entryPoint = t.GetMethod("Main")!;
 
-        return (t, t.GetMethod("Main")!);
+        return (t, _entryPoint);
     }
 
     private void PushVar(Emit method, PushVar pushVar)

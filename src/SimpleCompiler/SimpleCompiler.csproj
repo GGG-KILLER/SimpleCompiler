@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lokad.ILPack" Version="0.2.0" />
     <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.12-nightly.24" />
     <PackageReference Include="Loretta.CodeAnalysis.Lua.Experimental" Version="0.2.12-nightly.24" />
     <PackageReference Include="Sigil" Version="5.0.0" />
@@ -44,6 +43,7 @@
       <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
     </ProjectReference>
     <ProjectReference Include="..\SimpleCompiler.Runtime\SimpleCompiler.Runtime.csproj" />
+    <ProjectReference Include="..\ILPack\src\Lokad.ILPack.csproj" />
   </ItemGroup>
 
 </Project>
