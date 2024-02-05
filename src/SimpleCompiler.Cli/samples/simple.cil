@@ -75,7 +75,7 @@ stelem SimpleCompiler.Runtime.LuaValue
 dup
 ldc.i4.3
 
-ldloc.s 6 // SimpleCompiler.Runtime.LuaValue d_3CF7E92
+ldloc.s 6 // SimpleCompiler.Runtime.LuaValue d_5620B
 stelem SimpleCompiler.Runtime.LuaValue
 dup
 ldc.i4.4

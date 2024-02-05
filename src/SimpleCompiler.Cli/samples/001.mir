@@ -1,5 +1,0 @@
-Global Scope: 0x250E18D (Variables: [0xA2809F, 0x3EF92AF], Scopes: [0x2A7085E])
-0x2A7085E (Variables: [0x3B3AFC3], Scopes: []) {
-    a (0x3B3AFC3) = 1;
-    print (0xA2809F)(a (0x3B3AFC3));
-}
