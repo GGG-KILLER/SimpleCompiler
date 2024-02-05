@@ -1,4 +1,4 @@
-// See https://aka.ms/new-console-template for more information
+﻿// See https://aka.ms/new-console-template for more information
 
 using System.CodeDom.Compiler;
 using System.Diagnostics;
@@ -77,19 +77,14 @@ app.AddCommand("build", async (
     Console.WriteLine($"Syntax lowering done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
-    {
-        using var writer = File.CreateText(Path.ChangeExtension(path, ".mir"));
+        await dumpMir(path, 1, compiler, mirRoot, ctx.CancellationToken);
 
-        var indentedWriter = new IndentedTextWriter(writer, "    ");
-        var debugWriter = new MirDebugPrinter(indentedWriter);
-        indentedWriter.Write("Global Scope: ");
-        debugWriter.WriteScope(compiler.GlobalScope);
-        indentedWriter.WriteLine();
-        debugWriter.Visit(mirRoot);
+    s.Restart();
+    mirRoot = compiler.Optimize(mirRoot);
+    Console.WriteLine($"Optimizing done in {Duration.Format(s.Elapsed.Ticks)}");
 
-        await indentedWriter.FlushAsync(ctx.CancellationToken)
-                            .ConfigureAwait(false);
-    }
+    if (debug)
+        await dumpMir(path, 2, compiler, mirRoot, ctx.CancellationToken);
 
     s.Restart();
     var instrs = compiler.LowerMir(mirRoot);
@@ -131,6 +126,21 @@ app.AddCommand("build", async (
 });
 
 await app.RunAsync();
+
+static async Task dumpMir(string path, int num, Compiler compiler, MirNode root, CancellationToken cancellationToken = default)
+{
+    using var writer = File.CreateText(Path.ChangeExtension(path, $"{num}.mir"));
+
+    var indentedWriter = new IndentedTextWriter(writer, "    ");
+    var debugWriter = new MirDebugPrinter(indentedWriter);
+    indentedWriter.Write("Global Scope: ");
+    debugWriter.WriteScope(compiler.GlobalScope);
+    indentedWriter.WriteLine();
+    debugWriter.Visit(root);
+
+    await indentedWriter.FlushAsync(cancellationToken)
+                        .ConfigureAwait(false);
+}
 
 static Task WriteRuntimeConfig(string path)
 {

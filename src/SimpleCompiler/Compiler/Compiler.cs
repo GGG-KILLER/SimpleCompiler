@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -37,9 +37,6 @@ public sealed class Compiler
         _cilDebugWriter = cilDebugWriter;
     }
 
-    // TODO: Use public API when it's available: https://github.com/dotnet/runtime/issues/15704
-    private static readonly Type _builderType = Type.GetType("System.Reflection.Emit.AssemblyBuilderImpl, System.Reflection.Emit", throwOnError: true)!;
-
     public static Compiler Create(AssemblyName assemblyName, TextWriter? cilDebugWriter = null)
     {
         var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
@@ -64,9 +61,16 @@ public sealed class Compiler
         return lowerer.Visit(folded)!;
     }
 
-    [SuppressMessage("Code Quality", "CA1822", Justification = "For consistency with the rest of the API when using an instance of Compiler.")]
+    public MirNode Optimize(MirNode node)
+    {
+        _ = this;
+        node = ConstantFolder.ConstantFold(node);
+        return node;
+    }
+
     public IEnumerable<Instruction> LowerMir(MirNode node)
     {
+        _ = this;
         return MirLowerer.Lower(node);
     }
 
