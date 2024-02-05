@@ -9,69 +9,114 @@ using System.Linq;
 namespace SimpleCompiler.MIR.Internal
 {
 
-    internal static class MirFactory
+    internal static partial class MirFactory
     {
-        public static global::SimpleCompiler.MIR.Internal.BinaryOperationExpression BinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind, global::SimpleCompiler.MIR.Internal.Expression left, global::SimpleCompiler.MIR.Internal.Expression right)
+        public static global::SimpleCompiler.MIR.Internal.BinaryOperationExpression BinaryOperationExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind, global::SimpleCompiler.MIR.Internal.Expression left, global::SimpleCompiler.MIR.Internal.Expression right)
         {
 #if DEBUG
             if (left == null) throw new global::System.ArgumentNullException(nameof(left));
             if (right == null) throw new global::System.ArgumentNullException(nameof(right));
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.BinaryOperationExpression(global::SimpleCompiler.MIR.MirKind.BinaryOperationExpression, binaryOperationKind, left, right);
+            return new global::SimpleCompiler.MIR.Internal.BinaryOperationExpression(global::SimpleCompiler.MIR.MirKind.BinaryOperationExpression, default, resultKind, binaryOperationKind, left, right);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.ConstantExpression ConstantExpression(global::SimpleCompiler.MIR.ConstantKind constantKind, object value)
+        public static global::SimpleCompiler.MIR.Internal.BinaryOperationExpression BinaryOperationExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind, global::SimpleCompiler.MIR.Internal.Expression left, global::SimpleCompiler.MIR.Internal.Expression right)
+        {
+#if DEBUG
+            if (left == null) throw new global::System.ArgumentNullException(nameof(left));
+            if (right == null) throw new global::System.ArgumentNullException(nameof(right));
+#endif // DEBUG
+
+            return new global::SimpleCompiler.MIR.Internal.BinaryOperationExpression(global::SimpleCompiler.MIR.MirKind.BinaryOperationExpression, originalNode, resultKind, binaryOperationKind, left, right);
+        }
+
+        public static global::SimpleCompiler.MIR.Internal.ConstantExpression ConstantExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object value)
         {
 #if DEBUG
             if (value == null) throw new global::System.ArgumentNullException(nameof(value));
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.ConstantExpression(global::SimpleCompiler.MIR.MirKind.ConstantExpression, constantKind, value);
+            return new global::SimpleCompiler.MIR.Internal.ConstantExpression(global::SimpleCompiler.MIR.MirKind.ConstantExpression, default, resultKind, constantKind, value);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.DiscardExpression DiscardExpression()
+        public static global::SimpleCompiler.MIR.Internal.ConstantExpression ConstantExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object value)
+        {
+#if DEBUG
+            if (value == null) throw new global::System.ArgumentNullException(nameof(value));
+#endif // DEBUG
+
+            return new global::SimpleCompiler.MIR.Internal.ConstantExpression(global::SimpleCompiler.MIR.MirKind.ConstantExpression, originalNode, resultKind, constantKind, value);
+        }
+
+        public static global::SimpleCompiler.MIR.Internal.DiscardExpression DiscardExpression(global::SimpleCompiler.MIR.ResultKind resultKind)
         {
 #if DEBUG
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.DiscardExpression(global::SimpleCompiler.MIR.MirKind.DiscardExpression);
+            return new global::SimpleCompiler.MIR.Internal.DiscardExpression(global::SimpleCompiler.MIR.MirKind.DiscardExpression, default, resultKind);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.FunctionCallExpression FunctionCallExpression(global::SimpleCompiler.MIR.Internal.Expression callee)
+        public static global::SimpleCompiler.MIR.Internal.DiscardExpression DiscardExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind)
+        {
+#if DEBUG
+#endif // DEBUG
+
+            return new global::SimpleCompiler.MIR.Internal.DiscardExpression(global::SimpleCompiler.MIR.MirKind.DiscardExpression, originalNode, resultKind);
+        }
+
+        public static global::SimpleCompiler.MIR.Internal.FunctionCallExpression FunctionCallExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.Internal.Expression callee)
         {
 #if DEBUG
             if (callee == null) throw new global::System.ArgumentNullException(nameof(callee));
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.FunctionCallExpression(global::SimpleCompiler.MIR.MirKind.FunctionCallExpression, callee, default);
+            return new global::SimpleCompiler.MIR.Internal.FunctionCallExpression(global::SimpleCompiler.MIR.MirKind.FunctionCallExpression, default, resultKind, callee, default);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.FunctionCallExpression FunctionCallExpression(global::SimpleCompiler.MIR.Internal.Expression callee, global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> arguments)
+        public static global::SimpleCompiler.MIR.Internal.FunctionCallExpression FunctionCallExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.Internal.Expression callee, global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> arguments)
         {
 #if DEBUG
             if (callee == null) throw new global::System.ArgumentNullException(nameof(callee));
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.FunctionCallExpression(global::SimpleCompiler.MIR.MirKind.FunctionCallExpression, callee, arguments.Node);
+            return new global::SimpleCompiler.MIR.Internal.FunctionCallExpression(global::SimpleCompiler.MIR.MirKind.FunctionCallExpression, originalNode, resultKind, callee, arguments.Node);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.UnaryOperationExpression UnaryOperationExpression(global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind, global::SimpleCompiler.MIR.Internal.Expression operand)
+        public static global::SimpleCompiler.MIR.Internal.UnaryOperationExpression UnaryOperationExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind, global::SimpleCompiler.MIR.Internal.Expression operand)
         {
 #if DEBUG
             if (operand == null) throw new global::System.ArgumentNullException(nameof(operand));
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.UnaryOperationExpression(global::SimpleCompiler.MIR.MirKind.UnaryOperationExpression, unaryOperationKind, operand);
+            return new global::SimpleCompiler.MIR.Internal.UnaryOperationExpression(global::SimpleCompiler.MIR.MirKind.UnaryOperationExpression, default, resultKind, unaryOperationKind, operand);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.VariableExpression VariableExpression(global::SimpleCompiler.MIR.VariableInfo variableInfo)
+        public static global::SimpleCompiler.MIR.Internal.UnaryOperationExpression UnaryOperationExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind, global::SimpleCompiler.MIR.Internal.Expression operand)
+        {
+#if DEBUG
+            if (operand == null) throw new global::System.ArgumentNullException(nameof(operand));
+#endif // DEBUG
+
+            return new global::SimpleCompiler.MIR.Internal.UnaryOperationExpression(global::SimpleCompiler.MIR.MirKind.UnaryOperationExpression, originalNode, resultKind, unaryOperationKind, operand);
+        }
+
+        public static global::SimpleCompiler.MIR.Internal.VariableExpression VariableExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.VariableInfo variableInfo)
         {
 #if DEBUG
             if (variableInfo == null) throw new global::System.ArgumentNullException(nameof(variableInfo));
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.VariableExpression(global::SimpleCompiler.MIR.MirKind.VariableExpression, variableInfo);
+            return new global::SimpleCompiler.MIR.Internal.VariableExpression(global::SimpleCompiler.MIR.MirKind.VariableExpression, default, resultKind, variableInfo);
+        }
+
+        public static global::SimpleCompiler.MIR.Internal.VariableExpression VariableExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.VariableInfo variableInfo)
+        {
+#if DEBUG
+            if (variableInfo == null) throw new global::System.ArgumentNullException(nameof(variableInfo));
+#endif // DEBUG
+
+            return new global::SimpleCompiler.MIR.Internal.VariableExpression(global::SimpleCompiler.MIR.MirKind.VariableExpression, originalNode, resultKind, variableInfo);
         }
 
         public static global::SimpleCompiler.MIR.Internal.AssignmentStatement AssignmentStatement()
@@ -79,15 +124,15 @@ namespace SimpleCompiler.MIR.Internal
 #if DEBUG
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.AssignmentStatement(global::SimpleCompiler.MIR.MirKind.AssignmentStatement, default, default);
+            return new global::SimpleCompiler.MIR.Internal.AssignmentStatement(global::SimpleCompiler.MIR.MirKind.AssignmentStatement, default, default, default);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.AssignmentStatement AssignmentStatement(global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> assignees, global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> values)
+        public static global::SimpleCompiler.MIR.Internal.AssignmentStatement AssignmentStatement(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> assignees, global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> values)
         {
 #if DEBUG
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.AssignmentStatement(global::SimpleCompiler.MIR.MirKind.AssignmentStatement, assignees.Node, values.Node);
+            return new global::SimpleCompiler.MIR.Internal.AssignmentStatement(global::SimpleCompiler.MIR.MirKind.AssignmentStatement, originalNode, assignees.Node, values.Node);
         }
 
         public static global::SimpleCompiler.MIR.Internal.EmptyStatement EmptyStatement()
@@ -95,7 +140,15 @@ namespace SimpleCompiler.MIR.Internal
 #if DEBUG
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.EmptyStatement(global::SimpleCompiler.MIR.MirKind.EmptyStatement);
+            return new global::SimpleCompiler.MIR.Internal.EmptyStatement(global::SimpleCompiler.MIR.MirKind.EmptyStatement, default);
+        }
+
+        public static global::SimpleCompiler.MIR.Internal.EmptyStatement EmptyStatement(global::Loretta.CodeAnalysis.SyntaxReference? originalNode)
+        {
+#if DEBUG
+#endif // DEBUG
+
+            return new global::SimpleCompiler.MIR.Internal.EmptyStatement(global::SimpleCompiler.MIR.MirKind.EmptyStatement, originalNode);
         }
 
         public static global::SimpleCompiler.MIR.Internal.ExpressionStatement ExpressionStatement(global::SimpleCompiler.MIR.Internal.Expression expression)
@@ -104,7 +157,16 @@ namespace SimpleCompiler.MIR.Internal
             if (expression == null) throw new global::System.ArgumentNullException(nameof(expression));
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.ExpressionStatement(global::SimpleCompiler.MIR.MirKind.ExpressionStatement, expression);
+            return new global::SimpleCompiler.MIR.Internal.ExpressionStatement(global::SimpleCompiler.MIR.MirKind.ExpressionStatement, default, expression);
+        }
+
+        public static global::SimpleCompiler.MIR.Internal.ExpressionStatement ExpressionStatement(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.Internal.Expression expression)
+        {
+#if DEBUG
+            if (expression == null) throw new global::System.ArgumentNullException(nameof(expression));
+#endif // DEBUG
+
+            return new global::SimpleCompiler.MIR.Internal.ExpressionStatement(global::SimpleCompiler.MIR.MirKind.ExpressionStatement, originalNode, expression);
         }
 
         public static global::SimpleCompiler.MIR.Internal.StatementList StatementList()
@@ -112,15 +174,15 @@ namespace SimpleCompiler.MIR.Internal
 #if DEBUG
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.StatementList(global::SimpleCompiler.MIR.MirKind.StatementList, default, default);
+            return new global::SimpleCompiler.MIR.Internal.StatementList(global::SimpleCompiler.MIR.MirKind.StatementList, default, default, default);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.StatementList StatementList(global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Statement> statements, global::SimpleCompiler.MIR.ScopeInfo? scopeInfo)
+        public static global::SimpleCompiler.MIR.Internal.StatementList StatementList(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Statement> statements, global::SimpleCompiler.MIR.ScopeInfo? scopeInfo)
         {
 #if DEBUG
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.StatementList(global::SimpleCompiler.MIR.MirKind.StatementList, statements.Node, scopeInfo);
+            return new global::SimpleCompiler.MIR.Internal.StatementList(global::SimpleCompiler.MIR.MirKind.StatementList, originalNode, statements.Node, scopeInfo);
         }
     }
 
@@ -216,18 +278,18 @@ namespace SimpleCompiler.MIR.Internal
     }
 
 
-    public partial class MirRewriter : SimpleCompiler.MIR.MirVisitor<global::SimpleCompiler.MIR.MirNode>
+    internal partial class MirRewriter : global::SimpleCompiler.MIR.Internal.MirVisitor<global::SimpleCompiler.MIR.Internal.MirNode>
     {
-        public global::SimpleCompiler.MIR.MirList<TNode> VisitList<TNode>(global::SimpleCompiler.MIR.MirList<TNode> list) where TNode : global::SimpleCompiler.MIR.MirNode
+        public global::SimpleCompiler.MIR.Internal.MirList<TNode> VisitList<TNode>(global::SimpleCompiler.MIR.Internal.MirList<TNode> list) where TNode : global::SimpleCompiler.MIR.Internal.MirNode
         {
-            global::SimpleCompiler.MIR.MirListBuilder? alternate = null;
+            global::SimpleCompiler.MIR.Internal.MirListBuilder? alternate = null;
             for (int i = 0, n = list.Count; i < n; i++)
             {
                 var item = list[i];
                 var visited = Visit(item);
                 if (item != visited && alternate == null)
                 {
-                    alternate = new global::SimpleCompiler.MIR.MirListBuilder(n);
+                    alternate = new global::SimpleCompiler.MIR.Internal.MirListBuilder(n);
                     alternate.AddRange(list, 0, i);
                 }
 
@@ -245,26 +307,26 @@ namespace SimpleCompiler.MIR.Internal
             return list;
         }
 
-        public override global::SimpleCompiler.MIR.MirNode VisitBinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationExpression node) =>
-            node.Update(node.BinaryOperationKind, (global::SimpleCompiler.MIR.Expression?)Visit(node.Left) ?? throw new global::System.InvalidOperationException("Left cannot be null."), (global::SimpleCompiler.MIR.Expression?)Visit(node.Right) ?? throw new global::System.InvalidOperationException("Right cannot be null."));
-        public override global::SimpleCompiler.MIR.MirNode VisitConstantExpression(global::SimpleCompiler.MIR.ConstantExpression node) =>
-            node.Update(node.ConstantKind, node.Value);
-        public override global::SimpleCompiler.MIR.MirNode VisitDiscardExpression(global::SimpleCompiler.MIR.DiscardExpression node) =>
-            node;
-        public override global::SimpleCompiler.MIR.MirNode VisitFunctionCallExpression(global::SimpleCompiler.MIR.FunctionCallExpression node) =>
-            node.Update((global::SimpleCompiler.MIR.Expression?)Visit(node.Callee) ?? throw new global::System.InvalidOperationException("Callee cannot be null."), VisitList(node.Arguments));
-        public override global::SimpleCompiler.MIR.MirNode VisitUnaryOperationExpression(global::SimpleCompiler.MIR.UnaryOperationExpression node) =>
-            node.Update(node.UnaryOperationKind, (global::SimpleCompiler.MIR.Expression?)Visit(node.Operand) ?? throw new global::System.InvalidOperationException("Operand cannot be null."));
-        public override global::SimpleCompiler.MIR.MirNode VisitVariableExpression(global::SimpleCompiler.MIR.VariableExpression node) =>
-            node.Update(node.VariableInfo);
-        public override global::SimpleCompiler.MIR.MirNode VisitAssignmentStatement(global::SimpleCompiler.MIR.AssignmentStatement node) =>
-            node.Update(VisitList(node.Assignees), VisitList(node.Values));
-        public override global::SimpleCompiler.MIR.MirNode VisitEmptyStatement(global::SimpleCompiler.MIR.EmptyStatement node) =>
-            node;
-        public override global::SimpleCompiler.MIR.MirNode VisitExpressionStatement(global::SimpleCompiler.MIR.ExpressionStatement node) =>
-            node.Update((global::SimpleCompiler.MIR.Expression?)Visit(node.Expression) ?? throw new global::System.InvalidOperationException("Expression cannot be null."));
-        public override global::SimpleCompiler.MIR.MirNode VisitStatementList(global::SimpleCompiler.MIR.StatementList node) =>
-            node.Update(VisitList(node.Statements), node.ScopeInfo);
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitBinaryOperationExpression(global::SimpleCompiler.MIR.Internal.BinaryOperationExpression node) =>
+            node.Update(node.OriginalNode, node.ResultKind, node.BinaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression?)Visit(node.Left) ?? throw new global::System.InvalidOperationException("Left cannot be null."), (global::SimpleCompiler.MIR.Internal.Expression?)Visit(node.Right) ?? throw new global::System.InvalidOperationException("Right cannot be null."));
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitConstantExpression(global::SimpleCompiler.MIR.Internal.ConstantExpression node) =>
+            node.Update(node.OriginalNode, node.ResultKind, node.ConstantKind, node.Value);
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitDiscardExpression(global::SimpleCompiler.MIR.Internal.DiscardExpression node) =>
+            node.Update(node.OriginalNode, node.ResultKind);
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitFunctionCallExpression(global::SimpleCompiler.MIR.Internal.FunctionCallExpression node) =>
+            node.Update(node.OriginalNode, node.ResultKind, (global::SimpleCompiler.MIR.Internal.Expression?)Visit(node.Callee) ?? throw new global::System.InvalidOperationException("Callee cannot be null."), VisitList(node.Arguments));
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitUnaryOperationExpression(global::SimpleCompiler.MIR.Internal.UnaryOperationExpression node) =>
+            node.Update(node.OriginalNode, node.ResultKind, node.UnaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression?)Visit(node.Operand) ?? throw new global::System.InvalidOperationException("Operand cannot be null."));
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitVariableExpression(global::SimpleCompiler.MIR.Internal.VariableExpression node) =>
+            node.Update(node.OriginalNode, node.ResultKind, node.VariableInfo);
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitAssignmentStatement(global::SimpleCompiler.MIR.Internal.AssignmentStatement node) =>
+            node.Update(node.OriginalNode, VisitList(node.Assignees), VisitList(node.Values));
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitEmptyStatement(global::SimpleCompiler.MIR.Internal.EmptyStatement node) =>
+            node.Update(node.OriginalNode);
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitExpressionStatement(global::SimpleCompiler.MIR.Internal.ExpressionStatement node) =>
+            node.Update(node.OriginalNode, (global::SimpleCompiler.MIR.Internal.Expression?)Visit(node.Expression) ?? throw new global::System.InvalidOperationException("Expression cannot be null."));
+        public override global::SimpleCompiler.MIR.Internal.MirNode VisitStatementList(global::SimpleCompiler.MIR.Internal.StatementList node) =>
+            node.Update(node.OriginalNode, VisitList(node.Statements), node.ScopeInfo);
     }
 }
 

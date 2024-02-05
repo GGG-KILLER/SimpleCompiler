@@ -7,9 +7,10 @@ namespace SimpleCompiler.MIR.Internal
     partial class Statement : global::SimpleCompiler.MIR.Internal.MirNode
     {
         protected Statement(
-            global::SimpleCompiler.MIR.MirKind kind
+            global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode
         )
-            : base(kind)
+            : base(kind, originalNode)
         {
         }
 
@@ -24,10 +25,11 @@ namespace SimpleCompiler.MIR.Internal
     {
         internal StatementList(
             global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.Internal.MirNode? statements,
             global::SimpleCompiler.MIR.ScopeInfo? scopeInfo
         )
-            : base(kind)
+            : base(kind, originalNode)
         {
             this.SlotCount = 1;
             this._statements = statements;
@@ -64,16 +66,19 @@ namespace SimpleCompiler.MIR.Internal
             visitor.VisitStatementList(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.Internal.StatementList Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Statement> statements,
             global::SimpleCompiler.MIR.ScopeInfo? scopeInfo
         )
         {
             if (
-                this.Statements != statements
+                this.OriginalNode != originalNode
+                || this.Statements != statements
                 || this.ScopeInfo != scopeInfo
             )
             {
                 return global::SimpleCompiler.MIR.Internal.MirFactory.StatementList(
+                    originalNode,
                     statements,
                     scopeInfo
                 );
@@ -86,9 +91,10 @@ namespace SimpleCompiler.MIR.Internal
     {
         internal ExpressionStatement(
             global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.Internal.Expression expression
         )
-            : base(kind)
+            : base(kind, originalNode)
         {
             this.SlotCount = 1;
             this._expression = expression;
@@ -123,14 +129,17 @@ namespace SimpleCompiler.MIR.Internal
             visitor.VisitExpressionStatement(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.Internal.ExpressionStatement Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.Internal.Expression expression
         )
         {
             if (
-                this.Expression != expression
+                this.OriginalNode != originalNode
+                || this.Expression != expression
             )
             {
                 return global::SimpleCompiler.MIR.Internal.MirFactory.ExpressionStatement(
+                    originalNode,
                     expression
                 );
             }
@@ -141,9 +150,10 @@ namespace SimpleCompiler.MIR.Internal
     partial class EmptyStatement : global::SimpleCompiler.MIR.Internal.Statement
     {
         internal EmptyStatement(
-            global::SimpleCompiler.MIR.MirKind kind
+            global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode
         )
-            : base(kind)
+            : base(kind, originalNode)
         {
             this.SlotCount = 0;
         }
@@ -175,15 +185,31 @@ namespace SimpleCompiler.MIR.Internal
         public override TResult Accept<T1, T2, T3, TResult>(global::SimpleCompiler.MIR.Internal.MirVisitor<T1, T2, T3, TResult> visitor, T1 arg1, T2 arg2, T3 arg3) =>
             visitor.VisitEmptyStatement(this, arg1, arg2, arg3);
 
+        public global::SimpleCompiler.MIR.Internal.EmptyStatement Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode
+        )
+        {
+            if (
+                this.OriginalNode != originalNode
+            )
+            {
+                return global::SimpleCompiler.MIR.Internal.MirFactory.EmptyStatement(
+                    originalNode
+                );
+            }
+
+            return this;
+        }
     }
     partial class AssignmentStatement : global::SimpleCompiler.MIR.Internal.Statement
     {
         internal AssignmentStatement(
             global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.Internal.MirNode? assignees,
             global::SimpleCompiler.MIR.Internal.MirNode? values
         )
-            : base(kind)
+            : base(kind, originalNode)
         {
             this.SlotCount = 2;
             this._assignees = assignees;
@@ -225,16 +251,19 @@ namespace SimpleCompiler.MIR.Internal
             visitor.VisitAssignmentStatement(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.Internal.AssignmentStatement Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> assignees,
             global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> values
         )
         {
             if (
-                this.Assignees != assignees
+                this.OriginalNode != originalNode
+                || this.Assignees != assignees
                 || this.Values != values
             )
             {
                 return global::SimpleCompiler.MIR.Internal.MirFactory.AssignmentStatement(
+                    originalNode,
                     assignees,
                     values
                 );
@@ -246,12 +275,16 @@ namespace SimpleCompiler.MIR.Internal
     partial class Expression : global::SimpleCompiler.MIR.Internal.MirNode
     {
         protected Expression(
-            global::SimpleCompiler.MIR.MirKind kind
+            global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind
         )
-            : base(kind)
+            : base(kind, originalNode)
         {
+            this._resultKind = resultKind;
         }
 
+        public global::SimpleCompiler.MIR.ResultKind ResultKind => this._resultKind;
 
 
 
@@ -263,9 +296,11 @@ namespace SimpleCompiler.MIR.Internal
     {
         internal VariableExpression(
             global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.VariableInfo variableInfo
         )
-            : base(kind)
+            : base(kind, originalNode, resultKind)
         {
             this.SlotCount = 0;
             this._variableInfo = variableInfo;
@@ -300,14 +335,20 @@ namespace SimpleCompiler.MIR.Internal
             visitor.VisitVariableExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.Internal.VariableExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.VariableInfo variableInfo
         )
         {
             if (
-                this.VariableInfo != variableInfo
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.VariableInfo != variableInfo
             )
             {
                 return global::SimpleCompiler.MIR.Internal.MirFactory.VariableExpression(
+                    originalNode,
+                    resultKind,
                     variableInfo
                 );
             }
@@ -319,10 +360,12 @@ namespace SimpleCompiler.MIR.Internal
     {
         internal UnaryOperationExpression(
             global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind,
             global::SimpleCompiler.MIR.Internal.Expression operand
         )
-            : base(kind)
+            : base(kind, originalNode, resultKind)
         {
             this.SlotCount = 1;
             this._unaryOperationKind = unaryOperationKind;
@@ -359,16 +402,22 @@ namespace SimpleCompiler.MIR.Internal
             visitor.VisitUnaryOperationExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.Internal.UnaryOperationExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind,
             global::SimpleCompiler.MIR.Internal.Expression operand
         )
         {
             if (
-                this.UnaryOperationKind != unaryOperationKind
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.UnaryOperationKind != unaryOperationKind
                 || this.Operand != operand
             )
             {
                 return global::SimpleCompiler.MIR.Internal.MirFactory.UnaryOperationExpression(
+                    originalNode,
+                    resultKind,
                     unaryOperationKind,
                     operand
                 );
@@ -381,10 +430,12 @@ namespace SimpleCompiler.MIR.Internal
     {
         internal FunctionCallExpression(
             global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.Internal.Expression callee,
             global::SimpleCompiler.MIR.Internal.MirNode? arguments
         )
-            : base(kind)
+            : base(kind, originalNode, resultKind)
         {
             this.SlotCount = 2;
             this._callee = callee;
@@ -426,16 +477,22 @@ namespace SimpleCompiler.MIR.Internal
             visitor.VisitFunctionCallExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.Internal.FunctionCallExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.Internal.Expression callee,
             global::SimpleCompiler.MIR.Internal.MirList<global::SimpleCompiler.MIR.Internal.Expression> arguments
         )
         {
             if (
-                this.Callee != callee
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.Callee != callee
                 || this.Arguments != arguments
             )
             {
                 return global::SimpleCompiler.MIR.Internal.MirFactory.FunctionCallExpression(
+                    originalNode,
+                    resultKind,
                     callee,
                     arguments
                 );
@@ -447,9 +504,11 @@ namespace SimpleCompiler.MIR.Internal
     partial class DiscardExpression : global::SimpleCompiler.MIR.Internal.Expression
     {
         internal DiscardExpression(
-            global::SimpleCompiler.MIR.MirKind kind
+            global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind
         )
-            : base(kind)
+            : base(kind, originalNode, resultKind)
         {
             this.SlotCount = 0;
         }
@@ -481,15 +540,35 @@ namespace SimpleCompiler.MIR.Internal
         public override TResult Accept<T1, T2, T3, TResult>(global::SimpleCompiler.MIR.Internal.MirVisitor<T1, T2, T3, TResult> visitor, T1 arg1, T2 arg2, T3 arg3) =>
             visitor.VisitDiscardExpression(this, arg1, arg2, arg3);
 
+        public global::SimpleCompiler.MIR.Internal.DiscardExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind
+        )
+        {
+            if (
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+            )
+            {
+                return global::SimpleCompiler.MIR.Internal.MirFactory.DiscardExpression(
+                    originalNode,
+                    resultKind
+                );
+            }
+
+            return this;
+        }
     }
     partial class ConstantExpression : global::SimpleCompiler.MIR.Internal.Expression
     {
         internal ConstantExpression(
             global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.ConstantKind constantKind,
             object value
         )
-            : base(kind)
+            : base(kind, originalNode, resultKind)
         {
             this.SlotCount = 0;
             this._constantKind = constantKind;
@@ -526,16 +605,22 @@ namespace SimpleCompiler.MIR.Internal
             visitor.VisitConstantExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.Internal.ConstantExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.ConstantKind constantKind,
             object value
         )
         {
             if (
-                this.ConstantKind != constantKind
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.ConstantKind != constantKind
                 || this.Value != value
             )
             {
                 return global::SimpleCompiler.MIR.Internal.MirFactory.ConstantExpression(
+                    originalNode,
+                    resultKind,
                     constantKind,
                     value
                 );
@@ -548,11 +633,13 @@ namespace SimpleCompiler.MIR.Internal
     {
         internal BinaryOperationExpression(
             global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind,
             global::SimpleCompiler.MIR.Internal.Expression left,
             global::SimpleCompiler.MIR.Internal.Expression right
         )
-            : base(kind)
+            : base(kind, originalNode, resultKind)
         {
             this.SlotCount = 2;
             this._binaryOperationKind = binaryOperationKind;
@@ -596,18 +683,24 @@ namespace SimpleCompiler.MIR.Internal
             visitor.VisitBinaryOperationExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.Internal.BinaryOperationExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind,
             global::SimpleCompiler.MIR.Internal.Expression left,
             global::SimpleCompiler.MIR.Internal.Expression right
         )
         {
             if (
-                this.BinaryOperationKind != binaryOperationKind
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.BinaryOperationKind != binaryOperationKind
                 || this.Left != left
                 || this.Right != right
             )
             {
                 return global::SimpleCompiler.MIR.Internal.MirFactory.BinaryOperationExpression(
+                    originalNode,
+                    resultKind,
                     binaryOperationKind,
                     left,
                     right

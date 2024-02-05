@@ -102,7 +102,7 @@ namespace SimpleCompiler.MIR
 
 
 
-    public partial class MirRewriter : SimpleCompiler.MIR.MirVisitor<global::SimpleCompiler.MIR.MirNode>
+    public partial class MirRewriter : global::SimpleCompiler.MIR.MirVisitor<global::SimpleCompiler.MIR.MirNode>
     {
         public global::SimpleCompiler.MIR.MirList<TNode> VisitList<TNode>(global::SimpleCompiler.MIR.MirList<TNode> list) where TNode : global::SimpleCompiler.MIR.MirNode
         {
@@ -132,66 +132,87 @@ namespace SimpleCompiler.MIR
         }
 
         public override global::SimpleCompiler.MIR.MirNode VisitBinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationExpression node) =>
-            node.Update(node.BinaryOperationKind, (global::SimpleCompiler.MIR.Expression?)Visit(node.Left) ?? throw new global::System.InvalidOperationException("Left cannot be null."), (global::SimpleCompiler.MIR.Expression?)Visit(node.Right) ?? throw new global::System.InvalidOperationException("Right cannot be null."));
+            node.Update(node.OriginalNode, node.ResultKind, node.BinaryOperationKind, (global::SimpleCompiler.MIR.Expression?)Visit(node.Left) ?? throw new global::System.InvalidOperationException("Left cannot be null."), (global::SimpleCompiler.MIR.Expression?)Visit(node.Right) ?? throw new global::System.InvalidOperationException("Right cannot be null."));
         public override global::SimpleCompiler.MIR.MirNode VisitConstantExpression(global::SimpleCompiler.MIR.ConstantExpression node) =>
-            node.Update(node.ConstantKind, node.Value);
+            node.Update(node.OriginalNode, node.ResultKind, node.ConstantKind, node.Value);
         public override global::SimpleCompiler.MIR.MirNode VisitDiscardExpression(global::SimpleCompiler.MIR.DiscardExpression node) =>
-            node;
+            node.Update(node.OriginalNode, node.ResultKind);
         public override global::SimpleCompiler.MIR.MirNode VisitFunctionCallExpression(global::SimpleCompiler.MIR.FunctionCallExpression node) =>
-            node.Update((global::SimpleCompiler.MIR.Expression?)Visit(node.Callee) ?? throw new global::System.InvalidOperationException("Callee cannot be null."), VisitList(node.Arguments));
+            node.Update(node.OriginalNode, node.ResultKind, (global::SimpleCompiler.MIR.Expression?)Visit(node.Callee) ?? throw new global::System.InvalidOperationException("Callee cannot be null."), VisitList(node.Arguments));
         public override global::SimpleCompiler.MIR.MirNode VisitUnaryOperationExpression(global::SimpleCompiler.MIR.UnaryOperationExpression node) =>
-            node.Update(node.UnaryOperationKind, (global::SimpleCompiler.MIR.Expression?)Visit(node.Operand) ?? throw new global::System.InvalidOperationException("Operand cannot be null."));
+            node.Update(node.OriginalNode, node.ResultKind, node.UnaryOperationKind, (global::SimpleCompiler.MIR.Expression?)Visit(node.Operand) ?? throw new global::System.InvalidOperationException("Operand cannot be null."));
         public override global::SimpleCompiler.MIR.MirNode VisitVariableExpression(global::SimpleCompiler.MIR.VariableExpression node) =>
-            node.Update(node.VariableInfo);
+            node.Update(node.OriginalNode, node.ResultKind, node.VariableInfo);
         public override global::SimpleCompiler.MIR.MirNode VisitAssignmentStatement(global::SimpleCompiler.MIR.AssignmentStatement node) =>
-            node.Update(VisitList(node.Assignees), VisitList(node.Values));
+            node.Update(node.OriginalNode, VisitList(node.Assignees), VisitList(node.Values));
         public override global::SimpleCompiler.MIR.MirNode VisitEmptyStatement(global::SimpleCompiler.MIR.EmptyStatement node) =>
-            node;
+            node.Update(node.OriginalNode);
         public override global::SimpleCompiler.MIR.MirNode VisitExpressionStatement(global::SimpleCompiler.MIR.ExpressionStatement node) =>
-            node.Update((global::SimpleCompiler.MIR.Expression?)Visit(node.Expression) ?? throw new global::System.InvalidOperationException("Expression cannot be null."));
+            node.Update(node.OriginalNode, (global::SimpleCompiler.MIR.Expression?)Visit(node.Expression) ?? throw new global::System.InvalidOperationException("Expression cannot be null."));
         public override global::SimpleCompiler.MIR.MirNode VisitStatementList(global::SimpleCompiler.MIR.StatementList node) =>
-            node.Update(VisitList(node.Statements), node.ScopeInfo);
+            node.Update(node.OriginalNode, VisitList(node.Statements), node.ScopeInfo);
     }
-    public static class MirFactory
+    public static partial class MirFactory
     {
-        public static global::SimpleCompiler.MIR.BinaryOperationExpression BinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind, global::SimpleCompiler.MIR.Expression left, global::SimpleCompiler.MIR.Expression right) =>
-            (global::SimpleCompiler.MIR.BinaryOperationExpression) global::SimpleCompiler.MIR.Internal.MirFactory.BinaryOperationExpression(binaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression)left.Green, (global::SimpleCompiler.MIR.Internal.Expression)right.Green).CreateRed();
+        public static global::SimpleCompiler.MIR.BinaryOperationExpression BinaryOperationExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind, global::SimpleCompiler.MIR.Expression left, global::SimpleCompiler.MIR.Expression right) =>
+            (global::SimpleCompiler.MIR.BinaryOperationExpression) global::SimpleCompiler.MIR.Internal.MirFactory.BinaryOperationExpression(resultKind, binaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression)left.Green, (global::SimpleCompiler.MIR.Internal.Expression)right.Green).CreateRed();
 
-        public static global::SimpleCompiler.MIR.ConstantExpression ConstantExpression(global::SimpleCompiler.MIR.ConstantKind constantKind, global::System.Object value) =>
-            (global::SimpleCompiler.MIR.ConstantExpression) global::SimpleCompiler.MIR.Internal.MirFactory.ConstantExpression(constantKind, value).CreateRed();
+        public static global::SimpleCompiler.MIR.BinaryOperationExpression BinaryOperationExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind, global::SimpleCompiler.MIR.Expression left, global::SimpleCompiler.MIR.Expression right) =>
+            (global::SimpleCompiler.MIR.BinaryOperationExpression) global::SimpleCompiler.MIR.Internal.MirFactory.BinaryOperationExpression(originalNode, resultKind, binaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression)left.Green, (global::SimpleCompiler.MIR.Internal.Expression)right.Green).CreateRed();
 
-        public static global::SimpleCompiler.MIR.DiscardExpression DiscardExpression() =>
-            (global::SimpleCompiler.MIR.DiscardExpression) global::SimpleCompiler.MIR.Internal.MirFactory.DiscardExpression().CreateRed();
+        public static global::SimpleCompiler.MIR.ConstantExpression ConstantExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object value) =>
+            (global::SimpleCompiler.MIR.ConstantExpression) global::SimpleCompiler.MIR.Internal.MirFactory.ConstantExpression(resultKind, constantKind, value).CreateRed();
 
-        public static global::SimpleCompiler.MIR.FunctionCallExpression FunctionCallExpression(global::SimpleCompiler.MIR.Expression callee) =>
-            (global::SimpleCompiler.MIR.FunctionCallExpression) global::SimpleCompiler.MIR.Internal.MirFactory.FunctionCallExpression((global::SimpleCompiler.MIR.Internal.Expression)callee.Green).CreateRed();
+        public static global::SimpleCompiler.MIR.ConstantExpression ConstantExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object value) =>
+            (global::SimpleCompiler.MIR.ConstantExpression) global::SimpleCompiler.MIR.Internal.MirFactory.ConstantExpression(originalNode, resultKind, constantKind, value).CreateRed();
 
-        public static global::SimpleCompiler.MIR.FunctionCallExpression FunctionCallExpression(global::SimpleCompiler.MIR.Expression callee, global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> arguments) =>
-            (global::SimpleCompiler.MIR.FunctionCallExpression) global::SimpleCompiler.MIR.Internal.MirFactory.FunctionCallExpression((global::SimpleCompiler.MIR.Internal.Expression)callee.Green, arguments.Node.ToMirList<global::SimpleCompiler.MIR.Internal.Expression>()).CreateRed();
+        public static global::SimpleCompiler.MIR.DiscardExpression DiscardExpression(global::SimpleCompiler.MIR.ResultKind resultKind) =>
+            (global::SimpleCompiler.MIR.DiscardExpression) global::SimpleCompiler.MIR.Internal.MirFactory.DiscardExpression(resultKind).CreateRed();
 
-        public static global::SimpleCompiler.MIR.UnaryOperationExpression UnaryOperationExpression(global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind, global::SimpleCompiler.MIR.Expression operand) =>
-            (global::SimpleCompiler.MIR.UnaryOperationExpression) global::SimpleCompiler.MIR.Internal.MirFactory.UnaryOperationExpression(unaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression)operand.Green).CreateRed();
+        public static global::SimpleCompiler.MIR.DiscardExpression DiscardExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind) =>
+            (global::SimpleCompiler.MIR.DiscardExpression) global::SimpleCompiler.MIR.Internal.MirFactory.DiscardExpression(originalNode, resultKind).CreateRed();
 
-        public static global::SimpleCompiler.MIR.VariableExpression VariableExpression(global::SimpleCompiler.MIR.VariableInfo variableInfo) =>
-            (global::SimpleCompiler.MIR.VariableExpression) global::SimpleCompiler.MIR.Internal.MirFactory.VariableExpression(variableInfo).CreateRed();
+        public static global::SimpleCompiler.MIR.FunctionCallExpression FunctionCallExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.Expression callee) =>
+            (global::SimpleCompiler.MIR.FunctionCallExpression) global::SimpleCompiler.MIR.Internal.MirFactory.FunctionCallExpression(resultKind, (global::SimpleCompiler.MIR.Internal.Expression)callee.Green).CreateRed();
+
+        public static global::SimpleCompiler.MIR.FunctionCallExpression FunctionCallExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.Expression callee, global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> arguments) =>
+            (global::SimpleCompiler.MIR.FunctionCallExpression) global::SimpleCompiler.MIR.Internal.MirFactory.FunctionCallExpression(originalNode, resultKind, (global::SimpleCompiler.MIR.Internal.Expression)callee.Green, arguments.Node.ToMirList<global::SimpleCompiler.MIR.Internal.Expression>()).CreateRed();
+
+        public static global::SimpleCompiler.MIR.UnaryOperationExpression UnaryOperationExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind, global::SimpleCompiler.MIR.Expression operand) =>
+            (global::SimpleCompiler.MIR.UnaryOperationExpression) global::SimpleCompiler.MIR.Internal.MirFactory.UnaryOperationExpression(resultKind, unaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression)operand.Green).CreateRed();
+
+        public static global::SimpleCompiler.MIR.UnaryOperationExpression UnaryOperationExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind, global::SimpleCompiler.MIR.Expression operand) =>
+            (global::SimpleCompiler.MIR.UnaryOperationExpression) global::SimpleCompiler.MIR.Internal.MirFactory.UnaryOperationExpression(originalNode, resultKind, unaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression)operand.Green).CreateRed();
+
+        public static global::SimpleCompiler.MIR.VariableExpression VariableExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.VariableInfo variableInfo) =>
+            (global::SimpleCompiler.MIR.VariableExpression) global::SimpleCompiler.MIR.Internal.MirFactory.VariableExpression(resultKind, variableInfo).CreateRed();
+
+        public static global::SimpleCompiler.MIR.VariableExpression VariableExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.VariableInfo variableInfo) =>
+            (global::SimpleCompiler.MIR.VariableExpression) global::SimpleCompiler.MIR.Internal.MirFactory.VariableExpression(originalNode, resultKind, variableInfo).CreateRed();
 
         public static global::SimpleCompiler.MIR.AssignmentStatement AssignmentStatement() =>
             (global::SimpleCompiler.MIR.AssignmentStatement) global::SimpleCompiler.MIR.Internal.MirFactory.AssignmentStatement().CreateRed();
 
-        public static global::SimpleCompiler.MIR.AssignmentStatement AssignmentStatement(global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> assignees, global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> values) =>
-            (global::SimpleCompiler.MIR.AssignmentStatement) global::SimpleCompiler.MIR.Internal.MirFactory.AssignmentStatement(assignees.Node.ToMirList<global::SimpleCompiler.MIR.Internal.Expression>(), values.Node.ToMirList<global::SimpleCompiler.MIR.Internal.Expression>()).CreateRed();
+        public static global::SimpleCompiler.MIR.AssignmentStatement AssignmentStatement(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> assignees, global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> values) =>
+            (global::SimpleCompiler.MIR.AssignmentStatement) global::SimpleCompiler.MIR.Internal.MirFactory.AssignmentStatement(originalNode, assignees.Node.ToMirList<global::SimpleCompiler.MIR.Internal.Expression>(), values.Node.ToMirList<global::SimpleCompiler.MIR.Internal.Expression>()).CreateRed();
 
         public static global::SimpleCompiler.MIR.EmptyStatement EmptyStatement() =>
             (global::SimpleCompiler.MIR.EmptyStatement) global::SimpleCompiler.MIR.Internal.MirFactory.EmptyStatement().CreateRed();
 
+        public static global::SimpleCompiler.MIR.EmptyStatement EmptyStatement(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            (global::SimpleCompiler.MIR.EmptyStatement) global::SimpleCompiler.MIR.Internal.MirFactory.EmptyStatement(originalNode).CreateRed();
+
         public static global::SimpleCompiler.MIR.ExpressionStatement ExpressionStatement(global::SimpleCompiler.MIR.Expression expression) =>
             (global::SimpleCompiler.MIR.ExpressionStatement) global::SimpleCompiler.MIR.Internal.MirFactory.ExpressionStatement((global::SimpleCompiler.MIR.Internal.Expression)expression.Green).CreateRed();
+
+        public static global::SimpleCompiler.MIR.ExpressionStatement ExpressionStatement(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.Expression expression) =>
+            (global::SimpleCompiler.MIR.ExpressionStatement) global::SimpleCompiler.MIR.Internal.MirFactory.ExpressionStatement(originalNode, (global::SimpleCompiler.MIR.Internal.Expression)expression.Green).CreateRed();
 
         public static global::SimpleCompiler.MIR.StatementList StatementList() =>
             (global::SimpleCompiler.MIR.StatementList) global::SimpleCompiler.MIR.Internal.MirFactory.StatementList().CreateRed();
 
-        public static global::SimpleCompiler.MIR.StatementList StatementList(global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Statement> statements, global::SimpleCompiler.MIR.ScopeInfo? scopeInfo) =>
-            (global::SimpleCompiler.MIR.StatementList) global::SimpleCompiler.MIR.Internal.MirFactory.StatementList(statements.Node.ToMirList<global::SimpleCompiler.MIR.Internal.Statement>(), scopeInfo).CreateRed();
+        public static global::SimpleCompiler.MIR.StatementList StatementList(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Statement> statements, global::SimpleCompiler.MIR.ScopeInfo? scopeInfo) =>
+            (global::SimpleCompiler.MIR.StatementList) global::SimpleCompiler.MIR.Internal.MirFactory.StatementList(originalNode, statements.Node.ToMirList<global::SimpleCompiler.MIR.Internal.Statement>(), scopeInfo).CreateRed();
     }
 }
 

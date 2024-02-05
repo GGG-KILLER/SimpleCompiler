@@ -18,12 +18,14 @@ namespace SimpleCompiler.MIR.Internal
         protected readonly global::SimpleCompiler.MIR.MirKind _kind;
         private byte _slotCount;
 
-        protected MirNode(global::SimpleCompiler.MIR.MirKind kind)
+        protected MirNode(global::SimpleCompiler.MIR.MirKind kind, global::Loretta.CodeAnalysis.SyntaxReference? originalNode)
         {
             this._kind = kind;
+            this._originalNode = originalNode;
         }
 
         public global::SimpleCompiler.MIR.MirKind Kind => this._kind;
+        public global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => this._originalNode;
 
         public int SlotCount
         {
@@ -84,6 +86,7 @@ namespace SimpleCompiler.MIR.Internal
             if (this == other) return true;
             if (other == null) return false;
             if (this.Kind != other.Kind) return false;
+            if (this.OriginalNode != other.OriginalNode) return false;
 
             var n = this.SlotCount;
             if (n != other.SlotCount) return false;

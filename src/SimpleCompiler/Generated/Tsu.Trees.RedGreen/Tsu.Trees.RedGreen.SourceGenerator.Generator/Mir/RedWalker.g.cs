@@ -7,7 +7,7 @@
 
 namespace SimpleCompiler.MIR
 {
-    public abstract class MirWalker : global::SimpleCompiler.MIR.MirVisitor
+    public abstract partial class MirWalker : global::SimpleCompiler.MIR.MirVisitor
     {
         private int _recursionDepth;
 

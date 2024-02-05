@@ -10,7 +10,7 @@ namespace SimpleCompiler.MIR.Internal
     internal abstract partial class MirList : global::SimpleCompiler.MIR.Internal.MirNode
     {
         internal MirList()
-            : base(ListKind)
+            : base(ListKind, default(global::Loretta.CodeAnalysis.SyntaxReference)!)
         {
         }
 

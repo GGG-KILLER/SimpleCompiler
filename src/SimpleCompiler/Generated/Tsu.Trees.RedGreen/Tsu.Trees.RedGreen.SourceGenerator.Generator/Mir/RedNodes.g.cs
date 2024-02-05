@@ -29,6 +29,7 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.StatementList)this.Green).OriginalNode;
         public  global::SimpleCompiler.MIR.ScopeInfo? ScopeInfo => ((global::SimpleCompiler.MIR.Internal.StatementList)this.Green).ScopeInfo;
             public global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Statement> Statements => new global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Statement>(GetRed(ref this._statements, 0));
 
@@ -56,16 +57,19 @@ namespace SimpleCompiler.MIR
             visitor.VisitStatementList(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.StatementList Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Statement> statements,
             global::SimpleCompiler.MIR.ScopeInfo? scopeInfo
         )
         {
             if (
-                this.Statements != statements
+                this.OriginalNode != originalNode
+                || this.Statements != statements
                 || this.ScopeInfo != scopeInfo
             )
             {
                 return global::SimpleCompiler.MIR.MirFactory.StatementList(
+                    originalNode,
                     statements,
                     scopeInfo
                 );
@@ -74,13 +78,21 @@ namespace SimpleCompiler.MIR
             return this;
         }
 
+        public global::SimpleCompiler.MIR.StatementList WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.Statements,
+                this.ScopeInfo
+            );
         public global::SimpleCompiler.MIR.StatementList WithStatements(global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Statement> statements) =>
             this.Update(
+                this.OriginalNode,
                 statements,
                 this.ScopeInfo
             );
         public global::SimpleCompiler.MIR.StatementList WithScopeInfo(global::SimpleCompiler.MIR.ScopeInfo? scopeInfo) =>
             this.Update(
+                this.OriginalNode,
                 this.Statements,
                 scopeInfo
             );
@@ -94,6 +106,7 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.ExpressionStatement)this.Green).OriginalNode;
         public global::SimpleCompiler.MIR.Expression Expression => GetRed(ref this._expression, 0)!;
 
         internal override global::SimpleCompiler.MIR.MirNode? GetNodeSlot(int index) =>
@@ -120,14 +133,17 @@ namespace SimpleCompiler.MIR
             visitor.VisitExpressionStatement(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.ExpressionStatement Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.Expression expression
         )
         {
             if (
-                this.Expression != expression
+                this.OriginalNode != originalNode
+                || this.Expression != expression
             )
             {
                 return global::SimpleCompiler.MIR.MirFactory.ExpressionStatement(
+                    originalNode,
                     expression
                 );
             }
@@ -135,8 +151,14 @@ namespace SimpleCompiler.MIR
             return this;
         }
 
+        public global::SimpleCompiler.MIR.ExpressionStatement WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.Expression
+            );
         public global::SimpleCompiler.MIR.ExpressionStatement WithExpression(global::SimpleCompiler.MIR.Expression expression) =>
             this.Update(
+                this.OriginalNode,
                 expression
             );
     }
@@ -148,6 +170,7 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.EmptyStatement)this.Green).OriginalNode;
 
         internal override global::SimpleCompiler.MIR.MirNode? GetNodeSlot(int index) =>
                 null;
@@ -172,7 +195,26 @@ namespace SimpleCompiler.MIR
         public override TResult Accept<T1, T2, T3, TResult>(global::SimpleCompiler.MIR.MirVisitor<T1, T2, T3, TResult> visitor, T1 arg1, T2 arg2, T3 arg3) =>
             visitor.VisitEmptyStatement(this, arg1, arg2, arg3);
 
+        public global::SimpleCompiler.MIR.EmptyStatement Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode
+        )
+        {
+            if (
+                this.OriginalNode != originalNode
+            )
+            {
+                return global::SimpleCompiler.MIR.MirFactory.EmptyStatement(
+                    originalNode
+                );
+            }
 
+            return this;
+        }
+
+        public global::SimpleCompiler.MIR.EmptyStatement WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode
+            );
     }
     public partial class AssignmentStatement : global::SimpleCompiler.MIR.Statement
     {
@@ -184,6 +226,7 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.AssignmentStatement)this.Green).OriginalNode;
             public global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> Assignees => new global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression>(GetRed(ref this._assignees, 0));
             public global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> Values => new global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression>(GetRed(ref this._values, 1));
 
@@ -216,16 +259,19 @@ namespace SimpleCompiler.MIR
             visitor.VisitAssignmentStatement(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.AssignmentStatement Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> assignees,
             global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> values
         )
         {
             if (
-                this.Assignees != assignees
+                this.OriginalNode != originalNode
+                || this.Assignees != assignees
                 || this.Values != values
             )
             {
                 return global::SimpleCompiler.MIR.MirFactory.AssignmentStatement(
+                    originalNode,
                     assignees,
                     values
                 );
@@ -234,13 +280,21 @@ namespace SimpleCompiler.MIR
             return this;
         }
 
+        public global::SimpleCompiler.MIR.AssignmentStatement WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.Assignees,
+                this.Values
+            );
         public global::SimpleCompiler.MIR.AssignmentStatement WithAssignees(global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> assignees) =>
             this.Update(
+                this.OriginalNode,
                 assignees,
                 this.Values
             );
         public global::SimpleCompiler.MIR.AssignmentStatement WithValues(global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> values) =>
             this.Update(
+                this.OriginalNode,
                 this.Assignees,
                 values
             );
@@ -253,6 +307,7 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public abstract global::SimpleCompiler.MIR.ResultKind ResultKind { get; }
 
 
 
@@ -268,6 +323,8 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.VariableExpression)this.Green).OriginalNode;
+        public override  global::SimpleCompiler.MIR.ResultKind ResultKind => ((global::SimpleCompiler.MIR.Internal.VariableExpression)this.Green).ResultKind;
         public  global::SimpleCompiler.MIR.VariableInfo VariableInfo => ((global::SimpleCompiler.MIR.Internal.VariableExpression)this.Green).VariableInfo;
 
         internal override global::SimpleCompiler.MIR.MirNode? GetNodeSlot(int index) =>
@@ -294,14 +351,20 @@ namespace SimpleCompiler.MIR
             visitor.VisitVariableExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.VariableExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.VariableInfo variableInfo
         )
         {
             if (
-                this.VariableInfo != variableInfo
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.VariableInfo != variableInfo
             )
             {
                 return global::SimpleCompiler.MIR.MirFactory.VariableExpression(
+                    originalNode,
+                    resultKind,
                     variableInfo
                 );
             }
@@ -309,8 +372,22 @@ namespace SimpleCompiler.MIR
             return this;
         }
 
+        public global::SimpleCompiler.MIR.VariableExpression WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.ResultKind,
+                this.VariableInfo
+            );
+        public global::SimpleCompiler.MIR.VariableExpression WithResultKind(global::SimpleCompiler.MIR.ResultKind resultKind) =>
+            this.Update(
+                this.OriginalNode,
+                resultKind,
+                this.VariableInfo
+            );
         public global::SimpleCompiler.MIR.VariableExpression WithVariableInfo(global::SimpleCompiler.MIR.VariableInfo variableInfo) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 variableInfo
             );
     }
@@ -323,6 +400,8 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.UnaryOperationExpression)this.Green).OriginalNode;
+        public override  global::SimpleCompiler.MIR.ResultKind ResultKind => ((global::SimpleCompiler.MIR.Internal.UnaryOperationExpression)this.Green).ResultKind;
         public  global::SimpleCompiler.MIR.UnaryOperationKind UnaryOperationKind => ((global::SimpleCompiler.MIR.Internal.UnaryOperationExpression)this.Green).UnaryOperationKind;
         public global::SimpleCompiler.MIR.Expression Operand => GetRed(ref this._operand, 0)!;
 
@@ -350,16 +429,22 @@ namespace SimpleCompiler.MIR
             visitor.VisitUnaryOperationExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.UnaryOperationExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind,
             global::SimpleCompiler.MIR.Expression operand
         )
         {
             if (
-                this.UnaryOperationKind != unaryOperationKind
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.UnaryOperationKind != unaryOperationKind
                 || this.Operand != operand
             )
             {
                 return global::SimpleCompiler.MIR.MirFactory.UnaryOperationExpression(
+                    originalNode,
+                    resultKind,
                     unaryOperationKind,
                     operand
                 );
@@ -368,13 +453,31 @@ namespace SimpleCompiler.MIR
             return this;
         }
 
+        public global::SimpleCompiler.MIR.UnaryOperationExpression WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.ResultKind,
+                this.UnaryOperationKind,
+                this.Operand
+            );
+        public global::SimpleCompiler.MIR.UnaryOperationExpression WithResultKind(global::SimpleCompiler.MIR.ResultKind resultKind) =>
+            this.Update(
+                this.OriginalNode,
+                resultKind,
+                this.UnaryOperationKind,
+                this.Operand
+            );
         public global::SimpleCompiler.MIR.UnaryOperationExpression WithUnaryOperationKind(global::SimpleCompiler.MIR.UnaryOperationKind unaryOperationKind) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 unaryOperationKind,
                 this.Operand
             );
         public global::SimpleCompiler.MIR.UnaryOperationExpression WithOperand(global::SimpleCompiler.MIR.Expression operand) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 this.UnaryOperationKind,
                 operand
             );
@@ -389,6 +492,8 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.FunctionCallExpression)this.Green).OriginalNode;
+        public override  global::SimpleCompiler.MIR.ResultKind ResultKind => ((global::SimpleCompiler.MIR.Internal.FunctionCallExpression)this.Green).ResultKind;
         public global::SimpleCompiler.MIR.Expression Callee => GetRed(ref this._callee, 0)!;
             public global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> Arguments => new global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression>(GetRed(ref this._arguments, 1));
 
@@ -421,16 +526,22 @@ namespace SimpleCompiler.MIR
             visitor.VisitFunctionCallExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.FunctionCallExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.Expression callee,
             global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> arguments
         )
         {
             if (
-                this.Callee != callee
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.Callee != callee
                 || this.Arguments != arguments
             )
             {
                 return global::SimpleCompiler.MIR.MirFactory.FunctionCallExpression(
+                    originalNode,
+                    resultKind,
                     callee,
                     arguments
                 );
@@ -439,13 +550,31 @@ namespace SimpleCompiler.MIR
             return this;
         }
 
+        public global::SimpleCompiler.MIR.FunctionCallExpression WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.ResultKind,
+                this.Callee,
+                this.Arguments
+            );
+        public global::SimpleCompiler.MIR.FunctionCallExpression WithResultKind(global::SimpleCompiler.MIR.ResultKind resultKind) =>
+            this.Update(
+                this.OriginalNode,
+                resultKind,
+                this.Callee,
+                this.Arguments
+            );
         public global::SimpleCompiler.MIR.FunctionCallExpression WithCallee(global::SimpleCompiler.MIR.Expression callee) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 callee,
                 this.Arguments
             );
         public global::SimpleCompiler.MIR.FunctionCallExpression WithArguments(global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Expression> arguments) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 this.Callee,
                 arguments
             );
@@ -458,6 +587,8 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.DiscardExpression)this.Green).OriginalNode;
+        public override  global::SimpleCompiler.MIR.ResultKind ResultKind => ((global::SimpleCompiler.MIR.Internal.DiscardExpression)this.Green).ResultKind;
 
         internal override global::SimpleCompiler.MIR.MirNode? GetNodeSlot(int index) =>
                 null;
@@ -482,7 +613,35 @@ namespace SimpleCompiler.MIR
         public override TResult Accept<T1, T2, T3, TResult>(global::SimpleCompiler.MIR.MirVisitor<T1, T2, T3, TResult> visitor, T1 arg1, T2 arg2, T3 arg3) =>
             visitor.VisitDiscardExpression(this, arg1, arg2, arg3);
 
+        public global::SimpleCompiler.MIR.DiscardExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind
+        )
+        {
+            if (
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+            )
+            {
+                return global::SimpleCompiler.MIR.MirFactory.DiscardExpression(
+                    originalNode,
+                    resultKind
+                );
+            }
 
+            return this;
+        }
+
+        public global::SimpleCompiler.MIR.DiscardExpression WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.ResultKind
+            );
+        public global::SimpleCompiler.MIR.DiscardExpression WithResultKind(global::SimpleCompiler.MIR.ResultKind resultKind) =>
+            this.Update(
+                this.OriginalNode,
+                resultKind
+            );
     }
     public partial class ConstantExpression : global::SimpleCompiler.MIR.Expression
     {
@@ -492,6 +651,8 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).OriginalNode;
+        public override  global::SimpleCompiler.MIR.ResultKind ResultKind => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).ResultKind;
         public  global::SimpleCompiler.MIR.ConstantKind ConstantKind => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).ConstantKind;
         public  object Value => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).Value;
 
@@ -519,16 +680,22 @@ namespace SimpleCompiler.MIR
             visitor.VisitConstantExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.ConstantExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.ConstantKind constantKind,
             object value
         )
         {
             if (
-                this.ConstantKind != constantKind
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.ConstantKind != constantKind
                 || this.Value != value
             )
             {
                 return global::SimpleCompiler.MIR.MirFactory.ConstantExpression(
+                    originalNode,
+                    resultKind,
                     constantKind,
                     value
                 );
@@ -537,13 +704,31 @@ namespace SimpleCompiler.MIR
             return this;
         }
 
+        public global::SimpleCompiler.MIR.ConstantExpression WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.ResultKind,
+                this.ConstantKind,
+                this.Value
+            );
+        public global::SimpleCompiler.MIR.ConstantExpression WithResultKind(global::SimpleCompiler.MIR.ResultKind resultKind) =>
+            this.Update(
+                this.OriginalNode,
+                resultKind,
+                this.ConstantKind,
+                this.Value
+            );
         public global::SimpleCompiler.MIR.ConstantExpression WithConstantKind(global::SimpleCompiler.MIR.ConstantKind constantKind) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 constantKind,
                 this.Value
             );
         public global::SimpleCompiler.MIR.ConstantExpression WithValue(object value) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 this.ConstantKind,
                 value
             );
@@ -558,6 +743,8 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.BinaryOperationExpression)this.Green).OriginalNode;
+        public override  global::SimpleCompiler.MIR.ResultKind ResultKind => ((global::SimpleCompiler.MIR.Internal.BinaryOperationExpression)this.Green).ResultKind;
         public  global::SimpleCompiler.MIR.BinaryOperationKind BinaryOperationKind => ((global::SimpleCompiler.MIR.Internal.BinaryOperationExpression)this.Green).BinaryOperationKind;
         public global::SimpleCompiler.MIR.Expression Left => GetRed(ref this._left, 0)!;
         public global::SimpleCompiler.MIR.Expression Right => GetRed(ref this._right, 1)!;
@@ -591,18 +778,24 @@ namespace SimpleCompiler.MIR
             visitor.VisitBinaryOperationExpression(this, arg1, arg2, arg3);
 
         public global::SimpleCompiler.MIR.BinaryOperationExpression Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
+            global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind,
             global::SimpleCompiler.MIR.Expression left,
             global::SimpleCompiler.MIR.Expression right
         )
         {
             if (
-                this.BinaryOperationKind != binaryOperationKind
+                this.OriginalNode != originalNode
+                || this.ResultKind != resultKind
+                || this.BinaryOperationKind != binaryOperationKind
                 || this.Left != left
                 || this.Right != right
             )
             {
                 return global::SimpleCompiler.MIR.MirFactory.BinaryOperationExpression(
+                    originalNode,
+                    resultKind,
                     binaryOperationKind,
                     left,
                     right
@@ -612,20 +805,42 @@ namespace SimpleCompiler.MIR
             return this;
         }
 
+        public global::SimpleCompiler.MIR.BinaryOperationExpression WithOriginalNode(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            this.Update(
+                originalNode,
+                this.ResultKind,
+                this.BinaryOperationKind,
+                this.Left,
+                this.Right
+            );
+        public global::SimpleCompiler.MIR.BinaryOperationExpression WithResultKind(global::SimpleCompiler.MIR.ResultKind resultKind) =>
+            this.Update(
+                this.OriginalNode,
+                resultKind,
+                this.BinaryOperationKind,
+                this.Left,
+                this.Right
+            );
         public global::SimpleCompiler.MIR.BinaryOperationExpression WithBinaryOperationKind(global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 binaryOperationKind,
                 this.Left,
                 this.Right
             );
         public global::SimpleCompiler.MIR.BinaryOperationExpression WithLeft(global::SimpleCompiler.MIR.Expression left) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 this.BinaryOperationKind,
                 left,
                 this.Right
             );
         public global::SimpleCompiler.MIR.BinaryOperationExpression WithRight(global::SimpleCompiler.MIR.Expression right) =>
             this.Update(
+                this.OriginalNode,
+                this.ResultKind,
                 this.BinaryOperationKind,
                 this.Left,
                 right

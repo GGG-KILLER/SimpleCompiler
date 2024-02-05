@@ -18,6 +18,7 @@ namespace SimpleCompiler.MIR
         }
 
         public global::SimpleCompiler.MIR.MirKind Kind => this.Green.Kind;
+        public abstract global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode { get; }
         internal global::SimpleCompiler.MIR.Internal.MirNode Green { get; }
         public global::SimpleCompiler.MIR.MirNode? Parent => _parent;
         internal int SlotCount => this.Green.SlotCount;

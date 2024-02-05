@@ -15,6 +15,8 @@ namespace SimpleCompiler.MIR
         {
         }
 
+        public override global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => throw new global::System.InvalidOperationException("Unreachable.");
+
         [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
         public override void Accept(global::SimpleCompiler.MIR.MirVisitor visitor) =>
             throw new global::System.InvalidOperationException("A list must not be visited directly.");
