@@ -26,13 +26,18 @@
     <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.12-nightly.24" />
     <PackageReference Include="Loretta.CodeAnalysis.Lua.Experimental" Version="0.2.12-nightly.24" />
     <PackageReference Include="Sigil" Version="5.0.0" />
-    <PackageReference Include="Tsu.Trees.RedGreen" Version="0.2.1">
+    <PackageReference Include="Tsu.Trees.RedGreen" Version="0.2.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
+    <!-- <ProjectReference Include="..\..\..\Tsu\Tsu.Trees.RedGreen\src\Tsu.Trees.RedGreen.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
+    </ProjectReference> -->
     <ProjectReference Include="..\SimpleCompiler.ClassEnumGen\SimpleCompiler.ClassEnumGen.csproj">
       <OutputItemType>Analyzer</OutputItemType>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
