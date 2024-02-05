@@ -1,3 +1,4 @@
+using Loretta.CodeAnalysis;
 using Tsu.Trees.RedGreen;
 
 namespace SimpleCompiler.MIR.Internal;
@@ -13,6 +14,7 @@ namespace SimpleCompiler.MIR.Internal;
 )]
 internal abstract partial class MirNode
 {
+    protected readonly SyntaxReference? _originalNode;
 }
 
 // Needs to be defined otherwise lists don't work.

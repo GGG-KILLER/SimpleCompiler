@@ -31,7 +31,7 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
 
     public MirNode? VisitStatementList(StatementListSyntax node, ScopeInfo? scope)
     {
-        var statements = MirListBuilder<Statement>.Create();
+        var statements = new MirListBuilder<Statement>(node.Statements.Count);
         foreach (var statement in node.Statements)
         {
             var lowered = Visit(statement);
@@ -41,35 +41,36 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
                 statements.Add((Statement)lowered!);
         }
 
-        return MirFactory.StatementList(statements.ToList(), scope);
+        return MirFactory.StatementList(node.GetReference(), statements.ToList(), scope);
     }
 
     public override MirNode? VisitLocalVariableDeclarationStatement(LocalVariableDeclarationStatementSyntax node)
     {
-        var names = node.Names.ToArray();
-        var values = node.EqualsValues?.Values.ToArray() ?? [];
+        var syntaxNames = node.Names.ToArray();
+        var syntaxValues = node.EqualsValues?.Values.ToArray() ?? [];
 
-        var len = Math.Max(names.Length, values.Length);
+        var len = Math.Max(syntaxNames.Length, syntaxValues.Length);
         var assignees = new MirListBuilder<Expression>(len);
-        var valueNodes = new MirListBuilder<Expression>(len);
+        var values = new MirListBuilder<Expression>(len);
         for (var idx = 0; idx < len; idx++)
         {
-            var name = names.Length > idx ? names[idx] : null;
-            var value = values.Length > idx ? (Expression)Visit(values[idx])! : MirConstants.Nil;
+            var nameSyntax = syntaxNames.Length > idx ? syntaxNames[idx] : null;
+            var valueSyntax = syntaxValues.Length > idx ? syntaxValues[idx] : null;
+            var value = valueSyntax is not null ? (Expression)Visit(valueSyntax)! : MirFactory.NilConstant(null);
 
-            valueNodes.Add(value);
-            if (name is not null)
+            values.Add(value);
+            if (nameSyntax is not null)
             {
-                var variableInfo = new VariableInfo(_scopes.Peek(), VariableKind.Local, name.IdentifierName.Name);
-                assignees.Add(MirFactory.VariableExpression(variableInfo));
+                var variableInfo = new VariableInfo(_scopes.Peek(), VariableKind.Local, nameSyntax.IdentifierName.Name);
+                assignees.Add(MirFactory.VariableExpression(nameSyntax.GetReference(), ResultKind.Any, variableInfo));
             }
             else
             {
-                assignees.Add(MirConstants.Discard);
+                assignees.Add(MirFactory.DiscardExpression(null));
             }
         }
 
-        var assignment = MirFactory.AssignmentStatement(assignees.ToList(), valueNodes.ToList());
+        var assignment = MirFactory.AssignmentStatement(node.GetReference(), assignees.ToList(), values.ToList());
 
         foreach (var variable in assignment.Assignees.OfType<VariableExpression>())
             variable.VariableInfo.AddWrite(assignment);
@@ -90,7 +91,7 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         for (var idx = 0; idx < len; idx++)
         {
             var assignee = assignees.Length > idx ? assignees[idx] : null;
-            var value = values.Length > idx ? (Expression)Visit(values[idx])! : MirConstants.Nil;
+            var value = values.Length > idx ? (Expression)Visit(values[idx])! : MirFactory.NilConstant(null);
 
             valueNodes.Add(value);
             if (assignee is not null)
@@ -100,11 +101,11 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
             }
             else
             {
-                assigneeNodes.Add(MirConstants.Discard);
+                assigneeNodes.Add(MirFactory.DiscardExpression(null));
             }
         }
 
-        var assignment = MirFactory.AssignmentStatement(assigneeNodes.ToList(), valueNodes.ToList());
+        var assignment = MirFactory.AssignmentStatement(node.GetReference(), assigneeNodes.ToList(), valueNodes.ToList());
 
         foreach (var variable in assignment.Assignees.OfType<VariableExpression>())
             variable.VariableInfo.AddWrite(assignment);
@@ -125,19 +126,20 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
             _ => throw ExceptionUtil.Unreachable
         };
 
-        return MirFactory.FunctionCallExpression(callee, arguments);
+        return MirFactory.FunctionCallExpression(node.GetReference(), ResultKind.Any, callee, arguments);
     }
 
     public override MirNode? VisitBinaryExpression(BinaryExpressionSyntax node)
     {
         var left = (Expression)Visit(node.Left)!;
         var right = (Expression)Visit(node.Right)!;
-        var binOpKind = node.Kind() switch
+        var opKind = node.Kind() switch
         {
             SyntaxKind.AddExpression => BinaryOperationKind.Addition,
             SyntaxKind.SubtractExpression => BinaryOperationKind.Subtraction,
             SyntaxKind.MultiplyExpression => BinaryOperationKind.Multiplication,
             SyntaxKind.DivideExpression => BinaryOperationKind.Division,
+            SyntaxKind.FloorDivideExpression => BinaryOperationKind.IntegerDivision,
             SyntaxKind.ModuloExpression => BinaryOperationKind.Modulo,
             SyntaxKind.ExponentiateExpression => BinaryOperationKind.Exponentiation,
             SyntaxKind.ConcatExpression => BinaryOperationKind.Concatenation,
@@ -160,7 +162,39 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
             _ => throw ExceptionUtil.Unreachable,
         };
 
-        return MirFactory.BinaryOperationExpression(binOpKind, left, right);
+        var resKind = opKind switch
+        {
+            BinaryOperationKind.Addition
+            or BinaryOperationKind.Subtraction
+            or BinaryOperationKind.Multiplication
+            or BinaryOperationKind.Division
+            or BinaryOperationKind.Modulo => ResultKind.Int | ResultKind.Double,
+
+            BinaryOperationKind.Exponentiation => ResultKind.Double,
+
+            BinaryOperationKind.IntegerDivision
+            or BinaryOperationKind.BitwiseAnd
+            or BinaryOperationKind.BitwiseOr
+            or BinaryOperationKind.BitwiseXor
+            or BinaryOperationKind.LeftShift
+            or BinaryOperationKind.RightShift => ResultKind.Int,
+
+            BinaryOperationKind.Concatenation => ResultKind.Str,
+
+            BinaryOperationKind.BooleanAnd => left.ResultKind | right.ResultKind,
+            BinaryOperationKind.BooleanOr => left.ResultKind | right.ResultKind,
+
+            BinaryOperationKind.Equals
+            or BinaryOperationKind.NotEquals
+            or BinaryOperationKind.LessThan
+            or BinaryOperationKind.LessThanOrEquals
+            or BinaryOperationKind.GreaterThan
+            or BinaryOperationKind.GreaterThanOrEquals => ResultKind.Bool,
+
+            _ => ResultKind.Any
+        };
+
+        return MirFactory.BinaryOperationExpression(node.GetReference(), resKind, opKind, left, right);
     }
 
     public override MirNode? VisitCompilationUnit(CompilationUnitSyntax node)
@@ -181,26 +215,26 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         return statements;
     }
 
-    public override MirNode? VisitEmptyStatement(EmptyStatementSyntax node) => MirFactory.EmptyStatement();
+    public override MirNode? VisitEmptyStatement(EmptyStatementSyntax node) => MirFactory.EmptyStatement(node.GetReference());
 
     public override MirNode? VisitExpressionStatement(ExpressionStatementSyntax node) =>
-        MirFactory.ExpressionStatement((Expression)Visit(node.Expression)!);
+        MirFactory.ExpressionStatement(node.GetReference(), (Expression)Visit(node.Expression)!);
 
     public override MirNode? VisitIdentifierName(IdentifierNameSyntax node)
     {
         var variableInfo = FindOrCreateVariable(node.Name, VariableKind.Global);
-        return MirFactory.VariableExpression(variableInfo);
+        return MirFactory.VariableExpression(node.GetReference(), ResultKind.Any, variableInfo);
     }
 
     public override MirNode? VisitLiteralExpression(LiteralExpressionSyntax node)
     {
         return node.Kind() switch
         {
-            SyntaxKind.NilLiteralExpression => MirConstants.Nil,
-            SyntaxKind.TrueLiteralExpression => MirConstants.True,
-            SyntaxKind.FalseLiteralExpression => MirConstants.False,
-            SyntaxKind.StringLiteralExpression => MirFactory.ConstantExpression(ConstantKind.String, (string)node.Token.Value!),
-            SyntaxKind.NumericalLiteralExpression => MirFactory.ConstantExpression(ConstantKind.Number, (double)node.Token.Value!),
+            SyntaxKind.NilLiteralExpression => MirFactory.NilConstant(node.GetReference()),
+            SyntaxKind.TrueLiteralExpression => MirFactory.TrueConstant(node.GetReference()),
+            SyntaxKind.FalseLiteralExpression => MirFactory.FalseConstant(node.GetReference()),
+            SyntaxKind.StringLiteralExpression => MirFactory.ConstantExpression(ResultKind.Str, ConstantKind.String, (string)node.Token.Value!),
+            SyntaxKind.NumericalLiteralExpression => MirFactory.ConstantExpression(ResultKind.Double, ConstantKind.Number, (double)node.Token.Value!),
             SyntaxKind kind => throw new NotSupportedException($"Constants with kind {kind} is not supported."),
         };
     }
@@ -209,7 +243,16 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
 
     public override MirNode? VisitUnaryExpression(UnaryExpressionSyntax node)
     {
-        var unopKind = node.Kind() switch
+        var resKind = node.Kind() switch
+        {
+            SyntaxKind.BitwiseNotExpression => ResultKind.Int,
+            SyntaxKind.LengthExpression => ResultKind.Int,
+            SyntaxKind.LogicalNotExpression => ResultKind.Bool,
+            SyntaxKind.UnaryMinusExpression => ResultKind.Int | ResultKind.Double,
+            _ => ResultKind.Any
+        };
+
+        var opKind = node.Kind() switch
         {
             SyntaxKind.BitwiseNotExpression => UnaryOperationKind.BitwiseNegation,
             SyntaxKind.LengthExpression => UnaryOperationKind.LengthOf,
@@ -217,9 +260,10 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
             SyntaxKind.UnaryMinusExpression => UnaryOperationKind.NumericalNegation,
             _ => throw ExceptionUtil.Unreachable,
         };
+
         var operand = (Expression)Visit(node.Operand)!;
 
-        return MirFactory.UnaryOperationExpression(unopKind, operand);
+        return MirFactory.UnaryOperationExpression(node.GetReference(), resKind, opKind, operand);
     }
 
     public override MirNode? DefaultVisit(SyntaxNode node) =>
