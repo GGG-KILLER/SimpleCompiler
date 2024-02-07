@@ -1,4 +1,4 @@
-using Loretta.CodeAnalysis;
+﻿using Loretta.CodeAnalysis;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Syntax;
 using SimpleCompiler.Helpers;
@@ -19,6 +19,9 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         _globalScope = globalScope;
         _scopes.Push(_globalScope);
         _fileScope = new ScopeInfo(ScopeKind.File, _globalScope);
+        _globalScope.AddChildScope(_fileScope);
+        CreateVariable(_fileScope, "args", VariableKind.Parameter);
+        CreateVariable(_fileScope, "...", VariableKind.Parameter);
         _scopes.Push(_fileScope);
     }
 
