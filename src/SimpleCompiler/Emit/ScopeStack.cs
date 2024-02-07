@@ -2,14 +2,14 @@
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Sigil;
-using Sigil.NonGeneric;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.LIR;
 using SimpleCompiler.MIR;
 using SimpleCompiler.Runtime;
 using Label = Sigil.Label;
 
-namespace SimpleCompiler.Compiler;
+namespace SimpleCompiler.Emit;
+using Sigil.NonGeneric;
 
 public sealed class ScopeStack(ModuleBuilder moduleBuilder)
 {

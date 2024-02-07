@@ -70,24 +70,24 @@ app.AddCommand("build", async (
     TextWriter? cilDebugWriter = null;
     if (debug)
         cilDebugWriter = File.CreateText(Path.ChangeExtension(path, ".cil"));
-    var compiler = Compiler.Create(new AssemblyName(name), cilDebugWriter);
+    var compilation = new Compilation(tree);
 
     s.Restart();
-    var mirRoot = compiler.LowerSyntax((LuaSyntaxTree)tree);
+    var mirRoot = compilation.LowerSyntax();
     Console.WriteLine($"Syntax lowering done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
-        await dumpMir(path, 1, compiler, mirRoot, ctx.CancellationToken);
+        await dumpMir(path, 1, compilation, mirRoot, ctx.CancellationToken);
 
     s.Restart();
-    mirRoot = compiler.Optimize(mirRoot);
+    mirRoot = compilation.OptimizeLoweredSyntax();
     Console.WriteLine($"Optimizing done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
-        await dumpMir(path, 2, compiler, mirRoot, ctx.CancellationToken);
+        await dumpMir(path, 2, compilation, mirRoot, ctx.CancellationToken);
 
     s.Restart();
-    var instrs = compiler.LowerMir(mirRoot);
+    var instrs = compilation.LowerMir();
     Console.WriteLine($"MIR lowering done in {Duration.Format(s.Elapsed.Ticks)}");
     if (debug)
     {
@@ -99,21 +99,18 @@ app.AddCommand("build", async (
         }
     }
 
-    Console.WriteLine(value: "Compiling...");
-    s.Restart();
-    compiler.CompileProgram(instrs);
+    var outputDir = Path.GetDirectoryName(path);
+    var dllPath = Path.ChangeExtension(path, ".dll");
+    Console.WriteLine($"Compiling into {dllPath}...");
+    using (var stream = File.Open(dllPath, FileMode.Create, FileAccess.Write))
+    {
+        await compilation.EmitAsync(name, stream, cilDebugWriter)
+                         .ConfigureAwait(false);
+    }
+    await WriteRuntimeConfig(path);
     Console.WriteLine($"Compiled in {Duration.Format(s.Elapsed.Ticks)}");
     cilDebugWriter?.Flush();
     cilDebugWriter?.Dispose();
-
-    var outputDir = Path.GetDirectoryName(path);
-    var dllPath = Path.ChangeExtension(path, ".dll");
-    Console.WriteLine($"Saving to {dllPath}...");
-    using (var stream = File.Open(dllPath, FileMode.Create, FileAccess.Write))
-    {
-        await compiler.SaveAsync(stream);
-    }
-    await WriteRuntimeConfig(path);
 
     Console.WriteLine("Copying runtime assembly to same directory...");
     var runtimeAssembly = typeof(LuaValue).Assembly;
@@ -127,7 +124,7 @@ app.AddCommand("build", async (
 
 await app.RunAsync();
 
-static async Task dumpMir(string path, int num, Compiler compiler, MirNode root, CancellationToken cancellationToken = default)
+static async Task dumpMir(string path, int num, Compilation compiler, MirNode root, CancellationToken cancellationToken = default)
 {
     using var writer = File.CreateText(Path.ChangeExtension(path, $"{num}.mir"));
 
