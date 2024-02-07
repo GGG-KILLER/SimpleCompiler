@@ -18,6 +18,6 @@ internal abstract partial class MirNode
 }
 
 // Needs to be defined otherwise lists don't work.
-partial class MirList : MirNode
+internal partial class MirList : MirNode
 {
 }
