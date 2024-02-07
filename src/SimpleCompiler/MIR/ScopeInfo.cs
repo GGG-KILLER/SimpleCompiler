@@ -10,8 +10,6 @@ public enum ScopeKind
 
 public sealed class ScopeInfo
 {
-    public static readonly ScopeInfo Flatten = new((ScopeKind)byte.MaxValue, null);
-
     private readonly List<VariableInfo> _declaredVariables = [];
     private readonly List<ScopeInfo> _childScopes = [];
     private MirNode? _node;
@@ -31,14 +29,20 @@ public sealed class ScopeInfo
     }
     public IReadOnlyList<ScopeInfo> ChildScopes { get; }
     public IReadOnlyList<VariableInfo> DeclaredVariables { get; }
+    public KnownGlobalsSet KnownGlobals { get; }
 
     public ScopeInfo(ScopeKind kind, ScopeInfo? parentScope)
     {
+        if (parentScope == null && kind != ScopeKind.Global)
+            throw new ArgumentException("Only global scopes can have no parent node.", nameof(kind));
+        if (kind == ScopeKind.Global && parentScope != null)
+            throw new ArgumentException("Global scopes cannot have parent nodes.", nameof(parentScope));
+
         Kind = kind;
         ParentScope = parentScope;
-        ParentScope?.AddChildScope(this);
         ChildScopes = _childScopes.AsReadOnly();
         DeclaredVariables = _declaredVariables.AsReadOnly();
+        KnownGlobals = parentScope?.KnownGlobals ?? KnownGlobalsSet.CreateGlobals(this);
     }
 
     public VariableInfo? FindVariable(string name, ScopeKind upTo = ScopeKind.Global)

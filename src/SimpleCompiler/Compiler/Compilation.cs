@@ -14,12 +14,10 @@ public sealed class Compilation
     private IReadOnlyList<Instruction>? _lir;
 
     public ScopeInfo GlobalScope { get; }
-    public KnownGlobalsSet KnownGlobals { get; }
 
     public Compilation(SyntaxTree syntaxTree)
     {
         GlobalScope = new ScopeInfo(MIR.ScopeKind.Global, null);
-        KnownGlobals = new KnownGlobalsSet(GlobalScope);
         _syntaxTree = syntaxTree;
     }
 
@@ -56,6 +54,6 @@ public sealed class Compilation
     }
 
     public async Task EmitAsync(string name, Stream stream, TextWriter? cilDebugWriter = null) =>
-        await Emitter.EmitAsync(name, KnownGlobals, stream, LowerMir(), cilDebugWriter)
+        await Emitter.EmitAsync(name, GlobalScope.KnownGlobals, stream, LowerMir(), cilDebugWriter)
                      .ConfigureAwait(false);
 }

@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Sigil;
 using Sigil.NonGeneric;
-using SimpleCompiler.Compiler;
 using SimpleCompiler.Runtime;
 using SimpleCompiler.MIR;
 using Lokad.ILPack;
@@ -160,7 +159,7 @@ internal sealed class Emitter
         {
             method.LoadField(ReflectionData.StockGlobal_Print);
         }
-        else if (pushVar.Variable == _knownGlobals.ToString)
+        else if (pushVar.Variable == _knownGlobals.Tostring)
         {
             method.LoadField(ReflectionData.StockGlobal_ToString);
         }
@@ -177,7 +176,7 @@ internal sealed class Emitter
         {
             method.StoreField(ReflectionData.StockGlobal_Print);
         }
-        else if (storeVar.Variable == _knownGlobals.ToString)
+        else if (storeVar.Variable == _knownGlobals.Tostring)
         {
             method.StoreField(ReflectionData.StockGlobal_ToString);
         }

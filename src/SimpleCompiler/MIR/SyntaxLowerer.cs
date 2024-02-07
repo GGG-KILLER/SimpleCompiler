@@ -1,4 +1,4 @@
-﻿using Loretta.CodeAnalysis;
+using Loretta.CodeAnalysis;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Syntax;
 using SimpleCompiler.Helpers;
@@ -22,10 +22,15 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         _scopes.Push(_fileScope);
     }
 
-    private VariableInfo FindOrCreateVariable(string name, VariableKind kind, ScopeKind upTo = ScopeKind.Global)
+    private static VariableInfo CreateVariable(ScopeInfo scope, string name, VariableKind kind)
     {
-        return _scopes.Peek().FindVariable(name, upTo) ?? new VariableInfo(_globalScope, kind, name);
+        var var = new VariableInfo(scope, kind, name);
+        scope.AddDeclaredVariable(var);
+        return var;
     }
+
+    private VariableInfo FindOrCreateVariable(string name, VariableKind kind, ScopeKind upTo = ScopeKind.Global) =>
+        _scopes.Peek().FindVariable(name, upTo) ?? CreateVariable(_globalScope, name, kind);
 
     public override MirNode? VisitStatementList(StatementListSyntax node) => VisitStatementList(node, null);
 
@@ -38,7 +43,7 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
             if (lowered is StatementList statementList && statementList.ScopeInfo is null)
                 statements.AddRange(statementList.Statements);
             else
-                statements.Add((Statement)lowered!);
+                statements.Add((Statement) lowered!);
         }
 
         return MirFactory.StatementList(node.GetReference(), statements.ToList(), scope);
@@ -56,12 +61,12 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         {
             var nameSyntax = syntaxNames.Length > idx ? syntaxNames[idx] : null;
             var valueSyntax = syntaxValues.Length > idx ? syntaxValues[idx] : null;
-            var value = valueSyntax is not null ? (Expression)Visit(valueSyntax)! : MirFactory.NilConstant(null);
+            var value = valueSyntax is not null ? (Expression) Visit(valueSyntax)! : MirFactory.NilConstant(null);
 
             values.Add(value);
             if (nameSyntax is not null)
             {
-                var variableInfo = new VariableInfo(_scopes.Peek(), VariableKind.Local, nameSyntax.IdentifierName.Name);
+                var variableInfo = CreateVariable(_scopes.Peek(), nameSyntax.IdentifierName.Name, VariableKind.Local);
                 assignees.Add(MirFactory.VariableExpression(nameSyntax.GetReference(), ResultKind.Any, variableInfo));
             }
             else
@@ -74,8 +79,6 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
 
         foreach (var variable in assignment.Assignees.OfType<VariableExpression>())
             variable.VariableInfo.AddWrite(assignment);
-        foreach (var variable in assignment.Values.OfType<VariableExpression>())
-            variable.VariableInfo.AddRead(assignment);
 
         return assignment;
     }
@@ -91,12 +94,12 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
         for (var idx = 0; idx < len; idx++)
         {
             var assignee = assignees.Length > idx ? assignees[idx] : null;
-            var value = values.Length > idx ? (Expression)Visit(values[idx])! : MirFactory.NilConstant(null);
+            var value = values.Length > idx ? (Expression) Visit(values[idx])! : MirFactory.NilConstant(null);
 
             valueNodes.Add(value);
             if (assignee is not null)
             {
-                var assigneeNode = (Expression)Visit(assignee)!;
+                var assigneeNode = (Expression) Visit(assignee)!;
                 assigneeNodes.Add(assigneeNode);
             }
             else
@@ -109,20 +112,18 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
 
         foreach (var variable in assignment.Assignees.OfType<VariableExpression>())
             variable.VariableInfo.AddWrite(assignment);
-        foreach (var variable in assignment.Values.OfType<VariableExpression>())
-            variable.VariableInfo.AddRead(assignment);
 
         return assignment;
     }
 
     public override MirNode? VisitFunctionCallExpression(FunctionCallExpressionSyntax node)
     {
-        var callee = (Expression)Visit(node.Expression)!;
+        var callee = (Expression) Visit(node.Expression)!;
         var arguments = node.Argument switch
         {
-            StringFunctionArgumentSyntax stringArgument => new MirList<Expression>((Expression)Visit(stringArgument.Expression)!),
-            TableConstructorFunctionArgumentSyntax tableCtor => new MirList<Expression>((Expression)Visit(tableCtor.TableConstructor)!),
-            ExpressionListFunctionArgumentSyntax expressionList => new MirList<Expression>(expressionList.Expressions.Select(x => (Expression)Visit(x)!)),
+            StringFunctionArgumentSyntax stringArgument => new MirList<Expression>((Expression) Visit(stringArgument.Expression)!),
+            TableConstructorFunctionArgumentSyntax tableCtor => new MirList<Expression>((Expression) Visit(tableCtor.TableConstructor)!),
+            ExpressionListFunctionArgumentSyntax expressionList => new MirList<Expression>(expressionList.Expressions.Select(x => (Expression) Visit(x)!)),
             _ => throw ExceptionUtil.Unreachable
         };
 
@@ -131,8 +132,8 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
 
     public override MirNode? VisitBinaryExpression(BinaryExpressionSyntax node)
     {
-        var left = (Expression)Visit(node.Left)!;
-        var right = (Expression)Visit(node.Right)!;
+        var left = (Expression) Visit(node.Left)!;
+        var right = (Expression) Visit(node.Right)!;
         var opKind = node.Kind() switch
         {
             SyntaxKind.AddExpression => BinaryOperationKind.Addition,
@@ -218,12 +219,14 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
     public override MirNode? VisitEmptyStatement(EmptyStatementSyntax node) => MirFactory.EmptyStatement(node.GetReference());
 
     public override MirNode? VisitExpressionStatement(ExpressionStatementSyntax node) =>
-        MirFactory.ExpressionStatement(node.GetReference(), (Expression)Visit(node.Expression)!);
+        MirFactory.ExpressionStatement(node.GetReference(), (Expression) Visit(node.Expression)!);
 
     public override MirNode? VisitIdentifierName(IdentifierNameSyntax node)
     {
         var variableInfo = FindOrCreateVariable(node.Name, VariableKind.Global);
-        return MirFactory.VariableExpression(node.GetReference(), ResultKind.Any, variableInfo);
+        var mirNode = MirFactory.VariableExpression(node.GetReference(), ResultKind.Any, variableInfo);
+        variableInfo.AddRead(mirNode);
+        return mirNode;
     }
 
     public override MirNode? VisitLiteralExpression(LiteralExpressionSyntax node)
@@ -233,8 +236,8 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
             SyntaxKind.NilLiteralExpression => MirFactory.NilConstant(node.GetReference()),
             SyntaxKind.TrueLiteralExpression => MirFactory.TrueConstant(node.GetReference()),
             SyntaxKind.FalseLiteralExpression => MirFactory.FalseConstant(node.GetReference()),
-            SyntaxKind.StringLiteralExpression => MirFactory.ConstantExpression(ResultKind.Str, ConstantKind.String, (string)node.Token.Value!),
-            SyntaxKind.NumericalLiteralExpression => MirFactory.ConstantExpression(ResultKind.Double, ConstantKind.Number, (double)node.Token.Value!),
+            SyntaxKind.StringLiteralExpression => MirFactory.ConstantExpression(ResultKind.Str, ConstantKind.String, (string) node.Token.Value!),
+            SyntaxKind.NumericalLiteralExpression => MirFactory.ConstantExpression(ResultKind.Double, ConstantKind.Number, (double) node.Token.Value!),
             SyntaxKind kind => throw new NotSupportedException($"Constants with kind {kind} is not supported."),
         };
     }
@@ -261,7 +264,7 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
             _ => throw ExceptionUtil.Unreachable,
         };
 
-        var operand = (Expression)Visit(node.Operand)!;
+        var operand = (Expression) Visit(node.Operand)!;
 
         return MirFactory.UnaryOperationExpression(node.GetReference(), resKind, opKind, operand);
     }
