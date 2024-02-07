@@ -1,44 +1,42 @@
 ﻿using Loretta.CodeAnalysis;
-using Loretta.CodeAnalysis.Lua.Experimental;
 using SimpleCompiler.Emit;
 using SimpleCompiler.LIR;
 using SimpleCompiler.MIR;
+using SimpleCompiler.MIR.Optimizations;
 
 namespace SimpleCompiler.Compiler;
 
-public sealed class Compilation
+public sealed class Compilation(SyntaxTree syntaxTree)
 {
-    private readonly SyntaxTree _syntaxTree;
-    private MirNode? _mirRoot;
-    private MirNode? _optimizedMirRoot;
+    private readonly SyntaxTree _syntaxTree = syntaxTree;
+    private MirTree? _mirRoot;
+    private MirTree? _optimizedMirRoot;
     private IReadOnlyList<Instruction>? _lir;
 
-    public ScopeInfo GlobalScope { get; }
-
-    public Compilation(SyntaxTree syntaxTree)
-    {
-        GlobalScope = new ScopeInfo(MIR.ScopeKind.Global, null);
-        _syntaxTree = syntaxTree;
-    }
-
-    public MirNode LowerSyntax()
+    public MirTree LowerSyntax()
     {
         if (_mirRoot is null)
         {
-            var folded = _syntaxTree.GetRoot().ConstantFold(ConstantFoldingOptions.All);
-            var lowerer = new SyntaxLowerer(GlobalScope);
-            Interlocked.CompareExchange(ref _mirRoot, lowerer.Visit(folded)!, null);
+            Interlocked.CompareExchange(ref _mirRoot, MirTree.FromSyntax(_syntaxTree)!, null);
         }
         return _mirRoot;
     }
 
-    public MirNode OptimizeLoweredSyntax()
+    public MirTree OptimizeLoweredSyntax()
     {
         if (_optimizedMirRoot is null)
         {
-            var node = LowerSyntax();
-            node = ConstantFolder.ConstantFold(node);
-            Interlocked.CompareExchange(ref _optimizedMirRoot, node, null);
+            var tree = LowerSyntax();
+            var root = tree.Root;
+
+            root = new Inliner().Visit(root);
+
+            root = ConstantFolder.ConstantFold(root);
+
+            var globalScope = new ScopeInfo(ScopeKind.Global, null);
+            root = new ScopeRemapper(globalScope).Visit(root)!;
+
+            Interlocked.CompareExchange(ref _optimizedMirRoot, MirTree.FromRoot(globalScope, root), null);
         }
         return _optimizedMirRoot;
     }
@@ -47,13 +45,13 @@ public sealed class Compilation
     {
         if (_lir is null)
         {
-            var node = OptimizeLoweredSyntax();
+            var node = OptimizeLoweredSyntax().Root;
             Interlocked.CompareExchange(ref _lir, MirLowerer.Lower(node), null);
         }
         return _lir;
     }
 
     public async Task EmitAsync(string name, Stream stream, TextWriter? cilDebugWriter = null) =>
-        await Emitter.EmitAsync(name, GlobalScope.KnownGlobals, stream, LowerMir(), cilDebugWriter)
+        await Emitter.EmitAsync(name, OptimizeLoweredSyntax().GlobalScope.KnownGlobals, stream, LowerMir(), cilDebugWriter)
                      .ConfigureAwait(false);
 }

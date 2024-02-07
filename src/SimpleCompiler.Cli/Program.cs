@@ -73,18 +73,18 @@ app.AddCommand("build", async (
     var compilation = new Compilation(tree);
 
     s.Restart();
-    var mirRoot = compilation.LowerSyntax();
+    var mirTree = compilation.LowerSyntax();
     Console.WriteLine($"Syntax lowering done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
-        await dumpMir(path, 1, compilation, mirRoot, ctx.CancellationToken);
+        await dumpMir(path, 1, mirTree, ctx.CancellationToken);
 
     s.Restart();
-    mirRoot = compilation.OptimizeLoweredSyntax();
+    mirTree = compilation.OptimizeLoweredSyntax();
     Console.WriteLine($"Optimizing done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
-        await dumpMir(path, 2, compilation, mirRoot, ctx.CancellationToken);
+        await dumpMir(path, 2, mirTree, ctx.CancellationToken);
 
     s.Restart();
     var instrs = compilation.LowerMir();
@@ -124,16 +124,16 @@ app.AddCommand("build", async (
 
 await app.RunAsync();
 
-static async Task dumpMir(string path, int num, Compilation compiler, MirNode root, CancellationToken cancellationToken = default)
+static async Task dumpMir(string path, int num, MirTree tree, CancellationToken cancellationToken = default)
 {
     using var writer = File.CreateText(Path.ChangeExtension(path, $"{num}.mir"));
 
     var indentedWriter = new IndentedTextWriter(writer, "    ");
     var debugWriter = new MirDebugPrinter(indentedWriter);
     indentedWriter.Write("Global Scope: ");
-    debugWriter.WriteScope(compiler.GlobalScope);
+    debugWriter.WriteScope(tree.GlobalScope);
     indentedWriter.WriteLine();
-    debugWriter.Visit(root);
+    debugWriter.Visit(tree.Root);
 
     await indentedWriter.FlushAsync(cancellationToken)
                         .ConfigureAwait(false);
