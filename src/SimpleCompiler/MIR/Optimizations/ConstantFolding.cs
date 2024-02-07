@@ -10,16 +10,8 @@ public sealed class ConstantFolder : MirRewriter
     [return: NotNullIfNotNull(nameof(node))]
     public static MirNode? ConstantFold(MirNode? node) => s_instance.Visit(node);
 
-    public override MirNode VisitUnaryOperationExpression(UnaryOperationExpression node)
-    {
-        return ExtractConstantValue(node);
-    }
-
-    public override MirNode VisitBinaryOperationExpression(BinaryOperationExpression node)
-    {
-        return ExtractConstantValue(node);
-    }
-
+    public override MirNode VisitUnaryOperationExpression(UnaryOperationExpression node) => ExtractConstantValue(node);
+    public override MirNode VisitBinaryOperationExpression(BinaryOperationExpression node) => ExtractConstantValue(node);
     private static Expression ExtractConstantValue(Expression expression)
     {
         var constVal = expression.GetConstantValue();
@@ -49,10 +41,8 @@ public static class ConstantFoldingExtensions
             Unsafe.Unbox<TypedConstant>(s_cache.GetValue(node, node => func(node)));
 
         private Func<MirNode, TypedConstant>? _visit;
-        public override TypedConstant Visit(MirNode? node)
-        {
-            return node is null ? TypedConstant.None : GetOrSetValue(node, _visit ??= base.Visit);
-        }
+        public override TypedConstant Visit(MirNode? node) =>
+            node is null ? TypedConstant.None : GetOrSetValue(node, _visit ??= base.Visit);
 
         public override TypedConstant VisitConstantExpression(ConstantExpression node)
         {
