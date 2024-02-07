@@ -5,7 +5,7 @@ namespace SimpleCompiler.MIR.Optimizations;
 
 internal sealed class Inliner : MirRewriter
 {
-    private readonly Dictionary<VariableInfo, Expression> _values = [];
+    private readonly Dictionary<VariableInfo, (Expression Original, Expression Replacement)> _values = [];
 
     [return: NotNullIfNotNull(nameof(node))]
     public override MirNode? Visit(MirNode? node) => base.Visit(node);
@@ -27,9 +27,12 @@ internal sealed class Inliner : MirRewriter
                 }
                 else
                 {
-                    _values.Add(((VariableExpression) var).VariableInfo, val);
+                    _values.Add(((VariableExpression) var).VariableInfo, (node.Values[idx], val));
                 }
             }
+
+            if (assignees.Count < 1)
+                return MirFactory.None;
 
             return node.Update(node.OriginalNode, assignees.ToList(), values.ToList());
         }
@@ -40,9 +43,9 @@ internal sealed class Inliner : MirRewriter
     {
         if (_values.TryGetValue(node.VariableInfo, out var value))
         {
-            if (node.IsLocatedBefore(value))
+            if (value.Original.IsLocatedBefore(node))
             {
-                return value;
+                return value.Replacement;
             }
             else
             {

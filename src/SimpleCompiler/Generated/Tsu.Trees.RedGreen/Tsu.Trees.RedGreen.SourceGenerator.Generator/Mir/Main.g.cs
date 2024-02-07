@@ -19,6 +19,7 @@ namespace SimpleCompiler.MIR
                 node.Accept(this);
             }
         }
+        public virtual void VisitMirNone(global::SimpleCompiler.MIR.MirNone node) => this.DefaultVisit(node);
         public virtual void VisitBinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationExpression node) => this.DefaultVisit(node);
         public virtual void VisitConstantExpression(global::SimpleCompiler.MIR.ConstantExpression node) => this.DefaultVisit(node);
         public virtual void VisitDiscardExpression(global::SimpleCompiler.MIR.DiscardExpression node) => this.DefaultVisit(node);
@@ -36,6 +37,7 @@ namespace SimpleCompiler.MIR
     {
         public virtual TResult? Visit(global::SimpleCompiler.MIR.MirNode? node) => node == null ? default : node.Accept(this
         );
+        public virtual TResult? VisitMirNone(global::SimpleCompiler.MIR.MirNone node) => this.DefaultVisit(node);
         public virtual TResult? VisitBinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationExpression node) => this.DefaultVisit(node);
         public virtual TResult? VisitConstantExpression(global::SimpleCompiler.MIR.ConstantExpression node) => this.DefaultVisit(node);
         public virtual TResult? VisitDiscardExpression(global::SimpleCompiler.MIR.DiscardExpression node) => this.DefaultVisit(node);
@@ -53,6 +55,7 @@ namespace SimpleCompiler.MIR
     {
         public virtual TResult? Visit(global::SimpleCompiler.MIR.MirNode? node, T1 arg1) => node == null ? default : node.Accept(this
         , arg1);
+        public virtual TResult? VisitMirNone(global::SimpleCompiler.MIR.MirNone node, T1 arg1) => this.DefaultVisit(node, arg1);
         public virtual TResult? VisitBinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationExpression node, T1 arg1) => this.DefaultVisit(node, arg1);
         public virtual TResult? VisitConstantExpression(global::SimpleCompiler.MIR.ConstantExpression node, T1 arg1) => this.DefaultVisit(node, arg1);
         public virtual TResult? VisitDiscardExpression(global::SimpleCompiler.MIR.DiscardExpression node, T1 arg1) => this.DefaultVisit(node, arg1);
@@ -70,6 +73,7 @@ namespace SimpleCompiler.MIR
     {
         public virtual TResult? Visit(global::SimpleCompiler.MIR.MirNode? node, T1 arg1, T2 arg2) => node == null ? default : node.Accept(this
         , arg1, arg2);
+        public virtual TResult? VisitMirNone(global::SimpleCompiler.MIR.MirNone node, T1 arg1, T2 arg2) => this.DefaultVisit(node, arg1, arg2);
         public virtual TResult? VisitBinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationExpression node, T1 arg1, T2 arg2) => this.DefaultVisit(node, arg1, arg2);
         public virtual TResult? VisitConstantExpression(global::SimpleCompiler.MIR.ConstantExpression node, T1 arg1, T2 arg2) => this.DefaultVisit(node, arg1, arg2);
         public virtual TResult? VisitDiscardExpression(global::SimpleCompiler.MIR.DiscardExpression node, T1 arg1, T2 arg2) => this.DefaultVisit(node, arg1, arg2);
@@ -87,6 +91,7 @@ namespace SimpleCompiler.MIR
     {
         public virtual TResult? Visit(global::SimpleCompiler.MIR.MirNode? node, T1 arg1, T2 arg2, T3 arg3) => node == null ? default : node.Accept(this
         , arg1, arg2, arg3);
+        public virtual TResult? VisitMirNone(global::SimpleCompiler.MIR.MirNone node, T1 arg1, T2 arg2, T3 arg3) => this.DefaultVisit(node, arg1, arg2, arg3);
         public virtual TResult? VisitBinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationExpression node, T1 arg1, T2 arg2, T3 arg3) => this.DefaultVisit(node, arg1, arg2, arg3);
         public virtual TResult? VisitConstantExpression(global::SimpleCompiler.MIR.ConstantExpression node, T1 arg1, T2 arg2, T3 arg3) => this.DefaultVisit(node, arg1, arg2, arg3);
         public virtual TResult? VisitDiscardExpression(global::SimpleCompiler.MIR.DiscardExpression node, T1 arg1, T2 arg2, T3 arg3) => this.DefaultVisit(node, arg1, arg2, arg3);
@@ -131,6 +136,8 @@ namespace SimpleCompiler.MIR
             return list;
         }
 
+        public override global::SimpleCompiler.MIR.MirNode VisitMirNone(global::SimpleCompiler.MIR.MirNone node) =>
+            node.Update(node.OriginalNode);
         public override global::SimpleCompiler.MIR.MirNode VisitBinaryOperationExpression(global::SimpleCompiler.MIR.BinaryOperationExpression node) =>
             node.Update(node.OriginalNode, node.ResultKind, node.BinaryOperationKind, (global::SimpleCompiler.MIR.Expression?)Visit(node.Left) ?? throw new global::System.InvalidOperationException("Left cannot be null."), (global::SimpleCompiler.MIR.Expression?)Visit(node.Right) ?? throw new global::System.InvalidOperationException("Right cannot be null."));
         public override global::SimpleCompiler.MIR.MirNode VisitConstantExpression(global::SimpleCompiler.MIR.ConstantExpression node) =>
@@ -154,6 +161,12 @@ namespace SimpleCompiler.MIR
     }
     public static partial class MirFactory
     {
+        public static global::SimpleCompiler.MIR.MirNone MirNone() =>
+            (global::SimpleCompiler.MIR.MirNone) global::SimpleCompiler.MIR.Internal.MirFactory.MirNone().CreateRed();
+
+        public static global::SimpleCompiler.MIR.MirNone MirNone(global::Loretta.CodeAnalysis.SyntaxReference? originalNode) =>
+            (global::SimpleCompiler.MIR.MirNone) global::SimpleCompiler.MIR.Internal.MirFactory.MirNone(originalNode).CreateRed();
+
         public static global::SimpleCompiler.MIR.BinaryOperationExpression BinaryOperationExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind, global::SimpleCompiler.MIR.Expression left, global::SimpleCompiler.MIR.Expression right) =>
             (global::SimpleCompiler.MIR.BinaryOperationExpression) global::SimpleCompiler.MIR.Internal.MirFactory.BinaryOperationExpression(resultKind, binaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression)left.Green, (global::SimpleCompiler.MIR.Internal.Expression)right.Green).CreateRed();
 

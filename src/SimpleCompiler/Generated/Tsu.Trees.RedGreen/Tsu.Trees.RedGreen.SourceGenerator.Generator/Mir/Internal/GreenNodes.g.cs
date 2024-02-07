@@ -710,4 +710,58 @@ namespace SimpleCompiler.MIR.Internal
             return this;
         }
     }
+    partial class MirNone : global::SimpleCompiler.MIR.Internal.MirNode
+    {
+        internal MirNone(
+            global::SimpleCompiler.MIR.MirKind kind,
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode
+        )
+            : base(kind, originalNode)
+        {
+            this.SlotCount = 0;
+        }
+
+
+        public override global::SimpleCompiler.MIR.Internal.MirNode? GetSlot(int index) =>
+            null;
+
+        public override global::SimpleCompiler.MIR.MirNode CreateRed(global::SimpleCompiler.MIR.MirNode? parent) =>
+            new global::SimpleCompiler.MIR.MirNone(this, parent);
+
+        [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
+        public override void Accept(global::SimpleCompiler.MIR.Internal.MirVisitor visitor) =>
+            visitor.VisitMirNone(this);
+
+        [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
+        public override TResult Accept<TResult>(global::SimpleCompiler.MIR.Internal.MirVisitor<TResult> visitor) =>
+            visitor.VisitMirNone(this);
+
+        [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
+        public override TResult Accept<T1, TResult>(global::SimpleCompiler.MIR.Internal.MirVisitor<T1, TResult> visitor, T1 arg1) =>
+            visitor.VisitMirNone(this, arg1);
+
+        [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
+        public override TResult Accept<T1, T2, TResult>(global::SimpleCompiler.MIR.Internal.MirVisitor<T1, T2, TResult> visitor, T1 arg1, T2 arg2) =>
+            visitor.VisitMirNone(this, arg1, arg2);
+
+        [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
+        public override TResult Accept<T1, T2, T3, TResult>(global::SimpleCompiler.MIR.Internal.MirVisitor<T1, T2, T3, TResult> visitor, T1 arg1, T2 arg2, T3 arg3) =>
+            visitor.VisitMirNone(this, arg1, arg2, arg3);
+
+        public global::SimpleCompiler.MIR.Internal.MirNone Update(
+            global::Loretta.CodeAnalysis.SyntaxReference? originalNode
+        )
+        {
+            if (
+                this.OriginalNode != originalNode
+            )
+            {
+                return global::SimpleCompiler.MIR.Internal.MirFactory.MirNone(
+                    originalNode
+                );
+            }
+
+            return this;
+        }
+    }
 }

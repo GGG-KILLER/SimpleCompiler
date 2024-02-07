@@ -4,6 +4,8 @@ namespace SimpleCompiler.MIR;
 
 public static partial class MirFactory
 {
+    public static readonly MirNone None = MirNone();
+
     public static DiscardExpression DiscardExpression(SyntaxReference? reference) =>
         DiscardExpression(reference, ResultKind.None);
     public static ConstantExpression NilConstant(SyntaxReference? reference) =>
