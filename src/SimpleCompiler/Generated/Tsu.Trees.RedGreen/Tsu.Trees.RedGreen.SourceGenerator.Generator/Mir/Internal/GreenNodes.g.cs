@@ -566,7 +566,7 @@ namespace SimpleCompiler.MIR.Internal
             global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.ConstantKind constantKind,
-            object value
+            object? value
         )
             : base(kind, originalNode, resultKind)
         {
@@ -576,7 +576,7 @@ namespace SimpleCompiler.MIR.Internal
         }
 
         public global::SimpleCompiler.MIR.ConstantKind ConstantKind => this._constantKind;
-        public object Value => this._value;
+        public object? Value => this._value;
 
         public override global::SimpleCompiler.MIR.Internal.MirNode? GetSlot(int index) =>
             null;
@@ -608,7 +608,7 @@ namespace SimpleCompiler.MIR.Internal
             global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.ConstantKind constantKind,
-            object value
+            object? value
         )
         {
             if (

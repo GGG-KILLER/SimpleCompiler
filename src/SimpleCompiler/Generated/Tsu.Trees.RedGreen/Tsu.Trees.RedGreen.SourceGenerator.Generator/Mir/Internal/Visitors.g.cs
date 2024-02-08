@@ -47,19 +47,17 @@ namespace SimpleCompiler.MIR.Internal
             return new global::SimpleCompiler.MIR.Internal.BinaryOperationExpression(global::SimpleCompiler.MIR.MirKind.BinaryOperationExpression, originalNode, resultKind, binaryOperationKind, left, right);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.ConstantExpression ConstantExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object value)
+        public static global::SimpleCompiler.MIR.Internal.ConstantExpression ConstantExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind)
         {
 #if DEBUG
-            if (value == null) throw new global::System.ArgumentNullException(nameof(value));
 #endif // DEBUG
 
-            return new global::SimpleCompiler.MIR.Internal.ConstantExpression(global::SimpleCompiler.MIR.MirKind.ConstantExpression, default, resultKind, constantKind, value);
+            return new global::SimpleCompiler.MIR.Internal.ConstantExpression(global::SimpleCompiler.MIR.MirKind.ConstantExpression, default, resultKind, constantKind, default);
         }
 
-        public static global::SimpleCompiler.MIR.Internal.ConstantExpression ConstantExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object value)
+        public static global::SimpleCompiler.MIR.Internal.ConstantExpression ConstantExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object? value)
         {
 #if DEBUG
-            if (value == null) throw new global::System.ArgumentNullException(nameof(value));
 #endif // DEBUG
 
             return new global::SimpleCompiler.MIR.Internal.ConstantExpression(global::SimpleCompiler.MIR.MirKind.ConstantExpression, originalNode, resultKind, constantKind, value);

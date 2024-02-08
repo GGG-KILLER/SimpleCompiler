@@ -34,7 +34,7 @@ namespace SimpleCompiler.MIR
             public global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Statement> Statements => new global::SimpleCompiler.MIR.MirList<global::SimpleCompiler.MIR.Statement>(GetRed(ref this._statements, 0));
 
         internal override global::SimpleCompiler.MIR.MirNode? GetNodeSlot(int index) =>
-                index == 0 ? GetRed(ref this._statements, 1) : null;
+                index == 0 ? GetRed(ref this._statements, 0) : null;
 
         [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
         public override void Accept(global::SimpleCompiler.MIR.MirVisitor visitor) =>
@@ -110,7 +110,7 @@ namespace SimpleCompiler.MIR
         public global::SimpleCompiler.MIR.Expression Expression => GetRed(ref this._expression, 0)!;
 
         internal override global::SimpleCompiler.MIR.MirNode? GetNodeSlot(int index) =>
-                index == 0 ? GetRed(ref this._expression, 1)! : null;
+                index == 0 ? GetRed(ref this._expression, 0)! : null;
 
         [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
         public override void Accept(global::SimpleCompiler.MIR.MirVisitor visitor) =>
@@ -406,7 +406,7 @@ namespace SimpleCompiler.MIR
         public global::SimpleCompiler.MIR.Expression Operand => GetRed(ref this._operand, 0)!;
 
         internal override global::SimpleCompiler.MIR.MirNode? GetNodeSlot(int index) =>
-                index == 0 ? GetRed(ref this._operand, 1)! : null;
+                index == 0 ? GetRed(ref this._operand, 0)! : null;
 
         [return: global::System.Diagnostics.CodeAnalysis.MaybeNull]
         public override void Accept(global::SimpleCompiler.MIR.MirVisitor visitor) =>
@@ -654,7 +654,7 @@ namespace SimpleCompiler.MIR
         public override  global::Loretta.CodeAnalysis.SyntaxReference? OriginalNode => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).OriginalNode;
         public override  global::SimpleCompiler.MIR.ResultKind ResultKind => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).ResultKind;
         public  global::SimpleCompiler.MIR.ConstantKind ConstantKind => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).ConstantKind;
-        public  object Value => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).Value;
+        public  object? Value => ((global::SimpleCompiler.MIR.Internal.ConstantExpression)this.Green).Value;
 
         internal override global::SimpleCompiler.MIR.MirNode? GetNodeSlot(int index) =>
                 null;
@@ -683,7 +683,7 @@ namespace SimpleCompiler.MIR
             global::Loretta.CodeAnalysis.SyntaxReference? originalNode,
             global::SimpleCompiler.MIR.ResultKind resultKind,
             global::SimpleCompiler.MIR.ConstantKind constantKind,
-            object value
+            object? value
         )
         {
             if (
@@ -725,7 +725,7 @@ namespace SimpleCompiler.MIR
                 constantKind,
                 this.Value
             );
-        public global::SimpleCompiler.MIR.ConstantExpression WithValue(object value) =>
+        public global::SimpleCompiler.MIR.ConstantExpression WithValue(object? value) =>
             this.Update(
                 this.OriginalNode,
                 this.ResultKind,

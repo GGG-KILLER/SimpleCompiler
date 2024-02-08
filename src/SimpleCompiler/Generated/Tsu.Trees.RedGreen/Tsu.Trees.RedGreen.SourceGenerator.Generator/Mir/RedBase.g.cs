@@ -97,12 +97,10 @@ namespace SimpleCompiler.MIR
         public abstract TResult? Accept<T1, T2, TResult>(global::SimpleCompiler.MIR.MirVisitor<T1, T2, TResult> visitor, T1 arg1, T2 arg2);
         public abstract TResult? Accept<T1, T2, T3, TResult>(global::SimpleCompiler.MIR.MirVisitor<T1, T2, T3, TResult> visitor, T1 arg1, T2 arg2, T3 arg3);
 
-        public global::System.Collections.Generic.IEnumerable<global::SimpleCompiler.MIR.MirNode> ChildNodes()
-        {
-            var count = this.SlotCount;
-            for (var index = 0; index < count; index++)
-                yield return this.GetRequiredNodeSlot(index);
-        }
+        /// <summary>
+        /// The list of child nodes and tokens of this node, where each element is a SyntaxNodeOrToken instance.
+        /// </summary>
+        public global::SimpleCompiler.MIR.ChildMirList ChildNodes() => new(this);
 
         public global::System.Collections.Generic.IEnumerable<global::SimpleCompiler.MIR.MirNode> Ancestors() =>
             this.Parent?.AncestorsAndSelf() ?? global::System.Linq.Enumerable.Empty<global::SimpleCompiler.MIR.MirNode>();

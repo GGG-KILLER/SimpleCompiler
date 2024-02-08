@@ -173,10 +173,10 @@ namespace SimpleCompiler.MIR
         public static global::SimpleCompiler.MIR.BinaryOperationExpression BinaryOperationExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.BinaryOperationKind binaryOperationKind, global::SimpleCompiler.MIR.Expression left, global::SimpleCompiler.MIR.Expression right) =>
             (global::SimpleCompiler.MIR.BinaryOperationExpression) global::SimpleCompiler.MIR.Internal.MirFactory.BinaryOperationExpression(originalNode, resultKind, binaryOperationKind, (global::SimpleCompiler.MIR.Internal.Expression)left.Green, (global::SimpleCompiler.MIR.Internal.Expression)right.Green).CreateRed();
 
-        public static global::SimpleCompiler.MIR.ConstantExpression ConstantExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object value) =>
-            (global::SimpleCompiler.MIR.ConstantExpression) global::SimpleCompiler.MIR.Internal.MirFactory.ConstantExpression(resultKind, constantKind, value).CreateRed();
+        public static global::SimpleCompiler.MIR.ConstantExpression ConstantExpression(global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind) =>
+            (global::SimpleCompiler.MIR.ConstantExpression) global::SimpleCompiler.MIR.Internal.MirFactory.ConstantExpression(resultKind, constantKind).CreateRed();
 
-        public static global::SimpleCompiler.MIR.ConstantExpression ConstantExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object value) =>
+        public static global::SimpleCompiler.MIR.ConstantExpression ConstantExpression(global::Loretta.CodeAnalysis.SyntaxReference? originalNode, global::SimpleCompiler.MIR.ResultKind resultKind, global::SimpleCompiler.MIR.ConstantKind constantKind, object? value) =>
             (global::SimpleCompiler.MIR.ConstantExpression) global::SimpleCompiler.MIR.Internal.MirFactory.ConstantExpression(originalNode, resultKind, constantKind, value).CreateRed();
 
         public static global::SimpleCompiler.MIR.DiscardExpression DiscardExpression(global::SimpleCompiler.MIR.ResultKind resultKind) =>
