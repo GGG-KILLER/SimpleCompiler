@@ -17,10 +17,10 @@ public sealed class ConstantFolder : MirRewriter
         var constVal = expression.GetConstantValue();
         return constVal switch
         {
-            { HasValue: true, Value: bool val } => MirFactory.ConstantExpression(ResultKind.Bool, ConstantKind.Boolean, val),
-            { HasValue: true, Value: double val } => MirFactory.ConstantExpression(ResultKind.Double, ConstantKind.Number, val),
-            { HasValue: true, Value: long val } => MirFactory.ConstantExpression(ResultKind.Int, ConstantKind.Number, val),
-            { HasValue: true, Value: string val } => MirFactory.ConstantExpression(ResultKind.Str, ConstantKind.String, val),
+            { HasValue: true, Value: bool val } => MirFactory.ConstantExpression(null, ResultKind.Bool, ConstantKind.Boolean, val),
+            { HasValue: true, Value: double val } => MirFactory.ConstantExpression(null, ResultKind.Double, ConstantKind.Number, val),
+            { HasValue: true, Value: long val } => MirFactory.ConstantExpression(null, ResultKind.Int, ConstantKind.Number, val),
+            { HasValue: true, Value: string val } => MirFactory.ConstantExpression(null, ResultKind.Str, ConstantKind.String, val),
             _ => expression
         };
     }

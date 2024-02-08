@@ -239,8 +239,8 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<MirNode>
             SyntaxKind.NilLiteralExpression => MirFactory.NilConstant(node.GetReference()),
             SyntaxKind.TrueLiteralExpression => MirFactory.TrueConstant(node.GetReference()),
             SyntaxKind.FalseLiteralExpression => MirFactory.FalseConstant(node.GetReference()),
-            SyntaxKind.StringLiteralExpression => MirFactory.ConstantExpression(ResultKind.Str, ConstantKind.String, (string) node.Token.Value!),
-            SyntaxKind.NumericalLiteralExpression => MirFactory.ConstantExpression(ResultKind.Double, ConstantKind.Number, (double) node.Token.Value!),
+            SyntaxKind.StringLiteralExpression => MirFactory.ConstantExpression(node.GetReference(), ResultKind.Str, ConstantKind.String, (string) node.Token.Value!),
+            SyntaxKind.NumericalLiteralExpression => MirFactory.ConstantExpression(node.GetReference(), ResultKind.Double, ConstantKind.Number, (double) node.Token.Value!),
             SyntaxKind kind => throw new NotSupportedException($"Constants with kind {kind} is not supported."),
         };
     }

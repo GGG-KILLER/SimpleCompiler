@@ -6,5 +6,5 @@ namespace SimpleCompiler.MIR.Internal;
 internal sealed partial class ConstantExpression: Expression
 {
     private readonly ConstantKind _constantKind;
-    private readonly object _value;
+    private readonly object? _value;
 }
