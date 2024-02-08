@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using SimpleCompiler.Helpers;
 
 namespace SimpleCompiler.MIR.Optimizations;
 
@@ -43,19 +44,18 @@ internal sealed class Inliner : MirRewriter
     {
         if (_values.TryGetValue(node.VariableInfo, out var value))
         {
-            if (value.Original.IsLocatedBefore(node))
+#if DEBUG
+            if (value.Original.IsBeforeInPrefixOrder(node))
             {
+#endif // DEBUG
                 return value.Replacement;
+#if DEBUG
             }
             else
             {
-                // If we're before the variable declaration, then use nil. Although this
-                // shouldn't ever happen since undeclared variables just default to being
-                // a global and then after it's declared, further references will become
-                // the local.
-                Debug.Assert(false, "Somehow variable reference is before declaration.");
-                return MirFactory.NilConstant(null);
+                throw new UnreachableException("Somehow variable reference is before declaration.");
             }
+#endif // DEBUG
         }
 
         return base.VisitVariableExpression(node);

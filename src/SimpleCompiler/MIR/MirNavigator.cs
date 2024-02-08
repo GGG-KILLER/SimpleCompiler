@@ -5,14 +5,26 @@ public static class MirNavigator
     public static MirNode? GetCommonAncestor(this MirNode node, MirNode other) =>
         node.AncestorsAndSelf().Intersect(other.AncestorsAndSelf()).LastOrDefault();
 
-    public static bool IsLocatedBefore(this MirNode node, MirNode other)
+    public static bool IsBeforeInPrefixOrder(this MirNode node, MirNode other)
     {
-        // Only go up a level because everything other than synthesized constants shouldn't have a parent.
-        var nodeOriginal = node.OriginalNode ?? node.Parent?.OriginalNode;
-        var otherOriginal = other.OriginalNode ?? other.Parent?.OriginalNode;
+        var parent = node.GetCommonAncestor(other);
+        if (parent is null)
+            return false;
 
-        if (nodeOriginal is not null && otherOriginal is not null)
-            return nodeOriginal.Span.CompareTo(otherOriginal.Span) <= 0;
-        return false;
+        var currentIndex = 0;
+        var nodeIndex = -1;
+        var otherIndex = -1;
+        foreach (var curr in parent.DescendantNodesAndSelf())
+        {
+            if (curr == node)
+                nodeIndex = currentIndex;
+            if (curr == other)
+                otherIndex = currentIndex;
+            if (nodeIndex != -1 && otherIndex != -1)
+                break;
+            currentIndex++;
+        }
+
+        return nodeIndex != -1 && nodeIndex <= otherIndex;
     }
 }

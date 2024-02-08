@@ -1,4 +1,4 @@
-Global Scope: 0xFFA6BA (Variables: [0xF47E10, 0x3844016], Scopes: [0xC42DC])
-0x1949E73 (Variables: [], Scopes: []) {
-    print (0xF47E10)(1, 2, 3, 3, 6);
+Global Scope: 0x2428B97 (Variables: [0x293FE88, 0x113CF89], Scopes: [0x38DC0AA])
+0x145D5FC (Variables: [], Scopes: []) {
+    print (0x293FE88)(1, 2, 3, 3, 6);
 }
