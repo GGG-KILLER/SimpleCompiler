@@ -187,7 +187,7 @@ internal sealed class Emitter
         }
     }
 
-    private static void PushConstant(Emit method, ConstantKind kind, object value, bool wrapInLuaValue = true)
+    private static void PushConstant(Emit method, ConstantKind kind, object? value, bool wrapInLuaValue = true)
     {
         switch (kind)
         {
@@ -198,7 +198,7 @@ internal sealed class Emitter
                     method.LoadNull();
                 return;
             case ConstantKind.Boolean:
-                method.LoadConstant(Unsafe.Unbox<bool>(value));
+                method.LoadConstant(Unsafe.Unbox<bool>(value!));
                 if (wrapInLuaValue)
                     method.NewObject<LuaValue, bool>();
                 break;
@@ -217,13 +217,13 @@ internal sealed class Emitter
                 }
                 else
                 {
-                    method.LoadConstant(Unsafe.Unbox<double>(value));
+                    method.LoadConstant(Unsafe.Unbox<double>(value!));
                     if (wrapInLuaValue)
                         method.NewObject<LuaValue, double>();
                 }
                 break;
             case ConstantKind.String:
-                method.LoadConstant(Unsafe.As<string>(value));
+                method.LoadConstant(Unsafe.As<string>(value!));
                 if (wrapInLuaValue)
                     method.NewObject<LuaValue, string>();
                 break;

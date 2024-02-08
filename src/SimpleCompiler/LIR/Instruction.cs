@@ -10,7 +10,7 @@ public abstract partial record Instruction(LirInstrKind Kind)
     public static PushVar PushVar(VariableExpression variable) => PushVar(variable.VariableInfo);
     public static partial StoreVar StoreVar(VariableInfo variable);
     public static StoreVar StoreVar(VariableExpression variable) => StoreVar(variable.VariableInfo);
-    public static partial PushCons PushCons(ConstantKind constantKind, object value);
+    public static partial PushCons PushCons(ConstantKind constantKind, object? value);
     public static PushCons PushCons(ConstantExpression constant) => PushCons(constant.ConstantKind, constant.Value);
     public static partial Pop Pop();
 

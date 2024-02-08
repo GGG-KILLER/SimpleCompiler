@@ -22,7 +22,7 @@ public class Generator : IIncrementalGenerator
             (ctx, _) =>
             {
                 var attr = ctx.Attributes.Single();
-                var baseType = (INamedTypeSymbol)ctx.TargetSymbol;
+                var baseType = (INamedTypeSymbol) ctx.TargetSymbol;
                 var name = attr.NamedArguments.SingleOrDefault(x => x.Key == "KindEnumName").Value.Value as string
                     ?? baseType.Name + "Kind";
 
@@ -126,6 +126,8 @@ public class Generator : IIncrementalGenerator
                         if (!first) writer.Write(", ");
                         first = false;
                         writer.Write(arg.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                        if (arg.Type.NullableAnnotation == NullableAnnotation.Annotated)
+                            writer.Write('?');
                         writer.Write(' ');
                         writer.Write(arg.Name);
                     }
@@ -170,6 +172,8 @@ public class Generator : IIncrementalGenerator
                     if (!first) writer.Write(", ");
                     first = false;
                     writer.Write(arg.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                    if (arg.Type.NullableAnnotation == NullableAnnotation.Annotated)
+                        writer.Write('?');
                     writer.Write(' ');
                     writer.Write(char.ToUpperInvariant(arg.Name[0]));
                     writer.Write(arg.Name.Substring(1));

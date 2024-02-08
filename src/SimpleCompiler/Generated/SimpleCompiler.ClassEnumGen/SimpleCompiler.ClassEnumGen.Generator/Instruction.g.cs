@@ -49,7 +49,7 @@ partial record Instruction
 {
     public static partial PushVar PushVar(global::SimpleCompiler.MIR.VariableInfo variable) => new(variable);
     public static partial StoreVar StoreVar(global::SimpleCompiler.MIR.VariableInfo variable) => new(variable);
-    public static partial PushCons PushCons(global::SimpleCompiler.MIR.ConstantKind constantKind, object value) => new(constantKind, value);
+    public static partial PushCons PushCons(global::SimpleCompiler.MIR.ConstantKind constantKind, object? value) => new(constantKind, value);
     public static partial Pop Pop() => global::SimpleCompiler.LIR.Pop.Instance;
     public static partial Loc Loc(global::SimpleCompiler.LIR.Location location) => new(location);
     public static partial Br Br(global::SimpleCompiler.LIR.Location location) => new(location);
@@ -91,7 +91,7 @@ public sealed partial record PushVar(global::SimpleCompiler.MIR.VariableInfo Var
 
 public sealed partial record StoreVar(global::SimpleCompiler.MIR.VariableInfo Variable) : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.StoreVar);
 
-public sealed partial record PushCons(global::SimpleCompiler.MIR.ConstantKind ConstantKind, object Value) : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.PushCons);
+public sealed partial record PushCons(global::SimpleCompiler.MIR.ConstantKind ConstantKind, object? Value) : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.PushCons);
 
 public sealed partial record Pop() : global::SimpleCompiler.LIR.Instruction(global::SimpleCompiler.LIR.LirInstrKind.Pop)
 {
