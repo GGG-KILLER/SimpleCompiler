@@ -5,6 +5,7 @@ public enum ScopeKind
     Global,
     File,
     Function,
+    Loop,
     Block
 }
 

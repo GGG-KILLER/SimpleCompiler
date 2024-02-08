@@ -19,6 +19,16 @@ internal sealed class ScopeRemapper : MirRewriter
         _scopes.Push(_fileScope);
     }
 
+    private ScopeInfo? FindScope(ScopeKind kind)
+    {
+        foreach (var scope in _scopes)
+        {
+            if (scope.Kind == kind)
+                return scope;
+        }
+        return null;
+    }
+
     private static VariableInfo CreateVariable(ScopeInfo scope, string name, VariableKind kind)
     {
         var var = new VariableInfo(scope, kind, name);
@@ -26,8 +36,20 @@ internal sealed class ScopeRemapper : MirRewriter
         return var;
     }
 
-    private VariableInfo FindOrCreateVariable(string name, VariableKind kind, ScopeKind upTo = ScopeKind.Global) =>
-        _scopes.Peek().FindVariable(name, upTo) ?? CreateVariable(_globalScope, name, kind);
+    private VariableInfo FindOrCreateVariable(string name, VariableKind kind, ScopeKind upTo = ScopeKind.Global)
+    {
+        if (_scopes.Peek().FindVariable(name, upTo) is { } local)
+            return local;
+
+        return CreateVariable(kind switch
+        {
+            VariableKind.Iteration => FindScope(ScopeKind.Loop),
+            VariableKind.Parameter => FindScope(ScopeKind.Function),
+            VariableKind.Local => _scopes.Peek(),
+            VariableKind.Global => _globalScope,
+            _ => null,
+        } ?? _globalScope, name, kind);
+    }
 
     public override MirNode VisitStatementList(StatementList node)
     {
