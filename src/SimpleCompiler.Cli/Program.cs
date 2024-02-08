@@ -9,6 +9,7 @@ using Loretta.CodeAnalysis.Text;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.Compiler;
 using SimpleCompiler.MIR;
+using SimpleCompiler.MIR.Ssa;
 using SimpleCompiler.Runtime;
 using Tsu.Numerics;
 
@@ -77,14 +78,28 @@ app.AddCommand("build", async (
     Console.WriteLine($"Syntax lowering done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
-        await dumpMir(path, 1, mirTree, ctx.CancellationToken);
+    {
+        var ssaComputer = new SsaComputer(mirTree);
+        s.Restart();
+        ssaComputer.Compute();
+        Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
+
+        await dumpMir(path, 1, mirTree, ssaComputer, ctx.CancellationToken);
+    }
 
     s.Restart();
     mirTree = compilation.OptimizeLoweredSyntax();
     Console.WriteLine($"Optimizing done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
-        await dumpMir(path, 2, mirTree, ctx.CancellationToken);
+    {
+        var ssaComputer = new SsaComputer(mirTree);
+        s.Restart();
+        ssaComputer.Compute();
+        Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
+
+        await dumpMir(path, 2, mirTree, ssaComputer, ctx.CancellationToken);
+    }
 
     s.Restart();
     var instrs = compilation.LowerMir();
@@ -124,12 +139,12 @@ app.AddCommand("build", async (
 
 await app.RunAsync();
 
-static async Task dumpMir(string path, int num, MirTree tree, CancellationToken cancellationToken = default)
+static async Task dumpMir(string path, int num, MirTree tree, SsaComputer? ssaComputer = null, CancellationToken cancellationToken = default)
 {
     using var writer = File.CreateText(Path.ChangeExtension(path, $"{num}.mir"));
 
     var indentedWriter = new IndentedTextWriter(writer, "    ");
-    var debugWriter = new MirDebugPrinter(indentedWriter);
+    var debugWriter = new MirDebugPrinter(indentedWriter, ssaComputer);
     indentedWriter.Write("Global Scope: ");
     debugWriter.WriteScope(tree.GlobalScope);
     indentedWriter.WriteLine();

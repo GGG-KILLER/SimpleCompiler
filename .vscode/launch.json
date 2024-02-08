@@ -11,7 +11,7 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/src/SimpleCompiler.Cli/bin/Debug/net8.0/SimpleCompiler.Cli.dll",
-            "args": ["samples/simple.lua"],
+            "args": ["build", "-d", "samples/simple.lua"],
             "cwd": "${workspaceFolder}/src/SimpleCompiler.Cli",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",

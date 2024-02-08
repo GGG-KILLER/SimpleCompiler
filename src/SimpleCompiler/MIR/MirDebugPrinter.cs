@@ -1,9 +1,10 @@
 using System.CodeDom.Compiler;
 using SimpleCompiler.Helpers;
+using SimpleCompiler.MIR.Ssa;
 
 namespace SimpleCompiler.MIR;
 
-public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
+public sealed class MirDebugPrinter(IndentedTextWriter writer, SsaComputer? ssaComputer = null) : MirWalker
 {
     public void WriteScope(ScopeInfo? scopeInfo)
     {
@@ -75,9 +76,9 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
         writer.Write(constant.ConstantKind switch
         {
             ConstantKind.Nil => "nil",
-            ConstantKind.Boolean => ((bool)constant.Value).ToString(),
-            ConstantKind.Number => ((double)constant.Value).ToString(),
-            ConstantKind.String => '"' + (string)constant.Value + '"',
+            ConstantKind.Boolean => ((bool) constant.Value!).ToString(),
+            ConstantKind.Number => ((double) constant.Value!).ToString(),
+            ConstantKind.String => '"' + (string) constant.Value! + '"',
             _ => throw ExceptionUtil.Unreachable
         });
     }
@@ -139,8 +140,27 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer) : MirWalker
 
     public override void VisitVariableExpression(VariableExpression variable)
     {
+        var version = ssaComputer?.GetVariableVersion(variable);
         writer.Write(variable.VariableInfo.Name);
-        writer.Write($" (0x{variable.VariableInfo.GetHashCode():X})");
+        if (ssaComputer is not null)
+        {
+            if (version is null)
+                writer.Write("\u2099\u2092\u2099\u2091");
+            else
+                writer.Write(version.Version.ToSubscript());
+        }
+        writer.Write($" (0x{variable.VariableInfo.GetHashCode():X}");
+        if (ssaComputer is not null
+            && (variable.Parent is not AssignmentStatement assignment
+                || !assignment.Assignees.Contains(variable)))
+        {
+            writer.Write(" | ");
+            if (version is null)
+                writer.Write("?");
+            else
+                Visit(version.Value);
+        }
+        writer.Write(')');
     }
 
     public override void VisitDiscardExpression(DiscardExpression discard)

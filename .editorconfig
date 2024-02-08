@@ -276,3 +276,6 @@ dotnet_diagnostic.RS0026.severity = none
 
 # IDE0002: Simplify Member Access
 dotnet_diagnostic.IDE0002.severity = suggestion
+
+# CA1826: Use property instead of Linq Enumerable method (exclude .XOrDefault methods)
+dotnet_code_quality.CA1826.exclude_ordefault_methods = true
