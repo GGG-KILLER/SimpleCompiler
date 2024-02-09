@@ -3,8 +3,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Sigil;
 using SimpleCompiler.Helpers;
-using SimpleCompiler.LIR;
-using SimpleCompiler.MIR;
+using SimpleCompiler.IR;
 using SimpleCompiler.Runtime;
 using Label = Sigil.Label;
 
@@ -25,8 +24,8 @@ public sealed class ScopeStack(ModuleBuilder moduleBuilder)
         return scope;
     }
 
-    public void AssignLabel(Location location, Label label) =>
-        Current.AssignLabel(location, label);
+    // public void AssignLabel(Location location, Label label) =>
+    //     Current.AssignLabel(location, label);
 
     public sealed class Scope : IDisposable
     {
@@ -37,7 +36,7 @@ public sealed class ScopeStack(ModuleBuilder moduleBuilder)
         private readonly Scope? _parent;
         private int _counter;
 
-        public Dictionary<Location, Label> Labels { get; } = [];
+        // public Dictionary<Location, Label> Labels { get; } = [];
         public Dictionary<VariableInfo, Local> Locals { get; } = [];
         private TypeBuilder? _callsiteCache;
 
@@ -49,15 +48,15 @@ public sealed class ScopeStack(ModuleBuilder moduleBuilder)
             _parent = parent;
         }
 
-        public void AssignLabel(Location location, Label label) =>
-            Labels.Add(location, label);
+        // public void AssignLabel(Location location, Label label) =>
+        //     Labels.Add(location, label);
 
-        public Label GetOrCreateLabel(Emit method, Location location)
-        {
-            if (!Labels.TryGetValue(location, out var label))
-                Labels[location] = label = method.DefineLabel();
-            return label;
-        }
+        // public Label GetOrCreateLabel(Emit method, Location location)
+        // {
+        //     if (!Labels.TryGetValue(location, out var label))
+        //         Labels[location] = label = method.DefineLabel();
+        //     return label;
+        // }
 
         public Local? GetLocal(VariableInfo variable) =>
             Locals.GetValueOrDefault(variable) ?? _parent?.GetLocal(variable);

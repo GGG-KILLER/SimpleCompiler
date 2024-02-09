@@ -1,30 +1,28 @@
 ﻿using Loretta.CodeAnalysis;
 using SimpleCompiler.Emit;
-using SimpleCompiler.LIR;
-using SimpleCompiler.MIR;
-using SimpleCompiler.MIR.Optimizations;
+using SimpleCompiler.IR;
+using SimpleCompiler.IR.Optimizations;
 
 namespace SimpleCompiler.Compiler;
 
 public sealed class Compilation(SyntaxTree syntaxTree)
 {
     private readonly SyntaxTree _syntaxTree = syntaxTree;
-    private MirTree? _mirRoot;
-    private MirTree? _optimizedMirRoot;
-    private IReadOnlyList<Instruction>? _lir;
+    private IrTree? _mirRoot;
+    private IrTree? _optimizedIrRoot;
 
-    public MirTree LowerSyntax()
+    public IrTree LowerSyntax()
     {
         if (_mirRoot is null)
         {
-            Interlocked.CompareExchange(ref _mirRoot, MirTree.FromSyntax(_syntaxTree)!, null);
+            Interlocked.CompareExchange(ref _mirRoot, IrTree.FromSyntax(_syntaxTree)!, null);
         }
         return _mirRoot;
     }
 
-    public MirTree OptimizeLoweredSyntax(Action<MirNode, string>? onOptimizationRan = null)
+    public IrTree OptimizeLoweredSyntax(Action<IrNode, string>? onOptimizationRan = null)
     {
-        if (_optimizedMirRoot is null)
+        if (_optimizedIrRoot is null)
         {
             var tree = LowerSyntax();
             var root = tree.Root;
@@ -39,22 +37,12 @@ public sealed class Compilation(SyntaxTree syntaxTree)
             root = new ScopeRemapper(globalScope).Visit(root)!;
             onOptimizationRan?.Invoke(root, "Scope Remapping");
 
-            Interlocked.CompareExchange(ref _optimizedMirRoot, MirTree.FromRoot(globalScope, root), null);
+            Interlocked.CompareExchange(ref _optimizedIrRoot, IrTree.FromRoot(globalScope, root), null);
         }
-        return _optimizedMirRoot;
-    }
-
-    public IEnumerable<Instruction> LowerMir()
-    {
-        if (_lir is null)
-        {
-            var node = OptimizeLoweredSyntax().Root;
-            Interlocked.CompareExchange(ref _lir, MirLowerer.Lower(node), null);
-        }
-        return _lir;
+        return _optimizedIrRoot;
     }
 
     public async Task EmitAsync(string name, Stream stream, TextWriter? cilDebugWriter = null) =>
-        await Emitter.EmitAsync(name, OptimizeLoweredSyntax().GlobalScope.KnownGlobals, stream, LowerMir(), cilDebugWriter)
+        await Emitter.EmitAsync(name, OptimizeLoweredSyntax(), stream, cilDebugWriter)
                      .ConfigureAwait(false);
 }

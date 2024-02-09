@@ -8,8 +8,8 @@ using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Text;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.Compiler;
-using SimpleCompiler.MIR;
-using SimpleCompiler.MIR.Ssa;
+using SimpleCompiler.IR;
+using SimpleCompiler.IR.Ssa;
 using SimpleCompiler.Runtime;
 using Tsu.Numerics;
 
@@ -83,7 +83,7 @@ app.AddCommand("build", async (
         mirTree.Ssa.Compute();
         Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
 
-        await dumpMir(path, 1, mirTree, ctx.CancellationToken);
+        await dumpIr(path, 1, mirTree, ctx.CancellationToken);
     }
 
     s.Restart();
@@ -92,30 +92,20 @@ app.AddCommand("build", async (
     mirTree = compilation.OptimizeLoweredSyntax((root, stage) =>
     {
         Console.WriteLine($"  {c}: {stage}");
-        dumpMir(path, c++, MirTree.FromRoot(mirTree.GlobalScope, root), ctx.CancellationToken).GetAwaiter().GetResult();
+        dumpIr(path, c++, IrTree.FromRoot(mirTree.GlobalScope, root), ctx.CancellationToken).GetAwaiter().GetResult();
     });
     Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
     {
+        using (var textWriter = File.CreateText(Path.ChangeExtension(path, $"mir.lua")))
+            IrLifter.Lift(mirTree.Root).WriteTo(textWriter);
+
         s.Restart();
         mirTree.Ssa.Compute();
         Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
 
-        await dumpMir(path, c++, mirTree, ctx.CancellationToken);
-    }
-
-    s.Restart();
-    var instrs = compilation.LowerMir();
-    Console.WriteLine($"MIR lowering done in {Duration.Format(s.Elapsed.Ticks)}");
-    if (debug)
-    {
-        using var writer = File.CreateText(Path.ChangeExtension(path, ".lir"));
-        foreach (var instr in instrs)
-        {
-            await writer.WriteLineAsync(instr.ToRepr().AsMemory(), ctx.CancellationToken)
-                        .ConfigureAwait(false);
-        }
+        await dumpIr(path, c++, mirTree, ctx.CancellationToken);
     }
 
     var outputDir = Path.GetDirectoryName(path);
@@ -143,12 +133,12 @@ app.AddCommand("build", async (
 
 await app.RunAsync();
 
-static async Task dumpMir(string path, int num, MirTree tree, CancellationToken cancellationToken = default)
+static async Task dumpIr(string path, int num, IrTree tree, CancellationToken cancellationToken = default)
 {
     using var writer = File.CreateText(Path.ChangeExtension(path, $"{num}.mir"));
 
     var indentedWriter = new IndentedTextWriter(writer, "    ");
-    var debugWriter = new MirDebugPrinter(indentedWriter, tree.Ssa);
+    var debugWriter = new IrDebugPrinter(indentedWriter, tree.Ssa);
     indentedWriter.Write("Global Scope: ");
     debugWriter.WriteScope(tree.GlobalScope);
     indentedWriter.WriteLine();
