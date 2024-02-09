@@ -79,26 +79,30 @@ app.AddCommand("build", async (
 
     if (debug)
     {
-        var ssaComputer = new SsaComputer(mirTree);
         s.Restart();
-        ssaComputer.Compute();
+        mirTree.Ssa.Compute();
         Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
 
-        await dumpMir(path, 1, mirTree, ssaComputer, ctx.CancellationToken);
+        await dumpMir(path, 1, mirTree, ctx.CancellationToken);
     }
 
     s.Restart();
-    mirTree = compilation.OptimizeLoweredSyntax();
-    Console.WriteLine($"Optimizing done in {Duration.Format(s.Elapsed.Ticks)}");
+    Console.WriteLine($"Optimizing...");
+    var c = 2;
+    mirTree = compilation.OptimizeLoweredSyntax((root, stage) =>
+    {
+        Console.WriteLine($"  {c}: {stage}");
+        dumpMir(path, c++, MirTree.FromRoot(mirTree.GlobalScope, root), ctx.CancellationToken).GetAwaiter().GetResult();
+    });
+    Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
     {
-        var ssaComputer = new SsaComputer(mirTree);
         s.Restart();
-        ssaComputer.Compute();
+        mirTree.Ssa.Compute();
         Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
 
-        await dumpMir(path, 2, mirTree, ssaComputer, ctx.CancellationToken);
+        await dumpMir(path, c++, mirTree, ctx.CancellationToken);
     }
 
     s.Restart();
@@ -139,12 +143,12 @@ app.AddCommand("build", async (
 
 await app.RunAsync();
 
-static async Task dumpMir(string path, int num, MirTree tree, SsaComputer? ssaComputer = null, CancellationToken cancellationToken = default)
+static async Task dumpMir(string path, int num, MirTree tree, CancellationToken cancellationToken = default)
 {
     using var writer = File.CreateText(Path.ChangeExtension(path, $"{num}.mir"));
 
     var indentedWriter = new IndentedTextWriter(writer, "    ");
-    var debugWriter = new MirDebugPrinter(indentedWriter, ssaComputer);
+    var debugWriter = new MirDebugPrinter(indentedWriter, tree.Ssa);
     indentedWriter.Write("Global Scope: ");
     debugWriter.WriteScope(tree.GlobalScope);
     indentedWriter.WriteLine();
