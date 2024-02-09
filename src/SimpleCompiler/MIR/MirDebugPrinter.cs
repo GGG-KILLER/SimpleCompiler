@@ -150,16 +150,6 @@ public sealed class MirDebugPrinter(IndentedTextWriter writer, SsaComputer? ssaC
                 writer.Write(version.Version.ToSubscript());
         }
         writer.Write($" (0x{variable.VariableInfo.GetHashCode():X}");
-        if (ssaComputer is not null
-            && (variable.Parent is not AssignmentStatement assignment
-                || !assignment.Assignees.Contains(variable)))
-        {
-            writer.Write(" | ");
-            if (version is null)
-                writer.Write("?");
-            else
-                Visit(version.Value);
-        }
         writer.Write(')');
     }
 

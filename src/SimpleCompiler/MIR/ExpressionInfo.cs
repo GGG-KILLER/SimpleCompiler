@@ -5,6 +5,15 @@ public static class ExpressionExtensions
     public static bool IsConstant(this Expression? expression) =>
         IsConstVisitor.s_intance.Visit(expression);
 
+    public static bool IsAssignee(this Expression? expression)
+    {
+        if (expression?.Parent is null)
+            return false;
+
+        return expression.Parent is AssignmentStatement assignment
+            && assignment.Assignees.Contains(expression);
+    }
+
     private sealed class IsConstVisitor : MirVisitor<bool>
     {
         public static readonly IsConstVisitor s_intance = new();
