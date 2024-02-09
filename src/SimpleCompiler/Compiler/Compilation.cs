@@ -22,19 +22,22 @@ public sealed class Compilation(SyntaxTree syntaxTree)
         return _mirRoot;
     }
 
-    public MirTree OptimizeLoweredSyntax()
+    public MirTree OptimizeLoweredSyntax(Action<MirNode, string>? onOptimizationRan = null)
     {
         if (_optimizedMirRoot is null)
         {
             var tree = LowerSyntax();
             var root = tree.Root;
 
-            root = new Inliner().Visit(root);
+            root = new Inliner(tree).Visit(root);
+            onOptimizationRan?.Invoke(root, "Inlining");
 
             root = ConstantFolder.ConstantFold(root);
+            onOptimizationRan?.Invoke(root, "Constant Folding");
 
             var globalScope = new ScopeInfo(ScopeKind.Global, null);
             root = new ScopeRemapper(globalScope).Visit(root)!;
+            onOptimizationRan?.Invoke(root, "Scope Remapping");
 
             Interlocked.CompareExchange(ref _optimizedMirRoot, MirTree.FromRoot(globalScope, root), null);
         }
