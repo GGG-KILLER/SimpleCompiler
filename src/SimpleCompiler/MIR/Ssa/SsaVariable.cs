@@ -16,10 +16,10 @@ public sealed class SsaVariable
     public IReadOnlyList<SsaBlock> ReferencedBlocks => _referencedBlocks;
     public IReadOnlyList<SsaValueVersion> ValueVersions => _valueVersions;
 
-    internal void AddValueVersion(MirNode write, MirNode value) =>
+    internal void AddValueVersion(MirNode write, Expression value) =>
         _valueVersions.Add(new SsaValueVersion(_valueVersions.Count + 1, this, write, value));
 
-    internal void AddPhiVersion(MirNode write, IEnumerable<MirNode> values) =>
+    internal void AddPhiVersion(MirNode write, IEnumerable<Expression> values) =>
         _valueVersions.Add(new SsaValueVersion(_valueVersions.Count + 1, this, write, values));
 
     internal void AddReferencedBlock(SsaBlock block)

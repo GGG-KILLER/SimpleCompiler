@@ -1,10 +1,11 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SimpleCompiler.MIR.Ssa;
 
 public sealed class SsaValueVersion
 {
-    internal SsaValueVersion(int version, SsaVariable variable, MirNode write, MirNode value)
+    internal SsaValueVersion(int version, SsaVariable variable, MirNode write, Expression value)
     {
         Version = version;
         Variable = variable;
@@ -13,7 +14,7 @@ public sealed class SsaValueVersion
         PossibleValues = [value];
     }
 
-    internal SsaValueVersion(int version, SsaVariable variable, MirNode writeLocation, IEnumerable<MirNode> values)
+    internal SsaValueVersion(int version, SsaVariable variable, MirNode writeLocation, IEnumerable<Expression> values)
     {
         Version = version;
         Variable = variable;
@@ -27,7 +28,8 @@ public sealed class SsaValueVersion
 
     public MirNode WriteLocation { get; }
 
+    [MemberNotNullWhen(false, nameof(Value))]
     public bool IsPhi => Value is null && PossibleValues.Length > 1;
-    public MirNode? Value { get; }
-    public ImmutableArray<MirNode> PossibleValues { get; }
+    public Expression? Value { get; }
+    public ImmutableArray<Expression> PossibleValues { get; }
 }
