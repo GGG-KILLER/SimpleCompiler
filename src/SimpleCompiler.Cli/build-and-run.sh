@@ -18,7 +18,7 @@ while [ $# -gt 0 ]; do
         fi
     done
 
-    if $OPTIMIZE; then
+    if [ "$OPTIMIZE" = true ]; then
         echo "$FILE_DIR/$FILE_NAME.lua (Release):"
         dotnet run -c Debug -v quiet -- -Od "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
         dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
