@@ -83,9 +83,7 @@ public readonly struct LuaValue
         return Kind switch
         {
             ValueKind.Long => _valueUnion.Long,
-            ValueKind.Double => Math.Truncate(_valueUnion.Double) == _valueUnion.Double
-                                ? (int)Math.Truncate(_valueUnion.Double)
-                                : throw new LuaException($"Number {_valueUnion.Double} is not a valid integer value."),
+            ValueKind.Double => LuaOperations.ToInt(_valueUnion.Double),
             ValueKind.String => long.TryParse(_strValue,
                                                 NumberStyles.AllowLeadingSign | NumberStyles.AllowExponent,
                                                 CultureInfo.InvariantCulture, out var num)

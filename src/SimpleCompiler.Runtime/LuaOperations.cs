@@ -34,4 +34,29 @@ public static partial class LuaOperations
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static LuaValue Call(LuaValue callee, ReadOnlySpan<LuaValue> args) => callee.AsFunction()(args);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static LuaValue CreateValue(object? value)
+    {
+        return value switch
+        {
+            true => new LuaValue(true),
+            false => new LuaValue(false),
+            null => new LuaValue(),
+
+            LuaValue luaValue => luaValue,
+            string str => new LuaValue(str),
+            long i64 => new LuaValue(i64),
+            double f64 => new LuaValue(f64),
+            LuaFunction function => new LuaValue(function),
+
+            _ => throw new InvalidOperationException($"Cannot convert from {value.GetType()} to a LuaValue."),
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long ToInt(double value) =>
+        (long) value == value
+        ? (long) value
+        : throw new LuaException("Number does not have an integer representation.");
 }
