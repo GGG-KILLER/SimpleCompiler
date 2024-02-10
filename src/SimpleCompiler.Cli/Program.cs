@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Cocona;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Text;
+using SimpleCompiler.Cli;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.Compiler;
 using SimpleCompiler.IR;
@@ -32,10 +33,12 @@ await CoconaLiteApp.RunAsync(async (
         return 1;
     }
 
+    var objDir = ObjectFileManager.Create(Path.Combine(Path.GetDirectoryName(path) ?? ".", "obj"));
+
     var name = Path.GetFileNameWithoutExtension(path);
     TextWriter? cilDebugWriter = null;
     if (debug)
-        cilDebugWriter = File.CreateText(Path.ChangeExtension(path, ".cil"));
+        cilDebugWriter = objDir.CreateText(Path.ChangeExtension(path, ".cil"));
     var compilation = new Compilation(tree);
 
     s.Restart();
@@ -48,7 +51,7 @@ await CoconaLiteApp.RunAsync(async (
         mirTree.Ssa.Compute();
         Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
 
-        await dumpIr(path, 1, mirTree, ctx.CancellationToken);
+        await dumpIr(objDir, name, 1, mirTree, ctx.CancellationToken);
     }
 
     s.Restart();
@@ -57,20 +60,23 @@ await CoconaLiteApp.RunAsync(async (
     mirTree = compilation.OptimizeLoweredSyntax((root, stage) =>
     {
         Console.WriteLine($"  {c}: {stage}");
-        dumpIr(path, c++, IrTree.FromRoot(mirTree.GlobalScope, root), ctx.CancellationToken).GetAwaiter().GetResult();
+
+        dumpIr(objDir, name, c++, IrTree.FromRoot(mirTree.GlobalScope, root), ctx.CancellationToken)
+            .GetAwaiter()
+            .GetResult();
     });
     Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
     {
-        using (var textWriter = File.CreateText(Path.ChangeExtension(path, $"mir.lua")))
+        using (var textWriter = objDir.CreateText(Path.ChangeExtension(path, $"mir.lua")))
             IrLifter.Lift(mirTree.Root).WriteTo(textWriter);
 
         s.Restart();
         mirTree.Ssa.Compute();
         Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
 
-        await dumpIr(path, c++, mirTree, ctx.CancellationToken);
+        await dumpIr(objDir, name, c++, mirTree, ctx.CancellationToken);
     }
 
     var outputDir = Path.GetDirectoryName(path);
@@ -96,9 +102,9 @@ await CoconaLiteApp.RunAsync(async (
     return 0;
 });
 
-static async Task dumpIr(string path, int num, IrTree tree, CancellationToken cancellationToken = default)
+static async Task dumpIr(ObjectFileManager objectFileManager, string name, int num, IrTree tree, CancellationToken cancellationToken = default)
 {
-    using var writer = File.CreateText(Path.ChangeExtension(path, $"{num}.mir"));
+    using var writer = objectFileManager.CreateText(Path.ChangeExtension(name, $"{num}.mir"));
 
     var indentedWriter = new IndentedTextWriter(writer, "    ");
     var debugWriter = new IrDebugPrinter(indentedWriter, tree.Ssa);
