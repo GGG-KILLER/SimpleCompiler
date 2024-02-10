@@ -42,7 +42,7 @@ public sealed class Compilation(SyntaxTree syntaxTree)
         return _optimizedIrRoot;
     }
 
-    public async Task EmitAsync(string name, Stream stream, TextWriter? cilDebugWriter = null) =>
-        await Emitter.EmitAsync(name, OptimizeLoweredSyntax(), stream, cilDebugWriter)
+    public async Task EmitAsync(string name, Stream stream, bool optimize = true, TextWriter? cilDebugWriter = null) =>
+        await Emitter.EmitAsync(name, optimize ? OptimizeLoweredSyntax() : LowerSyntax(), stream, cilDebugWriter)
                      .ConfigureAwait(false);
 }
