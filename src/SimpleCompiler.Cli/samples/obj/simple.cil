@@ -29,8 +29,7 @@ newobj Void .ctor(Double)
 stelem SimpleCompiler.Runtime.LuaValue
 dup
 ldc.i4.3
-
-ldloc.0 // SimpleCompiler.Runtime.LuaValue d_B94C71
+newobj Void .ctor()
 stelem SimpleCompiler.Runtime.LuaValue
 dup
 ldc.i4.4
@@ -44,5 +43,12 @@ newobj Void .ctor(Double)
 stelem SimpleCompiler.Runtime.LuaValue
 newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
 call SimpleCompiler.Runtime.LuaValue Call(SimpleCompiler.Runtime.LuaValue, System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
+pop
+newobj Void .ctor()
+ret
+
+----------- .NET Entry Point ----------
+newobj Void .ctor()
+call toplevel
 pop
 ret

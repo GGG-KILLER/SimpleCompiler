@@ -1,0 +1,39 @@
+ldsfld SimpleCompiler.Runtime.LuaValue Print
+ldc.i4.5
+newarr SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.0
+ldc.r8 1
+newobj Void .ctor(Double)
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.1
+ldc.r8 2
+newobj Void .ctor(Double)
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.2
+ldc.r8 3
+newobj Void .ctor(Double)
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.3
+ldc.r8 3
+newobj Void .ctor(Double)
+stelem SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.4
+ldc.r8 6
+newobj Void .ctor(Double)
+stelem SimpleCompiler.Runtime.LuaValue
+newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
+call SimpleCompiler.Runtime.LuaValue Call(SimpleCompiler.Runtime.LuaValue, System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
+pop
+newobj Void .ctor()
+ret
+
+----------- .NET Entry Point ----------
+newobj Void .ctor()
+call toplevel
+pop
+ret
