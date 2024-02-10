@@ -172,7 +172,7 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<IrNode>
             or BinaryOperationKind.Subtraction
             or BinaryOperationKind.Multiplication
             or BinaryOperationKind.Division
-            or BinaryOperationKind.Modulo => ResultKind.Int | ResultKind.Double,
+            or BinaryOperationKind.Modulo => left.ResultKind is ResultKind.Int && right.ResultKind is ResultKind.Int ? ResultKind.Int : ResultKind.Double,
 
             BinaryOperationKind.Exponentiation => ResultKind.Double,
 
@@ -249,12 +249,14 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<IrNode>
 
     public override IrNode? VisitUnaryExpression(UnaryExpressionSyntax node)
     {
+        var operand = (Expression) Visit(node.Operand)!;
+
         var resKind = node.Kind() switch
         {
             SyntaxKind.BitwiseNotExpression => ResultKind.Int,
             SyntaxKind.LengthExpression => ResultKind.Int,
             SyntaxKind.LogicalNotExpression => ResultKind.Bool,
-            SyntaxKind.UnaryMinusExpression => ResultKind.Int | ResultKind.Double,
+            SyntaxKind.UnaryMinusExpression => operand.ResultKind == ResultKind.Int ? ResultKind.Int : ResultKind.Double,
             _ => ResultKind.Any
         };
 
@@ -266,8 +268,6 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<IrNode>
             SyntaxKind.UnaryMinusExpression => UnaryOperationKind.NumericalNegation,
             _ => throw ExceptionUtil.Unreachable,
         };
-
-        var operand = (Expression) Visit(node.Operand)!;
 
         return IrFactory.UnaryOperationExpression(node.GetReference(), resKind, opKind, operand);
     }
