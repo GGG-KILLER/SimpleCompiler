@@ -1,53 +1,18 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using System.CodeDom.Compiler;
+﻿using System.CodeDom.Compiler;
 using System.Diagnostics;
-using System.Reflection;
 using Cocona;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Text;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.Compiler;
 using SimpleCompiler.IR;
-using SimpleCompiler.IR.Ssa;
 using SimpleCompiler.Runtime;
 using Tsu.Numerics;
 
-var app = CoconaLiteApp.Create(args);
-
-app.AddCommand("run", (
-    [Argument][FileExists] string path
-) =>
-{
-    var assembly = Assembly.LoadFrom(path);
-    var program = assembly.GetType("Program");
-    if (program is null)
-    {
-        Console.Error.WriteLine("Unable to find Program entry class.");
-        return 1;
-    }
-    var entry = program.GetMethod("Main");
-    if (entry is null)
-    {
-        Console.Error.WriteLine("Unable to find Program.Main entry class.");
-        return 2;
-    }
-
-    try
-    {
-        entry.Invoke(null, null);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(ex);
-    }
-
-    return 0;
-});
-
-app.AddCommand("build", async (
+await CoconaLiteApp.RunAsync(async (
     [Argument][FileExists] string path,
     [Option('d')] bool debug,
+    [Option('O')] bool optimize,
     CoconaAppContext ctx) =>
 {
     SourceText sourceText;
@@ -113,7 +78,7 @@ app.AddCommand("build", async (
     Console.WriteLine($"Compiling into {dllPath}...");
     using (var stream = File.Open(dllPath, FileMode.Create, FileAccess.Write))
     {
-        await compilation.EmitAsync(name, stream, cilDebugWriter)
+        await compilation.EmitAsync(name, stream, optimize, cilDebugWriter)
                          .ConfigureAwait(false);
     }
     await WriteRuntimeConfig(path);
@@ -130,8 +95,6 @@ app.AddCommand("build", async (
 
     return 0;
 });
-
-await app.RunAsync();
 
 static async Task dumpIr(string path, int num, IrTree tree, CancellationToken cancellationToken = default)
 {
