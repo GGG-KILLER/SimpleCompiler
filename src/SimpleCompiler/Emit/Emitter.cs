@@ -5,7 +5,6 @@ using Sigil;
 using SimpleCompiler.Runtime;
 using SimpleCompiler.IR;
 using Lokad.ILPack;
-using System.Reflection.Metadata;
 
 namespace SimpleCompiler.Emit;
 
@@ -21,9 +20,6 @@ internal sealed partial class Emitter
         ModuleBuilder moduleBuilder,
         TextWriter? cilDebugWriter)
     {
-        _scopeStack = new(moduleBuilder);
-        _scopeStack.NewScope();
-
         _moduleBuilder = moduleBuilder;
         _programBuilder = moduleBuilder.DefineType(
             "Program",

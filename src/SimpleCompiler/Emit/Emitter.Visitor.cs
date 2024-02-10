@@ -11,14 +11,13 @@ namespace SimpleCompiler.Emit;
 
 internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKind>
 {
-    private readonly ScopeStack _scopeStack;
     private readonly Stack<MethodContext> _contextStack = [];
     private MethodContext _context = null!;
 
     [MemberNotNull(nameof(_context))]
     public MethodContext PushMethod(string name)
     {
-        _context = new MethodContext(Emit<Func<LuaValue, LuaValue>>.BuildStaticMethod(
+        _context = new MethodContext(_moduleBuilder, Emit<Func<LuaValue, LuaValue>>.BuildStaticMethod(
             _programBuilder,
             name,
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static));
@@ -44,14 +43,8 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
 
     public override ResultKind VisitStatementList(StatementList node, EmitOptions options)
     {
-        ScopeStack.Scope? scope = null;
-        if (node.ScopeInfo is not null)
-            scope = _scopeStack.NewScope();
-
         foreach (var statement in node.Statements)
             Visit(statement, EmitOptions.None);
-
-        scope?.Dispose();
 
         return ResultKind.None;
     }
@@ -387,7 +380,7 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
         }
         else
         {
-            var local = _scopeStack.GetLocal(node.VariableInfo);
+            var local = _context.Scope.GetLocal(node.VariableInfo);
             if (local is null)
             {
                 if (options.NeedsAddr())
@@ -418,7 +411,7 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
             case IrKind.VariableExpression:
             {
                 var varNode = Unsafe.As<VariableExpression>(assignee);
-                var local = _scopeStack.GetOrCreateLocal(_context.Method, varNode.VariableInfo);
+                var local = _context.Scope.GetOrCreateLocal(_context.Method, varNode.VariableInfo);
                 _context.Method.StoreLocal(local);
                 break;
             }

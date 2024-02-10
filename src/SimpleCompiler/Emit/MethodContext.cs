@@ -1,17 +1,20 @@
 
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Sigil;
 using SimpleCompiler.Runtime;
 
 namespace SimpleCompiler.Emit;
 
-internal sealed class MethodContext(Emit<Func<LuaValue, LuaValue>> method)
+internal sealed class MethodContext(ModuleBuilder moduleBuilder, Emit<Func<LuaValue, LuaValue>> method)
 {
     private static ConditionalWeakTable<Local, MethodContext> _localOwners = [];
 
     private readonly Stack<Local> _luaValueSlotPool = [];
 
     public readonly Emit<Func<LuaValue, LuaValue>> Method = method;
+
+    public readonly Scope Scope = new(moduleBuilder);
 
     public Local DangerousRentSlot()
     {
