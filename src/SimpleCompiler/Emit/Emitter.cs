@@ -1,13 +1,13 @@
-namespace SimpleCompiler.Emit;
 
 using System.Reflection;
 using System.Reflection.Emit;
 using Sigil;
-using Sigil.NonGeneric;
 using SimpleCompiler.Runtime;
 using SimpleCompiler.IR;
 using Lokad.ILPack;
-using System.Threading.Tasks;
+using System.Reflection.Metadata;
+
+namespace SimpleCompiler.Emit;
 
 internal sealed partial class Emitter
 {
@@ -34,19 +34,54 @@ internal sealed partial class Emitter
 
     private void CompileProgram(out Type programType, out MethodInfo entryPoint)
     {
-        var method = PushMethod(typeof(void), "Main", []);
-
-        Visit(_tree.Root);
-        method.Return();
-
-        if (!ReferenceEquals(PopMethod(), method))
-            throw new InvalidOperationException("Popped method is not the entry method.");
-
-        _cilDebugWriter?.WriteLine(method.Instructions());
-        method.CreateMethod(OptimizationOptions.All);
+        var luaEntryPoint = EmitLuaEntryPoint();
+        var dotnetEntryPoint = EmitDotnetEntryPoint(luaEntryPoint);
 
         programType = _programBuilder.CreateType();
-        entryPoint = programType.GetMethod("Main", [])!;
+        entryPoint = programType.GetMethod(dotnetEntryPoint.Name, dotnetEntryPoint.GetParameters().Select(x => x.ParameterType).ToArray())!;
+    }
+
+    private Emit<Func<LuaValue, LuaValue>> EmitLuaEntryPoint()
+    {
+        var context = PushMethod("toplevel");
+
+        Visit(_tree.Root, EmitOptions.None);
+
+        // Return nil initially while we don't have CFA adding returns where necessary.
+        context.Method.NewObject<LuaValue>();
+        context.Method.Return();
+
+        if (!ReferenceEquals(PopMethod(), context))
+            throw new InvalidOperationException("Popped context is not the entry method.");
+
+        _cilDebugWriter?.WriteLine(context.Method.Instructions());
+        context.Method.CreateMethod(OptimizationOptions.All);
+        return context.Method;
+    }
+
+    private MethodBuilder EmitDotnetEntryPoint(Emit<Func<LuaValue, LuaValue>> luaEntryPoint)
+    {
+        var method = Emit<Action<string[]>>.BuildStaticMethod(
+            _programBuilder,
+            "Main",
+            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static);
+
+        // TODO: When we have tables, implement args conversion.
+        method.NewObject<LuaValue>();
+
+        method.Call(luaEntryPoint);
+
+        // Pop entry point return since nothing will use it.
+        method.Pop();
+
+        // End method with return.
+        method.Return();
+
+        _cilDebugWriter?.WriteLine("");
+        _cilDebugWriter?.WriteLine("----------- .NET Entry Point ----------");
+        _cilDebugWriter?.WriteLine(method.Instructions());
+
+        return method.CreateMethod(OptimizationOptions.All);
     }
 
     public static async Task EmitAsync(string name, IrTree tree, Stream stream, TextWriter? cilDebugWriter = null)
@@ -61,7 +96,7 @@ internal sealed partial class Emitter
         var gen = new AssemblyGenerator();
         var bytes = gen.GenerateAssemblyBytes(
             assemblyBuilder,
-            [typeof(string).Assembly, typeof(LuaValue).Assembly],
+            [assemblyBuilder],
             entryPoint);
         await stream.WriteAsync(bytes.AsMemory())
                     .ConfigureAwait(false);
