@@ -14,6 +14,6 @@ ret
 
 ----------- .NET Entry Point ----------
 newobj Void .ctor()
-call toplevel
+call TopLevel
 pop
 ret

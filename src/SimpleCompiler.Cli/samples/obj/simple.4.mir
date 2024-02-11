@@ -1,7 +1,7 @@
 Global Scope: 0x1AE3E2 (Variables: [0x2903251, 0x234B191, 0x7B9BBC], Scopes: [0x1A6DD4A])
-0x3DB70E2 (Variables: [], Scopes: [0x3DBC9A8]) {
-    0x3DBC9A8 (Variables: [], Scopes: []) {
-        printₙₒₙₑ (0x212B849)(22);
+0x1B81064 (Variables: [], Scopes: [0xBA1D02]) {
+    0xBA1D02 (Variables: [], Scopes: []) {
+        printₙₒₙₑ (0x2629BA0)(22);
     }
-    printₙₒₙₑ (0x212B849)(7, 4, 11, dₙₒₙₑ (0x1EE05F), 11, 15);
+    printₙₒₙₑ (0x2629BA0)(7, 4, 11, dₙₒₙₑ (0x2B60FA0), 11, 15);
 }
