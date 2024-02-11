@@ -4,7 +4,7 @@ using Sigil;
 using SimpleCompiler.IR;
 using SimpleCompiler.Runtime;
 
-namespace SimpleCompiler.Emit;
+namespace SimpleCompiler.Backends.Cil;
 
 internal sealed class Scope(ModuleBuilder moduleBuilder)
 {

@@ -1,33 +1,24 @@
-
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Sigil;
 using SimpleCompiler.Runtime;
 
-namespace SimpleCompiler.Emit;
+namespace SimpleCompiler.Backends.Cil;
 
-internal sealed class MethodContext(ModuleBuilder moduleBuilder, Emit<Func<LuaValue, LuaValue>> method)
+internal sealed class SlotPool(Emit<Func<LuaValue, LuaValue>> method)
 {
-    private static ConditionalWeakTable<Local, MethodContext> _localOwners = [];
-
+    private static ConditionalWeakTable<Local, SlotPool> _localOwners = [];
     private readonly Stack<Local> _luaValueSlotPool = [];
-
-    public readonly Emit<Func<LuaValue, LuaValue>> Method = method;
-
-    public readonly Scope Scope = new(moduleBuilder);
 
     public Local DangerousRentSlot()
     {
         if (!_luaValueSlotPool.TryPop(out var local))
         {
-            local = Method.DeclareLocal<LuaValue>();
+            local = method.DeclareLocal<LuaValue>();
         }
 
         _localOwners.Add(local, this);
         return local;
     }
-
-    public LuaValueSlotOwner RentSlot() => new(this, DangerousRentSlot());
 
     public void ReturnSlot(Local local)
     {
@@ -47,27 +38,11 @@ internal sealed class MethodContext(ModuleBuilder moduleBuilder, Emit<Func<LuaVa
         var local = DangerousRentSlot();
         try
         {
-            body(Method, local);
+            body(method, local);
         }
         finally
         {
             ReturnSlot(local);
-        }
-    }
-}
-
-internal sealed class LuaValueSlotOwner(MethodContext context, Local local) : IDisposable
-{
-    private int _disposed = 0;
-
-    public MethodContext Context { get; } = context;
-    public Local Local => _disposed == 0 ? local : throw new ObjectDisposedException(nameof(LuaValueSlotOwner));
-
-    public void Dispose()
-    {
-        if (Interlocked.CompareExchange(ref _disposed, 1, 0) == 0)
-        {
-            Context.ReturnSlot(Local);
         }
     }
 }

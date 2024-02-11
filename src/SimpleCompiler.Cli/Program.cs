@@ -3,11 +3,13 @@ using System.Diagnostics;
 using Cocona;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Text;
+using SimpleCompiler.Backends.Cil;
 using SimpleCompiler.Cli;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.Compiler;
+using SimpleCompiler.FileSystem;
+using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.IR;
-using SimpleCompiler.Runtime;
 using Tsu.Numerics;
 
 await CoconaLiteApp.RunAsync(async (
@@ -21,12 +23,12 @@ await CoconaLiteApp.RunAsync(async (
         sourceText = SourceText.From(stream, throwIfBinaryDetected: true);
 
     var s = Stopwatch.StartNew();
-    var tree = LuaSyntaxTree.ParseText(sourceText, new LuaParseOptions(LuaSyntaxOptions.Lua51), path, ctx.CancellationToken);
+    var syntaxTree = LuaSyntaxTree.ParseText(sourceText, new LuaParseOptions(LuaSyntaxOptions.Lua51), path, ctx.CancellationToken);
     Console.WriteLine($"Parsed input file in {Duration.Format(s.Elapsed.Ticks)}");
 
-    if (tree.GetDiagnostics().Any())
+    if (syntaxTree.GetDiagnostics().Any())
     {
-        foreach (var diagnostic in tree.GetDiagnostics())
+        foreach (var diagnostic in syntaxTree.GetDiagnostics())
         {
             Console.Error.WriteLine(diagnostic.ToString());
         }
@@ -36,13 +38,17 @@ await CoconaLiteApp.RunAsync(async (
     var objDir = ObjectFileManager.Create(Path.Combine(Path.GetDirectoryName(path) ?? ".", "obj"));
 
     var name = Path.GetFileNameWithoutExtension(path);
+
+    var frontend = new LuaFrontend(syntaxTree);
     TextWriter? cilDebugWriter = null;
     if (debug)
-        cilDebugWriter = objDir.CreateText(Path.ChangeExtension(path, ".cil"));
-    var compilation = new Compilation(tree);
+        cilDebugWriter = objDir.CreateText(name + ".cil");
+    var backend = new CilBackend(cilDebugWriter);
+
+    var compilation = new Compilation(frontend, backend);
 
     s.Restart();
-    var mirTree = compilation.LowerSyntax();
+    var mirTree = compilation.GetTree();
     Console.WriteLine($"Syntax lowering done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
@@ -57,14 +63,14 @@ await CoconaLiteApp.RunAsync(async (
     s.Restart();
     Console.WriteLine($"Optimizing...");
     var c = 2;
-    mirTree = compilation.OptimizeLoweredSyntax((root, stage) =>
+    mirTree = compilation.GetOptimizedTree(debug ? (root, stage) =>
     {
         Console.WriteLine($"  {c}: {stage}");
 
-        dumpIr(objDir, name, c++, IrTree.FromRoot(mirTree.GlobalScope, root), ctx.CancellationToken)
+        dumpIr(objDir, name, c++, new IrTree(mirTree.GlobalScope, root), ctx.CancellationToken)
             .GetAwaiter()
             .GetResult();
-    });
+    } : null);
     Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
@@ -80,24 +86,12 @@ await CoconaLiteApp.RunAsync(async (
     }
 
     var outputDir = Path.GetDirectoryName(path);
-    var dllPath = Path.ChangeExtension(path, ".dll");
-    Console.WriteLine($"Compiling into {dllPath}...");
-    using (var stream = File.Open(dllPath, FileMode.Create, FileAccess.Write))
-    {
-        await compilation.EmitAsync(name, stream, optimize, cilDebugWriter)
-                         .ConfigureAwait(false);
-    }
-    await WriteRuntimeConfig(path);
+    Console.WriteLine($"Compiling to {outputDir}");
+    await compilation.EmitAsync(name, new OutputDirectory(outputDir!), optimize, cancellationToken: ctx.CancellationToken)
+                     .ConfigureAwait(false);
     Console.WriteLine($"Compiled in {Duration.Format(s.Elapsed.Ticks)}");
     cilDebugWriter?.Flush();
     cilDebugWriter?.Dispose();
-
-    Console.WriteLine("Copying runtime assembly to same directory...");
-    var runtimeAssembly = typeof(LuaValue).Assembly;
-    File.Copy(
-        runtimeAssembly.Location,
-        Path.Combine(outputDir!, Path.GetFileName(runtimeAssembly.Location)),
-        true);
 
     return 0;
 });
@@ -115,22 +109,4 @@ static async Task dumpIr(ObjectFileManager objectFileManager, string name, int n
 
     await indentedWriter.FlushAsync(cancellationToken)
                         .ConfigureAwait(false);
-}
-
-static Task WriteRuntimeConfig(string path)
-{
-    return File.WriteAllTextAsync(Path.ChangeExtension(path, ".runtimeconfig.json"), $$"""
-    {
-      "runtimeOptions": {
-        "tfm": "net{{Environment.Version.ToString(2)}}",
-        "framework": {
-          "name": "Microsoft.NETCore.App",
-          "version": "{{Environment.Version.ToString(3)}}"
-        },
-        "configProperties": {
-          "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false
-        }
-      }
-    }
-    """);
 }

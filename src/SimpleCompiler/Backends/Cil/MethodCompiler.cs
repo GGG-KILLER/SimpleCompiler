@@ -1,35 +1,38 @@
-
-using System.Reflection;
 using System.Diagnostics;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using SimpleCompiler.Runtime;
-using SimpleCompiler.IR;
-using System.Diagnostics.CodeAnalysis;
 using Sigil;
+using SimpleCompiler.IR;
+using SimpleCompiler.Runtime;
 
-namespace SimpleCompiler.Emit;
+namespace SimpleCompiler.Backends.Cil;
 
-internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKind>
+internal sealed class MethodCompiler(ModuleBuilder moduleBuilder, IrTree tree, Emit<Func<LuaValue, LuaValue>> method) : IrVisitor<MethodCompiler.EmitOptions, ResultKind>
 {
-    private readonly Stack<MethodContext> _contextStack = [];
-    private MethodContext _context = null!;
+    private readonly Scope _scope = new(moduleBuilder);
+    private readonly SlotPool _slots = new(method);
+    public Emit<Func<LuaValue, LuaValue>> Method => method;
 
-    [MemberNotNull(nameof(_context))]
-    public MethodContext PushMethod(string name)
+    public static MethodCompiler Create(ModuleBuilder moduleBuilder, TypeBuilder typeBuilder, IrTree tree, string name)
     {
-        _context = new MethodContext(_moduleBuilder, Emit<Func<LuaValue, LuaValue>>.BuildStaticMethod(
-            _programBuilder,
-            name,
-            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static));
-        _contextStack.Push(_context);
-        return _context;
+        return new MethodCompiler(
+            moduleBuilder,
+            tree,
+            Emit<Func<LuaValue, LuaValue>>.BuildStaticMethod(
+                typeBuilder,
+                name,
+                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static)
+        );
     }
 
-    public MethodContext PopMethod()
+    public void AddNilReturn()
     {
-        _context = _contextStack.Pop();
-        return _context;
+        method.NewObject<LuaValue>();
+        method.Return();
     }
+
+    public MethodBuilder CreateMethod() => method.CreateMethod(OptimizationOptions.All);
 
     public override ResultKind Visit(IrNode? node, EmitOptions options)
     {
@@ -63,7 +66,7 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
     public override ResultKind VisitExpressionStatement(ExpressionStatement node, EmitOptions options)
     {
         Visit(node.Expression, EmitOptions.None);
-        _context.Method.Pop();
+        method.Pop();
 
         return ResultKind.None;
     }
@@ -76,30 +79,30 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
         Visit(node.Callee, EmitOptions.NeedsLuaValue);
 
         // Create arguments array
-        _context.Method.LoadConstant(node.Arguments.Count);
-        _context.Method.NewArray<LuaValue>();
+        method.LoadConstant(node.Arguments.Count);
+        method.NewArray<LuaValue>();
 
         for (var i = 0; i < node.Arguments.Count; i++)
         {
             var argument = node.Arguments[i];
 
             // Duplicate array pointer
-            _context.Method.Duplicate();
+            method.Duplicate();
             // Load argument index into stack
-            _context.Method.LoadConstant(i);
+            method.LoadConstant(i);
 
             // Load argument value onto stack
             Visit(argument, EmitOptions.NeedsLuaValue);
 
             // Store argument in array
-            _context.Method.StoreElement<LuaValue>();
+            method.StoreElement<LuaValue>();
         }
 
         // Convert arguments into span
-        _context.Method.NewObject(typeof(ReadOnlySpan<LuaValue>), [typeof(LuaValue[])]);
+        method.NewObject(typeof(ReadOnlySpan<LuaValue>), [typeof(LuaValue[])]);
 
         // Use the call helper
-        _context.Method.Call(ReflectionData.LuaOperations_Call);
+        method.Call(ReflectionData.LuaOperations_Call);
 
         return ResultKind.Any;
     }
@@ -124,71 +127,71 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
         switch (node.BinaryOperationKind)
         {
             case BinaryOperationKind.Addition:
-                _context.Method.Add();
+                method.Add();
                 break;
             case BinaryOperationKind.BitwiseAnd:
-                _context.Method.And();
+                method.And();
                 break;
             case BinaryOperationKind.BitwiseOr:
-                _context.Method.Or();
+                method.Or();
                 break;
             case BinaryOperationKind.BitwiseXor:
-                _context.Method.Xor();
+                method.Xor();
                 break;
             case BinaryOperationKind.Concatenation:
-                _context.Method.Call(ReflectionData.string_Concat2);
+                method.Call(ReflectionData.string_Concat2);
                 break;
             case BinaryOperationKind.Division:
             case BinaryOperationKind.IntegerDivision:
-                _context.Method.Divide();
+                method.Divide();
                 break;
             case BinaryOperationKind.Exponentiation:
-                _context.Method.Call(ReflectionData.Math_Pow);
+                method.Call(ReflectionData.Math_Pow);
                 break;
             case BinaryOperationKind.Equals:
-                _context.Method.Call(ReflectionData.LuaValue_Equals);
+                method.Call(ReflectionData.LuaValue_Equals);
                 break;
             case BinaryOperationKind.GreaterThan:
-                _context.Method.CompareGreaterThan();
+                method.CompareGreaterThan();
                 break;
             case BinaryOperationKind.GreaterThanOrEquals:
                 if (leftDesired == ResultKind.Int && rightDesired == ResultKind.Int)
-                    _context.Method.CompareLessThan();
+                    method.CompareLessThan();
                 else
-                    _context.Method.UnsignedCompareLessThan();
-                _context.Method.LoadConstant(false);
-                _context.Method.CompareEqual();
+                    method.UnsignedCompareLessThan();
+                method.LoadConstant(false);
+                method.CompareEqual();
                 break;
             case BinaryOperationKind.LeftShift:
-                _context.Method.ShiftLeft();
+                method.ShiftLeft();
                 break;
             case BinaryOperationKind.LessThan:
-                _context.Method.CompareLessThan();
+                method.CompareLessThan();
                 break;
             case BinaryOperationKind.LessThanOrEquals:
                 if (leftDesired == ResultKind.Int && rightDesired == ResultKind.Int)
-                    _context.Method.CompareGreaterThan();
+                    method.CompareGreaterThan();
                 else
-                    _context.Method.UnsignedCompareGreaterThan();
-                _context.Method.LoadConstant(false);
-                _context.Method.CompareEqual();
+                    method.UnsignedCompareGreaterThan();
+                method.LoadConstant(false);
+                method.CompareEqual();
                 break;
             case BinaryOperationKind.Modulo:
-                _context.Method.Remainder();
+                method.Remainder();
                 break;
             case BinaryOperationKind.Multiplication:
-                _context.Method.Multiply();
+                method.Multiply();
                 break;
             case BinaryOperationKind.NotEquals:
-                _context.Method.Call(ReflectionData.LuaValue_Equals);
-                _context.Method.LoadConstant(false);
-                _context.Method.CompareEqual();
+                method.Call(ReflectionData.LuaValue_Equals);
+                method.LoadConstant(false);
+                method.CompareEqual();
                 break;
             case BinaryOperationKind.RightShift:
-                _context.Method.ShiftRight();
+                method.ShiftRight();
                 break;
             case BinaryOperationKind.Subtraction:
-                _context.Method.Subtract();
+                method.Subtract();
                 break;
             case BinaryOperationKind.BooleanAnd:
                 throw new NotImplementedException("Boolean and has not been implemented.");
@@ -201,16 +204,16 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
             switch (node.ResultKind)
             {
                 case ResultKind.Bool:
-                    _context.Method.NewObject<LuaValue, bool>();
+                    method.NewObject<LuaValue, bool>();
                     break;
                 case ResultKind.Int:
-                    _context.Method.NewObject<LuaValue, int>();
+                    method.NewObject<LuaValue, int>();
                     break;
                 case ResultKind.Double:
-                    _context.Method.NewObject<LuaValue, double>();
+                    method.NewObject<LuaValue, double>();
                     break;
                 case ResultKind.Str:
-                    _context.Method.NewObject<LuaValue, string>();
+                    method.NewObject<LuaValue, string>();
                     break;
                 case ResultKind.Any:
                     // Result is already wrapped.
@@ -237,19 +240,19 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
             case UnaryOperationKind.LogicalNegation:
                 if (result == ResultKind.Bool)
                 {
-                    _context.Method.LoadConstant(false);
-                    _context.Method.CompareEqual();
+                    method.LoadConstant(false);
+                    method.CompareEqual();
                 }
                 else if (result is ResultKind.Int or ResultKind.Double or ResultKind.Str or ResultKind.Func)
                 {
-                    _context.Method.Pop();
-                    _context.Method.LoadConstant(false);
+                    method.Pop();
+                    method.LoadConstant(false);
                 }
                 else if (result == ResultKind.Any)
                 {
                     CallMethodOnStackLuaValue(ReflectionData.LuaValue_IsTruthy);
-                    _context.Method.LoadConstant(false);
-                    _context.Method.CompareEqual();
+                    method.LoadConstant(false);
+                    method.CompareEqual();
                 }
                 else
                 {
@@ -257,17 +260,17 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
                 }
                 if (options.NeedsLuaValue())
                 {
-                    _context.Method.NewObject<LuaValue, bool>();
+                    method.NewObject<LuaValue, bool>();
                     if (options.NeedsAddr())
                         ConvertValueToAddr();
                 }
                 break;
             case UnaryOperationKind.BitwiseNegation:
                 ConvertTo(result, ResultKind.Int);
-                _context.Method.Not();
+                method.Not();
                 if (options.NeedsLuaValue())
                 {
-                    _context.Method.NewObject<LuaValue, long>();
+                    method.NewObject<LuaValue, long>();
                     if (options.NeedsAddr())
                         ConvertValueToAddr();
                 }
@@ -276,13 +279,13 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
             {
                 var desired = OperationFacts.DesiredOperand(node);
                 ConvertTo(result, desired);
-                _context.Method.Negate();
+                method.Negate();
                 if (options.NeedsLuaValue())
                 {
                     if (desired == ResultKind.Int)
-                        _context.Method.NewObject<LuaValue, long>();
+                        method.NewObject<LuaValue, long>();
                     else
-                        _context.Method.NewObject<LuaValue, double>();
+                        method.NewObject<LuaValue, double>();
 
                     if (options.NeedsAddr())
                         ConvertValueToAddr();
@@ -305,54 +308,54 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
             case ConstantKind.Nil:
                 if (options.NeedsLuaValue())
                 {
-                    _context.Method.NewObject<LuaValue>();
+                    method.NewObject<LuaValue>();
                     if (options.NeedsAddr())
-                        _context.Method.LoadFieldAddress(ReflectionData.LuaValue_Nil);
+                        method.LoadFieldAddress(ReflectionData.LuaValue_Nil);
                 }
                 else
                 {
-                    _context.Method.LoadNull();
+                    method.LoadNull();
                 }
                 break;
             case ConstantKind.Boolean:
                 if (options.NeedsAddr())
                 {
-                    _context.Method.LoadFieldAddress(Unsafe.Unbox<bool>(node.Value!) ? ReflectionData.LuaValue_True : ReflectionData.LuaValue_False);
+                    method.LoadFieldAddress(Unsafe.Unbox<bool>(node.Value!) ? ReflectionData.LuaValue_True : ReflectionData.LuaValue_False);
                 }
                 else
                 {
-                    _context.Method.LoadConstant(Unsafe.Unbox<bool>(node.Value!));
+                    method.LoadConstant(Unsafe.Unbox<bool>(node.Value!));
                     if (options.NeedsLuaValue())
-                        _context.Method.NewObject<LuaValue, bool>();
+                        method.NewObject<LuaValue, bool>();
                 }
                 break;
             case ConstantKind.Number:
                 if (node.ResultKind == ResultKind.Int)
                 {
-                    _context.Method.LoadConstant(Unsafe.Unbox<long>(node.Value!));
+                    method.LoadConstant(Unsafe.Unbox<long>(node.Value!));
                     if (options.NeedsLuaValue())
                     {
-                        _context.Method.NewObject<LuaValue, long>();
+                        method.NewObject<LuaValue, long>();
                         if (options.NeedsAddr())
                             ConvertValueToAddr();
                     }
                 }
                 else
                 {
-                    _context.Method.LoadConstant(Unsafe.Unbox<double>(node.Value!));
+                    method.LoadConstant(Unsafe.Unbox<double>(node.Value!));
                     if (options.NeedsLuaValue())
                     {
-                        _context.Method.NewObject<LuaValue, double>();
+                        method.NewObject<LuaValue, double>();
                         if (options.NeedsAddr())
                             ConvertValueToAddr();
                     }
                 }
                 break;
             case ConstantKind.String:
-                _context.Method.LoadConstant(Unsafe.As<string>(node.Value));
+                method.LoadConstant(Unsafe.As<string>(node.Value));
                 if (options.NeedsLuaValue())
                 {
-                    _context.Method.NewObject<LuaValue, string>();
+                    method.NewObject<LuaValue, string>();
                     if (options.NeedsAddr())
                         ConvertValueToAddr();
                 }
@@ -364,36 +367,36 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
 
     public override ResultKind VisitVariableExpression(VariableExpression node, EmitOptions options)
     {
-        if (node.VariableInfo == _tree.GlobalScope.KnownGlobals.Print)
+        if (node.VariableInfo == tree.GlobalScope.KnownGlobals.Print)
         {
             if (options.NeedsAddr())
-                _context.Method.LoadFieldAddress(ReflectionData.StockGlobal_Print);
+                method.LoadFieldAddress(ReflectionData.StockGlobal_Print);
             else
-                _context.Method.LoadField(ReflectionData.StockGlobal_Print);
+                method.LoadField(ReflectionData.StockGlobal_Print);
         }
-        else if (node.VariableInfo == _tree.GlobalScope.KnownGlobals.Tostring)
+        else if (node.VariableInfo == tree.GlobalScope.KnownGlobals.Tostring)
         {
             if (options.NeedsAddr())
-                _context.Method.LoadFieldAddress(ReflectionData.StockGlobal_ToString);
+                method.LoadFieldAddress(ReflectionData.StockGlobal_ToString);
             else
-                _context.Method.LoadField(ReflectionData.StockGlobal_ToString);
+                method.LoadField(ReflectionData.StockGlobal_ToString);
         }
         else
         {
-            var local = _context.Scope.GetLocal(node.VariableInfo);
+            var local = _scope.GetLocal(node.VariableInfo);
             if (local is null)
             {
                 if (options.NeedsAddr())
-                    _context.Method.LoadFieldAddress(ReflectionData.LuaValue_Nil);
+                    method.LoadFieldAddress(ReflectionData.LuaValue_Nil);
                 else
-                    _context.Method.NewObject<LuaValue>();
+                    method.NewObject<LuaValue>();
             }
             else
             {
                 if (options.NeedsAddr())
-                    _context.Method.LoadLocalAddress(local);
+                    method.LoadLocalAddress(local);
                 else
-                    _context.Method.LoadLocal(local);
+                    method.LoadLocal(local);
             }
         }
 
@@ -405,14 +408,14 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
         switch (assignee.Kind)
         {
             case IrKind.DiscardExpression:
-                _context.Method.Pop();
+                method.Pop();
                 break;
 
             case IrKind.VariableExpression:
             {
                 var varNode = Unsafe.As<VariableExpression>(assignee);
-                var local = _context.Scope.GetOrCreateLocal(_context.Method, varNode.VariableInfo);
-                _context.Method.StoreLocal(local);
+                var local = _scope.GetOrCreateLocal(method, varNode.VariableInfo);
+                method.StoreLocal(local);
                 break;
             }
 
@@ -429,7 +432,7 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
         if (method.DeclaringType != typeof(LuaValue) && !method.GetParameters().Any(param => param.ParameterType == typeof(LuaValue)))
             throw new InvalidOperationException("Attempted to call method that doesn't receive a LuaValue nor is a LuaValue instance method.");
 
-        _context.WithSlot((m, local) =>
+        _slots.WithSlot((m, local) =>
         {
             m.StoreLocal(local);
             m.LoadLocalAddress(local);
@@ -440,7 +443,7 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ConvertValueToAddr()
     {
-        _context.WithSlot(static (m, slot) =>
+        _slots.WithSlot(static (m, slot) =>
         {
             m.StoreLocal(slot);
             m.LoadLocalAddress(slot);
@@ -469,20 +472,20 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
                 }
                 else
                 {
-                    _context.Method.LoadConstant("Value cannot be converted to a bool.");
-                    _context.Method.NewObject<LuaException, string>();
-                    _context.Method.Throw();
+                    method.LoadConstant("Value cannot be converted to a bool.");
+                    method.NewObject<LuaException, string>();
+                    method.Throw();
                     return false;
                 }
             case ResultKind.Int:
                 if (source == ResultKind.Double)
                 {
-                    _context.Method.Call(ReflectionData.LuaOperations_ToInt);
+                    method.Call(ReflectionData.LuaOperations_ToInt);
                     return true;
                 }
                 else if (source == ResultKind.Str)
                 {
-                    _context.Method.NewObject<LuaValue, string>();
+                    method.NewObject<LuaValue, string>();
                     CallMethodOnStackLuaValue(ReflectionData.LuaValue_ToInteger);
                     return true;
                 }
@@ -493,20 +496,20 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
                 }
                 else
                 {
-                    _context.Method.LoadConstant("Value cannot be converted to an integer.");
-                    _context.Method.NewObject<LuaException, string>();
-                    _context.Method.Throw();
+                    method.LoadConstant("Value cannot be converted to an integer.");
+                    method.NewObject<LuaException, string>();
+                    method.Throw();
                     return false;
                 }
             case ResultKind.Double:
                 if (source == ResultKind.Int)
                 {
-                    _context.Method.Convert<double>();
+                    method.Convert<double>();
                     return true;
                 }
                 else if (source == ResultKind.Str)
                 {
-                    _context.Method.NewObject<LuaValue, string>();
+                    method.NewObject<LuaValue, string>();
                     CallMethodOnStackLuaValue(ReflectionData.LuaValue_ToNumber);
                     return true;
                 }
@@ -517,15 +520,15 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
                 }
                 else
                 {
-                    _context.Method.LoadConstant("Value cannot be converted to a number.");
-                    _context.Method.NewObject<LuaException, string>();
-                    _context.Method.Throw();
+                    method.LoadConstant("Value cannot be converted to a number.");
+                    method.NewObject<LuaException, string>();
+                    method.Throw();
                     return false;
                 }
             case ResultKind.Str:
-                _context.Method.LoadConstant("Value is not a string.");
-                _context.Method.NewObject<LuaException, string>();
-                _context.Method.Throw();
+                method.LoadConstant("Value is not a string.");
+                method.NewObject<LuaException, string>();
+                method.Throw();
                 return false;
             case ResultKind.Any:
                 switch (source)
@@ -533,23 +536,23 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
                     case ResultKind.None:
                         throw new ArgumentException("Cannot convert none to any.", nameof(source));
                     case ResultKind.Nil:
-                        _context.Method.Pop();
-                        _context.Method.NewObject<LuaValue>();
+                        method.Pop();
+                        method.NewObject<LuaValue>();
                         break;
                     case ResultKind.Bool:
-                        _context.Method.NewObject<LuaValue, bool>();
+                        method.NewObject<LuaValue, bool>();
                         break;
                     case ResultKind.Int:
-                        _context.Method.NewObject<LuaValue, long>();
+                        method.NewObject<LuaValue, long>();
                         break;
                     case ResultKind.Double:
-                        _context.Method.NewObject<LuaValue, double>();
+                        method.NewObject<LuaValue, double>();
                         break;
                     case ResultKind.Str:
-                        _context.Method.NewObject<LuaValue, string>();
+                        method.NewObject<LuaValue, string>();
                         break;
                     case ResultKind.Func:
-                        _context.Method.NewObject<LuaValue, LuaFunction>();
+                        method.NewObject<LuaValue, LuaFunction>();
                         break;
                     case ResultKind.Any:
                         throw new UnreachableException();
@@ -571,6 +574,6 @@ internal sealed partial class Emitter : IrVisitor<Emitter.EmitOptions, ResultKin
 
 internal static class EmitOptionsExtensions
 {
-    public static bool NeedsLuaValue(this Emitter.EmitOptions options) => (options & Emitter.EmitOptions.NeedsLuaValue) != 0;
-    public static bool NeedsAddr(this Emitter.EmitOptions options) => (options & Emitter.EmitOptions.NeedsAddr) != 0;
+    public static bool NeedsLuaValue(this MethodCompiler.EmitOptions options) => (options & MethodCompiler.EmitOptions.NeedsLuaValue) != 0;
+    public static bool NeedsAddr(this MethodCompiler.EmitOptions options) => (options & MethodCompiler.EmitOptions.NeedsAddr) != 0;
 }
