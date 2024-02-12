@@ -1,4 +1,5 @@
-ldsfld SimpleCompiler.Runtime.LuaValue Print
+ldsflda SimpleCompiler.Runtime.LuaValue Print
+call SimpleCompiler.Runtime.LuaFunction AsFunction()
 ldc.i4.1
 newarr SimpleCompiler.Runtime.LuaValue
 dup
@@ -7,9 +8,10 @@ ldc.r8 22
 newobj Void .ctor(Double)
 stelem SimpleCompiler.Runtime.LuaValue
 newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
-call SimpleCompiler.Runtime.LuaValue Call(SimpleCompiler.Runtime.LuaValue, System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
+callvirt SimpleCompiler.Runtime.LuaValue Invoke(System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
 pop
-ldsfld SimpleCompiler.Runtime.LuaValue Print
+ldsflda SimpleCompiler.Runtime.LuaValue Print
+call SimpleCompiler.Runtime.LuaFunction AsFunction()
 ldc.i4.6
 newarr SimpleCompiler.Runtime.LuaValue
 dup
@@ -42,7 +44,7 @@ ldc.r8 15
 newobj Void .ctor(Double)
 stelem SimpleCompiler.Runtime.LuaValue
 newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
-call SimpleCompiler.Runtime.LuaValue Call(SimpleCompiler.Runtime.LuaValue, System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
+callvirt SimpleCompiler.Runtime.LuaValue Invoke(System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
 pop
 newobj Void .ctor()
 ret
