@@ -1,10 +1,11 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
 
 namespace SimpleCompiler.Runtime;
 
-public readonly struct LuaValue
+public readonly struct LuaValue : IEquatable<LuaValue>
 {
     public static readonly LuaValue Nil = new(ValueKind.Nil, null, null, default);
     public static readonly LuaValue True = new(true);
@@ -135,6 +136,42 @@ public readonly struct LuaValue
             _ => throw new UnreachableException(),
         };
     }
+
+    public override bool Equals([NotNullWhen(true)] object? obj) =>
+        obj is LuaValue value && Equals(value);
+
+    public bool Equals(LuaValue other)
+    {
+        return Kind == other.Kind
+            && Kind switch
+            {
+                ValueKind.Nil => true,
+                ValueKind.Boolean => _valueUnion.Boolean == other._valueUnion.Boolean,
+                ValueKind.Long => _valueUnion.Long == other._valueUnion.Long,
+                ValueKind.Double => _valueUnion.Double == other._valueUnion.Double,
+                ValueKind.String => _strValue == other._strValue,
+                ValueKind.Function => _luaFunction == other._luaFunction,
+                _ => false
+            };
+    }
+
+    public override int GetHashCode()
+    {
+        return Kind switch
+        {
+            ValueKind.Nil => 0,
+            ValueKind.Boolean => _valueUnion.Boolean.GetHashCode(),
+            ValueKind.Long => _valueUnion.Long.GetHashCode(),
+            ValueKind.Double => _valueUnion.Double.GetHashCode(),
+            ValueKind.String => _strValue!.GetHashCode(),
+            ValueKind.Function => _luaFunction!.GetHashCode(),
+            _ => -1
+        };
+    }
+
+    public static bool operator ==(LuaValue left, LuaValue right) => left.Equals(right);
+
+    public static bool operator !=(LuaValue left, LuaValue right) => !(left == right);
 
     [StructLayout(LayoutKind.Explicit)]
     private struct ValueUnion
