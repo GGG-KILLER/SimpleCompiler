@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using SimpleCompiler.IR;
 
-namespace SimpleCompiler.IR;
+namespace SimpleCompiler.Compiler.Optimizations;
 
 public sealed class ConstantFolder : IrRewriter
 {
@@ -96,14 +97,14 @@ public static class ConstantFoldingExtensions
                 (BinaryOperationKind.Multiplication, { HasValue: true, Value: double l }, { HasValue: true, Value: long r }) => new TypedConstant(l * r),
                 (BinaryOperationKind.Multiplication, { HasValue: true, Value: long l }, { HasValue: true, Value: double r }) => new TypedConstant(l * r),
                 (BinaryOperationKind.Multiplication, { HasValue: true, Value: double l }, { HasValue: true, Value: double r }) => new TypedConstant(l * r),
-                (BinaryOperationKind.Division, { HasValue: true, Value: long l }, { HasValue: true, Value: long r }) => new TypedConstant((double)(l / r)),
+                (BinaryOperationKind.Division, { HasValue: true, Value: long l }, { HasValue: true, Value: long r }) => new TypedConstant((double) (l / r)),
                 (BinaryOperationKind.Division, { HasValue: true, Value: double l }, { HasValue: true, Value: long r }) => new TypedConstant(l / r),
                 (BinaryOperationKind.Division, { HasValue: true, Value: long l }, { HasValue: true, Value: double r }) => new TypedConstant(l / r),
                 (BinaryOperationKind.Division, { HasValue: true, Value: double l }, { HasValue: true, Value: double r }) => new TypedConstant(l / r),
                 (BinaryOperationKind.IntegerDivision, { HasValue: true, Value: long l }, { HasValue: true, Value: long r }) => new TypedConstant(l / r),
-                (BinaryOperationKind.IntegerDivision, { HasValue: true, Value: double l }, { HasValue: true, Value: long r }) => new TypedConstant((long)(l / r)),
-                (BinaryOperationKind.IntegerDivision, { HasValue: true, Value: long l }, { HasValue: true, Value: double r }) => new TypedConstant((long)(l / r)),
-                (BinaryOperationKind.IntegerDivision, { HasValue: true, Value: double l }, { HasValue: true, Value: double r }) => new TypedConstant((long)(l / r)),
+                (BinaryOperationKind.IntegerDivision, { HasValue: true, Value: double l }, { HasValue: true, Value: long r }) => new TypedConstant((long) (l / r)),
+                (BinaryOperationKind.IntegerDivision, { HasValue: true, Value: long l }, { HasValue: true, Value: double r }) => new TypedConstant((long) (l / r)),
+                (BinaryOperationKind.IntegerDivision, { HasValue: true, Value: double l }, { HasValue: true, Value: double r }) => new TypedConstant((long) (l / r)),
                 (BinaryOperationKind.Modulo, { HasValue: true, Value: int l }, { HasValue: true, Value: int r }) => new TypedConstant(l % r),
                 (BinaryOperationKind.Modulo, { HasValue: true, Value: double l }, { HasValue: true, Value: int r }) => new TypedConstant(l % r),
                 (BinaryOperationKind.Modulo, { HasValue: true, Value: int l }, { HasValue: true, Value: double r }) => new TypedConstant(l % r),

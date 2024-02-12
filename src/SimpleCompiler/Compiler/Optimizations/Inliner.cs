@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using SimpleCompiler.IR;
 using SimpleCompiler.IR.Ssa;
 
-namespace SimpleCompiler.IR.Optimizations;
+namespace SimpleCompiler.Compiler.Optimizations;
 
 internal sealed class Inliner(IrTree tree) : IrRewriter
 {
@@ -46,9 +47,7 @@ internal sealed class Inliner(IrTree tree) : IrRewriter
     public override IrNode VisitVariableExpression(VariableExpression node)
     {
         if (CanInline(node, out var value) && !node.IsAssignee())
-        {
             return Visit(value.Value!);
-        }
 
         return base.VisitVariableExpression(node);
     }
@@ -67,9 +66,7 @@ internal sealed class Inliner(IrTree tree) : IrRewriter
         public override bool VisitVariableExpression(VariableExpression node)
         {
             if (tree.Ssa.GetVariableVersion(node) is { } value && !value.IsPhi)
-            {
                 return Visit(value.Value);
-            }
 
             return false;
         }

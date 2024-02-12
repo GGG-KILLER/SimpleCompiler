@@ -1,8 +1,8 @@
 ﻿using SimpleCompiler.Backends;
+using SimpleCompiler.Compiler.Optimizations;
 using SimpleCompiler.FileSystem;
 using SimpleCompiler.Frontends;
 using SimpleCompiler.IR;
-using SimpleCompiler.IR.Optimizations;
 
 namespace SimpleCompiler.Compiler;
 
