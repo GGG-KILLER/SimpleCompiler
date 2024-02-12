@@ -7,10 +7,10 @@ public sealed partial class SsaComputer(IrTree tree)
     private State? _state;
     public IrTree Tree { get; } = tree;
 
-    private FrozenDictionary<IrNode, SsaBlock> BlocksByNode =>
-        _state?.BlocksByNode ?? throw new InvalidOperationException("State hasn't been computed.");
-    private FrozenDictionary<ScopeInfo, SsaBlock> BlocksByScope =>
-        _state?.BlocksByScope ?? throw new InvalidOperationException("State hasn't been computed.");
+    private FrozenDictionary<IrNode, SsaScope> ScopesByNode =>
+        _state?.ScopesByNode ?? throw new InvalidOperationException("State hasn't been computed.");
+    private FrozenDictionary<ScopeInfo, SsaScope> ScopesByScope =>
+        _state?.ScopesByScope ?? throw new InvalidOperationException("State hasn't been computed.");
     private FrozenDictionary<IrNode, SsaVariable> VariablesByNode =>
         _state?.VariablesByNode ?? throw new InvalidOperationException("State hasn't been computed.");
     private FrozenDictionary<VariableInfo, SsaVariable> VariablesByInfo =>
@@ -26,24 +26,24 @@ public sealed partial class SsaComputer(IrTree tree)
         }
     }
 
-    public SsaBlock? FindBlock(IrNode? node)
+    public SsaScope? FindScope(IrNode? node)
     {
         Compute();
 
         for (; node is not null; node = node.Parent)
         {
-            if (BlocksByNode.TryGetValue(node, out var block))
+            if (ScopesByNode.TryGetValue(node, out var block))
                 return block;
         }
 
         return null;
     }
 
-    public SsaBlock? FindBlock(ScopeInfo scope)
+    public SsaScope? FindScope(ScopeInfo scope)
     {
         Compute();
 
-        return BlocksByScope.TryGetValue(scope, out var block) ? block : null;
+        return ScopesByScope.TryGetValue(scope, out var block) ? block : null;
     }
 
     public SsaVariable? GetVariable(IrNode node)

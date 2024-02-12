@@ -2,12 +2,12 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace SimpleCompiler.IR.Ssa;
 
-public sealed class SsaBlock
+public sealed class SsaScope
 {
     private readonly List<SsaVariable> _declaredVars = [], _referencedVars = [];
-    private readonly List<SsaBlock> _childBlocks = [];
+    private readonly List<SsaScope> _childBlocks = [];
 
-    internal SsaBlock(IrNode? declaration, SsaBlock? parent)
+    internal SsaScope(IrNode? declaration, SsaScope? parent)
     {
         Declaration = declaration;
         Parent = parent;
@@ -20,8 +20,8 @@ public sealed class SsaBlock
     public IrNode? Declaration { get; }
 
     [NotNullIfNotNull(nameof(Declaration))]
-    public SsaBlock? Parent { get; }
-    public IReadOnlyList<SsaBlock> Children => _childBlocks;
+    public SsaScope? Parent { get; }
+    public IReadOnlyList<SsaScope> Children => _childBlocks;
 
     public IReadOnlyList<SsaVariable> DeclaredVariables => _declaredVars;
     public IReadOnlyList<SsaVariable> ReferencedVariables => _referencedVars;
@@ -40,9 +40,9 @@ public sealed class SsaBlock
         return null;
     }
 
-    internal SsaBlock CreateChild(IrNode declaration)
+    internal SsaScope CreateChild(IrNode declaration)
     {
-        SsaBlock ssaBlock = new(declaration, this);
+        SsaScope ssaBlock = new(declaration, this);
         _childBlocks.Add(ssaBlock);
         return ssaBlock;
     }

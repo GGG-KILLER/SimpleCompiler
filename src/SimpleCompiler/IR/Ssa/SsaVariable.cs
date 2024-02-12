@@ -2,18 +2,18 @@ namespace SimpleCompiler.IR.Ssa;
 
 public sealed class SsaVariable
 {
-    private readonly List<SsaBlock> _referencedBlocks = [];
+    private readonly List<SsaScope> _referencedBlocks = [];
     private readonly List<SsaValueVersion> _valueVersions = [];
 
-    internal SsaVariable(VariableInfo variable, SsaBlock block)
+    internal SsaVariable(VariableInfo variable, SsaScope block)
     {
         Variable = variable;
         DeclaredBlock = block;
     }
 
     public VariableInfo Variable { get; }
-    public SsaBlock DeclaredBlock { get; }
-    public IReadOnlyList<SsaBlock> ReferencedBlocks => _referencedBlocks;
+    public SsaScope DeclaredBlock { get; }
+    public IReadOnlyList<SsaScope> ReferencedBlocks => _referencedBlocks;
     public IReadOnlyList<SsaValueVersion> ValueVersions => _valueVersions;
 
     internal void AddValueVersion(IrNode write, Expression value) =>
@@ -22,7 +22,7 @@ public sealed class SsaVariable
     internal void AddPhiVersion(IrNode write, IEnumerable<Expression> values) =>
         _valueVersions.Add(new SsaValueVersion(_valueVersions.Count + 1, this, write, values));
 
-    internal void AddReferencedBlock(SsaBlock block)
+    internal void AddReferencedBlock(SsaScope block)
     {
         if (DeclaredBlock == block)
             return;

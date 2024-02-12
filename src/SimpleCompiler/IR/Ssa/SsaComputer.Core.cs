@@ -10,31 +10,31 @@ public sealed partial class SsaComputer
         var walker = new StateCalculatorWalker(tree);
         walker.Visit(tree.Root);
         return new State(
-            walker._blocksByNode.ToFrozenDictionary(),
-            walker._blocksByScope.ToFrozenDictionary(),
+            walker._scopesByNode.ToFrozenDictionary(),
+            walker._scopesByScope.ToFrozenDictionary(),
             walker._variablesByNode.ToFrozenDictionary(),
             walker._variablesByInfo.ToFrozenDictionary(),
             walker._versionsByNode.ToFrozenDictionary()
         );
     }
     private sealed record State(
-        FrozenDictionary<IrNode, SsaBlock> BlocksByNode,
-        FrozenDictionary<ScopeInfo, SsaBlock> BlocksByScope,
+        FrozenDictionary<IrNode, SsaScope> ScopesByNode,
+        FrozenDictionary<ScopeInfo, SsaScope> ScopesByScope,
         FrozenDictionary<IrNode, SsaVariable> VariablesByNode,
         FrozenDictionary<VariableInfo, SsaVariable> VariablesByInfo,
         FrozenDictionary<IrNode, SsaValueVersion> VersionsByNode);
     private sealed class StateCalculatorWalker : IrWalker
     {
-        internal readonly Dictionary<IrNode, SsaBlock> _blocksByNode = [];
-        internal readonly Dictionary<ScopeInfo, SsaBlock> _blocksByScope = [];
+        internal readonly Dictionary<IrNode, SsaScope> _scopesByNode = [];
+        internal readonly Dictionary<ScopeInfo, SsaScope> _scopesByScope = [];
         internal readonly Dictionary<VariableInfo, SsaVariable> _variablesByInfo = [];
         internal readonly Dictionary<IrNode, SsaVariable> _variablesByNode = [];
         internal readonly Dictionary<IrNode, SsaValueVersion> _versionsByNode = [];
-        internal readonly Stack<SsaBlock> _blocks = [];
+        internal readonly Stack<SsaScope> _blocks = [];
 
         public StateCalculatorWalker(IrTree tree)
         {
-            var globalScope = new SsaBlock(null, null);
+            var globalScope = new SsaScope(null, null);
             _blocks.Push(globalScope);
             foreach (var variable in tree.GlobalScope.DeclaredVariables)
                 globalScope.CreateVariable(variable);
@@ -43,10 +43,10 @@ public sealed partial class SsaComputer
         public override void VisitStatementList(StatementList node)
         {
             var parent = _blocks.TryPeek(out var p) ? p : null;
-            var block = parent?.CreateChild(node) ?? new SsaBlock(node, null);
-            _blocksByNode.Add(node, block);
+            var block = parent?.CreateChild(node) ?? new SsaScope(node, null);
+            _scopesByNode.Add(node, block);
             if (node.ScopeInfo is not null)
-                _blocksByScope.Add(node.ScopeInfo, block);
+                _scopesByScope.Add(node.ScopeInfo, block);
             _blocks.Push(block);
 
             base.VisitStatementList(node);
