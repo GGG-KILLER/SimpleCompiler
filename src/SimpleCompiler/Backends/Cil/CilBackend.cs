@@ -7,6 +7,7 @@ using SimpleCompiler.IR;
 using Lokad.ILPack;
 using SimpleCompiler.FileSystem;
 using System.Text;
+using System.Runtime.Loader;
 
 namespace SimpleCompiler.Backends.Cil;
 
@@ -16,7 +17,7 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
     {
         var programBuilder = moduleBuilder.DefineType(
             "Program",
-            TypeAttributes.Public | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
+            TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
 
         var luaEntryPoint = EmitLuaEntryPoint(moduleBuilder, programBuilder, tree);
         var dotnetEntryPoint = EmitDotnetEntryPoint(programBuilder, luaEntryPoint);
@@ -111,9 +112,26 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
             await writer.WriteAsync(text);
         }
 
-        var runtime = typeof(LuaValue).Assembly.Location;
-        using var runtimeOutput = output.CreateFile(Path.GetFileName(runtime));
-        using var runtimeInput = File.OpenRead(runtime);
-        await runtimeInput.CopyToAsync(runtimeOutput, 4096, cancellationToken);
+        // Copy all referenced assemblies.
+        {
+            var ctx = new AssemblyLoadContext("ExportContext", true);
+            Assembly compiled;
+            using (var stream = new MemoryStream(bytes, false))
+                compiled = ctx.LoadFromStream(stream);
+
+            foreach (var referenced in compiled.GetReferencedAssemblies())
+            {
+                if (referenced.Name is "System.Runtime" or "System.Private.CoreLib")
+                    continue;
+
+                var assembly = ctx.LoadFromAssemblyName(referenced);
+                var location = assembly.Location;
+                var name = Path.GetFileName(location);
+
+                using var runtimeOutput = output.CreateFile(name);
+                using var runtimeInput = File.OpenRead(location);
+                await runtimeInput.CopyToAsync(runtimeOutput, 4096, cancellationToken);
+            }
+        }
     }
 }
