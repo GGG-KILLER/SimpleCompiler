@@ -1,12 +1,12 @@
-﻿using SimpleCompiler.Backends;
+﻿using Loretta.CodeAnalysis;
+using SimpleCompiler.Backends;
 using SimpleCompiler.Compiler.Optimizations;
 using SimpleCompiler.FileSystem;
-using SimpleCompiler.Frontends;
 using SimpleCompiler.IR;
 
 namespace SimpleCompiler.Compiler;
 
-public sealed class Compilation(IFrontend frontend, IBackend backend)
+public sealed class Compilation(SyntaxTree syntaxTree, IBackend backend)
 {
     private IrTree? _mirRoot;
     private IrTree? _optimizedIrRoot;
@@ -15,7 +15,8 @@ public sealed class Compilation(IFrontend frontend, IBackend backend)
     {
         if (_mirRoot is null)
         {
-            Interlocked.CompareExchange(ref _mirRoot, frontend.GetTree(), null);
+            var globalScope = new ScopeInfo(ScopeKind.Global, null);
+            Interlocked.CompareExchange(ref _mirRoot, new IrTree(globalScope, new SyntaxLowerer(globalScope).Visit(syntaxTree.GetRoot())!), null);
         }
         return _mirRoot;
     }

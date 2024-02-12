@@ -3,9 +3,7 @@ using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Syntax;
 using SimpleCompiler.Helpers;
 
-namespace SimpleCompiler.Frontends.Lua;
-
-using SimpleCompiler.IR;
+namespace SimpleCompiler.IR;
 
 /// <summary>
 /// "Lowers" the higher level syntax into a lower level representation.

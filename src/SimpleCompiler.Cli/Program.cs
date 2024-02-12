@@ -8,7 +8,6 @@ using SimpleCompiler.Cli;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.Compiler;
 using SimpleCompiler.FileSystem;
-using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.IR;
 using Tsu.Numerics;
 
@@ -39,13 +38,12 @@ await CoconaLiteApp.RunAsync(async (
 
     var name = Path.GetFileNameWithoutExtension(path);
 
-    var frontend = new LuaFrontend(syntaxTree);
     TextWriter? cilDebugWriter = null;
     if (debug)
         cilDebugWriter = objDir.CreateText(name + ".cil");
     var backend = new CilBackend(cilDebugWriter);
 
-    var compilation = new Compilation(frontend, backend);
+    var compilation = new Compilation(syntaxTree, backend);
 
     s.Restart();
     var mirTree = compilation.GetTree();
