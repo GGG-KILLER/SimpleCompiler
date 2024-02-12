@@ -131,6 +131,7 @@ public readonly struct LuaValue
             ValueKind.Long => _valueUnion.Long.ToString(),
             ValueKind.Double => _valueUnion.Double.ToString(),
             ValueKind.String => _strValue!,
+            ValueKind.Function => $"function: 0x{_luaFunction!.GetHashCode():X}",
             _ => throw new UnreachableException(),
         };
     }
