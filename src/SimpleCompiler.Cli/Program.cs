@@ -60,29 +60,36 @@ await CoconaLiteApp.RunAsync(async (
         await dumpIr(objDir, name, 1, mirTree, ctx.CancellationToken);
     }
 
-    s.Restart();
-    Console.WriteLine($"Optimizing...");
     var c = 2;
-    mirTree = compilation.GetOptimizedTree(debug ? (root, stage) =>
+    if (optimize)
     {
-        Console.WriteLine($"  {c}: {stage}");
+        s.Restart();
+        Console.WriteLine($"Optimizing...");
+        mirTree = compilation.GetOptimizedTree(debug ? (root, stage) =>
+        {
+            Console.WriteLine($"  {c}: {stage}");
 
-        dumpIr(objDir, name, c++, new IrTree(mirTree.GlobalScope, root), ctx.CancellationToken)
-            .GetAwaiter()
-            .GetResult();
-    } : null);
-    Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
+            dumpIr(objDir, name, c++, new IrTree(mirTree.GlobalScope, root), ctx.CancellationToken)
+                .GetAwaiter()
+                .GetResult();
+        }
+        : null);
+        Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
+
+        if (debug)
+        {
+            s.Restart();
+            mirTree.Ssa.Compute();
+            Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
+
+            await dumpIr(objDir, name, c++, mirTree, ctx.CancellationToken);
+        }
+    }
 
     if (debug)
     {
-        using (var textWriter = objDir.CreateText(Path.ChangeExtension(path, $"mir.lua")))
-            IrLifter.Lift(mirTree.Root).WriteTo(textWriter);
-
-        s.Restart();
-        mirTree.Ssa.Compute();
-        Console.WriteLine($"  SSA computation done in {Duration.Format(s.Elapsed.Ticks)}");
-
-        await dumpIr(objDir, name, c++, mirTree, ctx.CancellationToken);
+        using var textWriter = objDir.CreateText(Path.ChangeExtension(path, $"mir.lua"));
+        IrLifter.Lift(mirTree.Root).WriteTo(textWriter);
     }
 
     var outputDir = Path.GetDirectoryName(path);
