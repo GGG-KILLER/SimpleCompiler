@@ -368,12 +368,33 @@ internal sealed class MethodCompiler(ModuleBuilder moduleBuilder, IrTree tree, E
 
     public override ResultKind VisitVariableExpression(VariableExpression node, EmitOptions options)
     {
-        if (node.VariableInfo == tree.GlobalScope.KnownGlobals.Print)
+        if (node.VariableInfo == tree.GlobalScope.KnownGlobals.Assert)
+        {
+            if (options.NeedsAddr())
+                method.LoadFieldAddress(ReflectionData.StockGlobal_Assert);
+            else
+                method.LoadField(ReflectionData.StockGlobal_Assert);
+        }
+        else if (node.VariableInfo == tree.GlobalScope.KnownGlobals.Type)
+        {
+            if (options.NeedsAddr())
+                method.LoadFieldAddress(ReflectionData.StockGlobal_Type);
+            else
+                method.LoadField(ReflectionData.StockGlobal_Type);
+        }
+        else if (node.VariableInfo == tree.GlobalScope.KnownGlobals.Print)
         {
             if (options.NeedsAddr())
                 method.LoadFieldAddress(ReflectionData.StockGlobal_Print);
             else
                 method.LoadField(ReflectionData.StockGlobal_Print);
+        }
+        else if (node.VariableInfo == tree.GlobalScope.KnownGlobals.Error)
+        {
+            if (options.NeedsAddr())
+                method.LoadFieldAddress(ReflectionData.StockGlobal_Error);
+            else
+                method.LoadField(ReflectionData.StockGlobal_Error);
         }
         else if (node.VariableInfo == tree.GlobalScope.KnownGlobals.Tostring)
         {

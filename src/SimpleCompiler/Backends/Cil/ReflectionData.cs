@@ -21,7 +21,10 @@ internal static class ReflectionData
 
     public static readonly MethodInfo LuaOperations_ToInt = StaticMethod(LuaOperations.ToInt);
 
+    public static readonly FieldInfo StockGlobal_Assert = StaticField(() => StockGlobals.Assert);
+    public static readonly FieldInfo StockGlobal_Type = StaticField(() => StockGlobals.Type);
     public static readonly FieldInfo StockGlobal_Print = StaticField(() => StockGlobals.Print);
+    public static readonly FieldInfo StockGlobal_Error = StaticField(() => StockGlobals.Error);
     public static readonly FieldInfo StockGlobal_ToString = StaticField(() => StockGlobals.ToString);
 
     public static readonly MethodInfo LuaFunction_Invoke =
