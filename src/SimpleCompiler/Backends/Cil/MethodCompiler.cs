@@ -76,7 +76,8 @@ internal sealed class MethodCompiler(ModuleBuilder moduleBuilder, IrTree tree, E
     public override ResultKind VisitFunctionCallExpression(FunctionCallExpression node, EmitOptions options)
     {
         // Load callee onto stack
-        Visit(node.Callee, EmitOptions.NeedsLuaValue);
+        Visit(node.Callee, EmitOptions.NeedsLuaValueAddr);
+        method.Call(ReflectionData.LuaValue_AsFunction);
 
         // Create arguments array
         method.LoadConstant(node.Arguments.Count);
@@ -102,7 +103,7 @@ internal sealed class MethodCompiler(ModuleBuilder moduleBuilder, IrTree tree, E
         method.NewObject(typeof(ReadOnlySpan<LuaValue>), [typeof(LuaValue[])]);
 
         // Use the call helper
-        method.Call(ReflectionData.LuaOperations_Call);
+        method.CallVirtual(ReflectionData.LuaFunction_Invoke);
 
         return ResultKind.Any;
     }

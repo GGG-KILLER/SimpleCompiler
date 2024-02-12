@@ -15,11 +15,10 @@ internal static class ReflectionData
     public static readonly MethodInfo LuaValue_Equals = InstanceMethod<LuaValue>(x => x.Equals(default(LuaValue)));
     public static readonly MethodInfo LuaValue_IsTruthy = InstanceGetter<LuaValue, bool>(x => x.IsTruthy);
     public static readonly MethodInfo LuaValue_AsBoolean = InstanceMethod<LuaValue>(x => x.AsBoolean());
+    public static readonly MethodInfo LuaValue_AsFunction = InstanceMethod<LuaValue>(x => x.AsFunction());
     public static readonly MethodInfo LuaValue_ToInteger = InstanceMethod<LuaValue>(x => x.ToInteger());
     public static readonly MethodInfo LuaValue_ToNumber = InstanceMethod<LuaValue>(x => x.ToNumber());
 
-    public static readonly MethodInfo LuaOperations_Call = StaticMethod(LuaOperations.Call);
-    public static readonly MethodInfo LuaOperations_CreateValue = StaticMethod(LuaOperations.CreateValue);
     public static readonly MethodInfo LuaOperations_ToInt = StaticMethod(LuaOperations.ToInt);
 
     public static readonly FieldInfo StockGlobal_Print = StaticField(() => StockGlobals.Print);
