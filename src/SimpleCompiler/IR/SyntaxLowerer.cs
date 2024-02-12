@@ -52,6 +52,24 @@ public sealed class SyntaxLowerer : LuaSyntaxVisitor<IrNode>
         return IrFactory.StatementList(node.GetReference(), statements.ToList(), scope);
     }
 
+    public override IrNode? VisitIfStatement(IfStatementSyntax node)
+    {
+        var condition = (Expression) Visit(node.Condition)!;
+        var body = (StatementList) Visit(node.Body)!;
+
+        var clauses = new IrListBuilder<IfClause>(node.ElseIfClauses.Count + 1);
+        clauses.Add(IrFactory.IfClause(condition, body));
+        foreach (var elseIfClause in node.ElseIfClauses)
+        {
+            condition = (Expression) Visit(elseIfClause.Condition)!;
+            body = (StatementList) Visit(elseIfClause.Body)!;
+            clauses.Add(IrFactory.IfClause(condition, body));
+        }
+
+        var elseBody = (StatementList?) Visit(node.ElseClause?.ElseBody);
+        return IrFactory.IfStatement(node.GetReference(), clauses.ToList(), elseBody);
+    }
+
     public override IrNode? VisitLocalVariableDeclarationStatement(LocalVariableDeclarationStatementSyntax node)
     {
         var syntaxNames = node.Names.ToArray();

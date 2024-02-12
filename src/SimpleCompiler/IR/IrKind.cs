@@ -16,4 +16,6 @@ public enum IrKind
     ExpressionStatement,
     EmptyStatement,
     StatementList,
+    IfStatement,
+    IfClause,
 }
