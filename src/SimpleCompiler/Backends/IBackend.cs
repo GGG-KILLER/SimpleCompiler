@@ -5,5 +5,5 @@ namespace SimpleCompiler.Backends;
 
 public interface IBackend
 {
-    Task EmitToDirectory(EmitOptions options, IrTree tree, IOutputManager output, CancellationToken cancellationToken = default);
+    Task EmitToDirectory(EmitOptions options, IrGraph ir, IOutputManager output, CancellationToken cancellationToken = default);
 }

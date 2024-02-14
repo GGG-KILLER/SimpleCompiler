@@ -12,16 +12,16 @@ internal sealed class Scope(ModuleBuilder moduleBuilder)
     private readonly object _lock = new();
     private int _counter;
 
-    public Dictionary<VariableInfo, Local> Locals { get; } = [];
+    public Dictionary<NameValue, Local> Locals { get; } = [];
     private TypeBuilder? _cacheType;
 
-    public Local? GetLocal(VariableInfo variable) =>
+    public Local? GetLocal(NameValue variable) =>
         Locals.GetValueOrDefault(variable);
 
-    public Local GetOrCreateLocal(Emit<Func<LuaValue, LuaValue>> method, VariableInfo variable)
+    public Local GetOrCreateLocal(Emit<Func<LuaValue, LuaValue>> method, NameValue variable)
     {
         if (GetLocal(variable) is not { } local)
-            local = Locals[variable] = method.DeclareLocal<LuaValue>($"{variable.Name}_{variable.Scope.GetHashCode():X}");
+            local = Locals[variable] = method.DeclareLocal<LuaValue>($"{variable.Name}_{variable.Version}");
         return local;
     }
 

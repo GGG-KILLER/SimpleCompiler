@@ -11,8 +11,6 @@ public enum BinaryOperationKind
     Modulo,
     Concatenation,
 
-    BooleanAnd,
-    BooleanOr,
     BitwiseAnd,
     BitwiseOr,
     BitwiseXor,

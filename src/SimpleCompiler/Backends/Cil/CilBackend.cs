@@ -13,29 +13,26 @@ namespace SimpleCompiler.Backends.Cil;
 
 public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBackend
 {
-    private void CompileProgram(ModuleBuilder moduleBuilder, IrTree tree, out MethodInfo entryPoint)
+    private void CompileProgram(ModuleBuilder moduleBuilder, IrGraph ir, out MethodInfo entryPoint)
     {
         var programBuilder = moduleBuilder.DefineType(
             "Program",
             TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
 
-        var luaEntryPoint = EmitLuaEntryPoint(moduleBuilder, programBuilder, tree);
+        var luaEntryPoint = EmitLuaEntryPoint(moduleBuilder, programBuilder, ir);
         var dotnetEntryPoint = EmitDotnetEntryPoint(programBuilder, luaEntryPoint);
 
         var type = programBuilder.CreateType();
         entryPoint = type.GetMethod(dotnetEntryPoint.Name, dotnetEntryPoint.GetParameters().Select(x => x.ParameterType).ToArray())!;
     }
 
-    private Emit<Func<LuaValue, LuaValue>> EmitLuaEntryPoint(ModuleBuilder moduleBuilder, TypeBuilder programBuilder, IrTree tree)
+    private Emit<Func<LuaValue, LuaValue>> EmitLuaEntryPoint(ModuleBuilder moduleBuilder, TypeBuilder programBuilder, IrGraph ir)
     {
-        var compiler = MethodCompiler.Create(moduleBuilder, programBuilder, tree, "TopLevel");
+        var compiler = MethodCompiler.Create(moduleBuilder, programBuilder, ir, "TopLevel");
 
-        compiler.Visit(tree.Root, MethodCompiler.EmitOptions.None);
-
-        // Return nil initially while we don't have CFA adding returns where necessary.
-        compiler.AddNilReturn();
-
+        compiler.Compile();
         cilDebugWriter?.WriteLine(compiler.Method.Instructions());
+
         compiler.CreateMethod();
         return compiler.Method;
     }
@@ -65,7 +62,7 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
         return method.CreateMethod(OptimizationOptions.All);
     }
 
-    public async Task EmitToDirectory(EmitOptions emitOptions, IrTree tree, IOutputManager output, CancellationToken cancellationToken = default)
+    public async Task EmitToDirectory(EmitOptions emitOptions, IrGraph ir, IOutputManager output, CancellationToken cancellationToken = default)
     {
         byte[] bytes;
         {
@@ -73,7 +70,7 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
             var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
             var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName.Name + ".dll");
 
-            CompileProgram(moduleBuilder, tree, out var entryPoint);
+            CompileProgram(moduleBuilder, ir, out var entryPoint);
 
             var gen = new AssemblyGenerator();
             bytes = gen.GenerateAssemblyBytes(

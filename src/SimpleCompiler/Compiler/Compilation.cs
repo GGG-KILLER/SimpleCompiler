@@ -1,49 +1,22 @@
-﻿using Loretta.CodeAnalysis;
-using SimpleCompiler.Backends;
-using SimpleCompiler.Compiler.Optimizations;
+﻿using SimpleCompiler.Backends;
 using SimpleCompiler.FileSystem;
+using SimpleCompiler.Frontends;
 using SimpleCompiler.IR;
 
 namespace SimpleCompiler.Compiler;
 
-public sealed class Compilation(SyntaxTree syntaxTree, IBackend backend)
+public sealed class Compilation<TInput>(IFrontend<TInput> frontend, IBackend backend)
 {
-    private IrTree? _mirRoot;
-    private IrTree? _optimizedIrRoot;
+    public IrGraph GetIrGraph(TInput input) => frontend.Lower(input);
 
-    public IrTree GetTree()
+    public IrGraph GetOptimizedIrGraph(TInput input, Action<IrGraph, string>? onOptimizationRan = null)
     {
-        if (_mirRoot is null)
-        {
-            var globalScope = new ScopeInfo(ScopeKind.Global, null);
-            Interlocked.CompareExchange(ref _mirRoot, new IrTree(globalScope, new SyntaxLowerer(globalScope).Visit(syntaxTree.GetRoot())!), null);
-        }
-        return _mirRoot;
+        var ir = frontend.Lower(input);
+        // TODO: Optimization steps
+        return ir;
     }
 
-    public IrTree GetOptimizedTree(Action<IrNode, string>? onOptimizationRan = null)
-    {
-        if (_optimizedIrRoot is null)
-        {
-            var tree = GetTree();
-            var root = tree.Root;
-
-            root = new Inliner(tree).Visit(root);
-            onOptimizationRan?.Invoke(root, "Inlining");
-
-            root = ConstantFolder.ConstantFold(root);
-            onOptimizationRan?.Invoke(root, "Constant Folding");
-
-            var globalScope = new ScopeInfo(ScopeKind.Global, null);
-            root = new ScopeRemapper(globalScope).Visit(root)!;
-            onOptimizationRan?.Invoke(root, "Scope Remapping");
-
-            Interlocked.CompareExchange(ref _optimizedIrRoot, new IrTree(globalScope, root), null);
-        }
-        return _optimizedIrRoot;
-    }
-
-    public async Task EmitAsync(string name, IOutputManager output, bool optimize = true, CancellationToken cancellationToken = default) =>
-        await backend.EmitToDirectory(new EmitOptions(name), optimize ? GetOptimizedTree() : GetTree(), output, cancellationToken)
+    public async Task EmitAsync(TInput input, string name, IOutputManager output, bool optimize = true, CancellationToken cancellationToken = default) =>
+        await backend.EmitToDirectory(new EmitOptions(name), optimize ? GetOptimizedIrGraph(input) : GetIrGraph(input), output, cancellationToken)
                      .ConfigureAwait(false);
 }
