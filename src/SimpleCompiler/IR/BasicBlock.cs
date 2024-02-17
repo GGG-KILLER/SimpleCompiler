@@ -54,7 +54,7 @@ public sealed class BasicBlock(int blockOrdinal, ImmutableArray<Instruction> ins
 
         foreach (var instruction in instructions)
         {
-            if (instruction.IsAssignment)
+            if (instruction.IsAssignment && instruction.Assignee is not null)
             {
                 allDeclared.Add(instruction.Assignee);
             }
@@ -99,7 +99,7 @@ public sealed class BasicBlock(int blockOrdinal, ImmutableArray<Instruction> ins
                 case InstructionKind.PhiAssignment:
                 {
                     var assignment = CastHelper.FastCast<PhiAssignment>(instruction);
-                    foreach ((_, var value) in assignment.Value.Names)
+                    foreach ((_, var value) in assignment.Phi.Values)
                         allReferenced.Add(value);
                     break;
                 }
@@ -119,10 +119,9 @@ public sealed class BasicBlock(int blockOrdinal, ImmutableArray<Instruction> ins
         }
 
         allReferenced.ExceptWith(allDeclared);
-        allDeclared.RemoveWhere(x => x.Name == NameValue.TemporaryName);
 
         referenced = [.. allReferenced];
-        exported = allDeclared.GroupBy(x => x.Name).Select(x => x.MaxBy(y => y.Version)!).ToImmutableArray();
+        exported = [.. allDeclared];
     }
 }
 
