@@ -21,8 +21,8 @@ partial record Instruction
     public static partial Assignment Assignment(global::SimpleCompiler.IR.NameValue name, global::SimpleCompiler.IR.Operand operand) => new(name, operand);
     public static partial UnaryAssignment UnaryAssignment(global::SimpleCompiler.IR.NameValue? name, global::SimpleCompiler.IR.UnaryOperationKind operationKind, global::SimpleCompiler.IR.Operand operand) => new(name, operationKind, operand);
     public static partial BinaryAssignment BinaryAssignment(global::SimpleCompiler.IR.NameValue? name, global::SimpleCompiler.IR.Operand left, global::SimpleCompiler.IR.BinaryOperationKind operatorKind, global::SimpleCompiler.IR.Operand right) => new(name, left, operatorKind, right);
-    public static partial FunctionAssignment FunctionAssignment(global::SimpleCompiler.IR.NameValue? name, global::SimpleCompiler.IR.Operand callee, global::System.Collections.Generic.IEnumerable<global::SimpleCompiler.IR.Operand> arguments) => new(name, callee, arguments);
-    public static partial PhiAssignment PhiAssignment(global::SimpleCompiler.IR.NameValue? name, global::SimpleCompiler.IR.Phi value) => new(name, value);
+    public static partial FunctionAssignment FunctionAssignment(global::SimpleCompiler.IR.NameValue name, global::SimpleCompiler.IR.Operand callee, global::System.Collections.Immutable.ImmutableArray<global::SimpleCompiler.IR.Operand> arguments) => new(name, callee, arguments);
+    public static partial PhiAssignment PhiAssignment(global::SimpleCompiler.IR.NameValue name, global::SimpleCompiler.IR.Phi phi) => new(name, phi);
     public static partial Branch Branch(global::SimpleCompiler.IR.BranchTarget target) => new(target);
     public static partial CondBranch CondBranch(global::SimpleCompiler.IR.Operand operand, global::SimpleCompiler.IR.BranchTarget ifTrue, global::SimpleCompiler.IR.BranchTarget ifFalse) => new(operand, ifTrue, ifFalse);
 }
@@ -35,9 +35,9 @@ public sealed partial record UnaryAssignment(global::SimpleCompiler.IR.NameValue
 
 public sealed partial record BinaryAssignment(global::SimpleCompiler.IR.NameValue? Name, global::SimpleCompiler.IR.Operand Left, global::SimpleCompiler.IR.BinaryOperationKind OperatorKind, global::SimpleCompiler.IR.Operand Right) : global::SimpleCompiler.IR.Instruction(global::SimpleCompiler.IR.InstructionKind.BinaryAssignment);
 
-public sealed partial record FunctionAssignment(global::SimpleCompiler.IR.NameValue? Name, global::SimpleCompiler.IR.Operand Callee, global::System.Collections.Generic.IEnumerable<global::SimpleCompiler.IR.Operand> Arguments) : global::SimpleCompiler.IR.Instruction(global::SimpleCompiler.IR.InstructionKind.FunctionAssignment);
+public sealed partial record FunctionAssignment(global::SimpleCompiler.IR.NameValue Name, global::SimpleCompiler.IR.Operand Callee, global::System.Collections.Immutable.ImmutableArray<global::SimpleCompiler.IR.Operand> Arguments) : global::SimpleCompiler.IR.Instruction(global::SimpleCompiler.IR.InstructionKind.FunctionAssignment);
 
-public sealed partial record PhiAssignment(global::SimpleCompiler.IR.NameValue? Name, global::SimpleCompiler.IR.Phi Value) : global::SimpleCompiler.IR.Instruction(global::SimpleCompiler.IR.InstructionKind.PhiAssignment);
+public sealed partial record PhiAssignment(global::SimpleCompiler.IR.NameValue Name, global::SimpleCompiler.IR.Phi Phi) : global::SimpleCompiler.IR.Instruction(global::SimpleCompiler.IR.InstructionKind.PhiAssignment);
 
 public sealed partial record Branch(global::SimpleCompiler.IR.BranchTarget Target) : global::SimpleCompiler.IR.Instruction(global::SimpleCompiler.IR.InstructionKind.Branch);
 
