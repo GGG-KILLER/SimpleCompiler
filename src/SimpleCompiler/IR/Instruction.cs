@@ -1,8 +1,6 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using ClassEnumGen;
-using Loretta.CodeAnalysis;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.IR.Debug;
 
@@ -17,13 +15,12 @@ public abstract partial record Instruction(InstructionKind Kind)
     public static partial Assignment Assignment(NameValue name, Operand operand);
     public static partial UnaryAssignment UnaryAssignment(NameValue? name, UnaryOperationKind operationKind, Operand operand);
     public static partial BinaryAssignment BinaryAssignment(NameValue? name, Operand left, BinaryOperationKind operatorKind, Operand right);
-    public static partial FunctionAssignment FunctionAssignment(NameValue? name, Operand callee, IEnumerable<Operand> arguments);
-    public static partial PhiAssignment PhiAssignment(NameValue? name, Phi value);
+    public static partial FunctionAssignment FunctionAssignment(NameValue name, Operand callee, ImmutableArray<Operand> arguments);
+    public static partial PhiAssignment PhiAssignment(NameValue name, Phi phi);
 
     public static partial Branch Branch(BranchTarget target);
     public static partial CondBranch CondBranch(Operand operand, BranchTarget ifTrue, BranchTarget ifFalse);
 
-    [MemberNotNullWhen(true, nameof(Assignee))]
     public bool IsAssignment => Kind is InstructionKind.Assignment or InstructionKind.UnaryAssignment
                                      or InstructionKind.BinaryAssignment or InstructionKind.FunctionAssignment
                                      or InstructionKind.PhiAssignment;
@@ -37,6 +34,42 @@ public abstract partial record Instruction(InstructionKind Kind)
         InstructionKind.PhiAssignment => CastHelper.FastCast<PhiAssignment>(this).Name,
         _ => null
     };
+
+    public IEnumerable<Operand> Operands
+    {
+        get
+        {
+            switch (Kind)
+            {
+                case InstructionKind.Assignment:
+                    return [CastHelper.FastCast<Assignment>(this).Operand];
+                case InstructionKind.UnaryAssignment:
+                    return [CastHelper.FastCast<UnaryAssignment>(this).Operand];
+                case InstructionKind.BinaryAssignment:
+                {
+                    var asg = CastHelper.FastCast<BinaryAssignment>(this);
+                    return [asg.Left, asg.Right];
+                }
+                case InstructionKind.FunctionAssignment:
+                {
+                    var fna = CastHelper.FastCast<FunctionAssignment>(this);
+                    return [fna.Callee, .. fna.Arguments];
+                }
+                case InstructionKind.PhiAssignment:
+                    return CastHelper.FastCast<PhiAssignment>(this)
+                                     .Phi
+                                     .Values
+                                     .Select(x => x.Value);
+                case InstructionKind.CondBranch:
+                    return [CastHelper.FastCast<CondBranch>(this).Operand];
+                case InstructionKind.DebugLocation:
+                case InstructionKind.Branch:
+                    return [];
+                default:
+                    throw new NotImplementedException($"Operands not implemented for instruction {Kind}.");
+            }
+        }
+    }
 
     public bool References(Operand operand)
     {
@@ -58,8 +91,8 @@ public abstract partial record Instruction(InstructionKind Kind)
             }
             case InstructionKind.PhiAssignment:
                 return CastHelper.FastCast<PhiAssignment>(this)
-                                 .Value
-                                 .Names
+                                 .Phi
+                                 .Values
                                  .Select(x => x.Value)
                                  .Contains(operand);
             case InstructionKind.CondBranch:
@@ -108,12 +141,12 @@ public abstract partial record Instruction(InstructionKind Kind)
                 _ => throw new InvalidOperationException($"Invalid binary operation kind {bina.OperatorKind}"),
             }} {bina.Left}, {bina.Right}",
             FunctionAssignment fna => $"{(fna.Name != null ? $"{fna.Name} = " : "")}{fna.Callee}({string.Join(", ", fna.Arguments)})",
-            PhiAssignment phi => $"{phi.Name} = {phi.Value}",
+            PhiAssignment phi => $"{phi.Name} = {phi.Phi}",
 
             Branch br => $"br BB{br.Target.Block.Ordinal}",
             CondBranch cbr => $"if {cbr.Operand}: br BB{cbr.IfTrue.Block.Ordinal}; else: br BB{cbr.IfFalse.Block.Ordinal}",
 
-            _ => throw new NotImplementedException()
+            _ => throw new NotImplementedException($"ToRepr hasn't been implemented for {Kind}.")
         };
     }
 }
