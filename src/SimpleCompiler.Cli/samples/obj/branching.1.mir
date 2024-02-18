@@ -21,7 +21,7 @@ BB0:
   # samples/branching.lua  3,4:3,14
   t₄ = eq t₂, t₃
   # samples/branching.lua  3,4:3,14
-  br BB1 if t₄ else 2
+  br BB1 if t₄ else BB2
 
 BB1:
   # samples/branching.lua  4,9:4,10
@@ -31,16 +31,17 @@ BB1:
   br BB5
 
 BB2:
+  L_302F24_a₃ = L_302F24_a₁
   # samples/branching.lua  5,12:5,13
   t₆ = 3
   # samples/branching.lua  5,8:5,13
-  t₇ = mod L_302F24_a₁, t₆
+  t₇ = mod L_302F24_a₃, t₆
   # samples/branching.lua  5,17:5,18
   t₈ = 0
   # samples/branching.lua  5,8:5,18
   t₉ = eq t₇, t₈
   # samples/branching.lua  5,8:5,18
-  br BB3 if t₄ else 4
+  br BB3 if t₄ else BB4
 
 BB3:
   # samples/branching.lua  6,9:6,10
@@ -57,7 +58,8 @@ BB4:
   br BB5
 
 BB5:
+  L_1CB3A6F_print₃ = L_1CB3A6F_print₂
   L_302F24_a₆ = ϕ([BB1: L_302F24_a₂], [BB3: L_302F24_a₄], [BB4: L_302F24_a₅])
   # samples/branching.lua  11,1:11,9
-  t₁₂ = L_1CB3A6F_print₂(L_302F24_a₆)
+  t₁₂ = L_1CB3A6F_print₃(L_302F24_a₆)
 
