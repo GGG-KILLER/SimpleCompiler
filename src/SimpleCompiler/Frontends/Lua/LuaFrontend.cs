@@ -39,7 +39,6 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
         private readonly List<BasicBlock> _basicBlocks = [];
         private readonly List<IrEdge> _edges = [];
         private readonly List<List<Action<BasicBlock>>> _targetQueue = [];
-        private readonly List<int> _entryBlockOrdinals = [];
 
         // Current block state
         private readonly ImmutableArray<Instruction>.Builder _instructions = ImmutableArray.CreateBuilder<Instruction>();
@@ -70,19 +69,10 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             _targetQueue[offset].Add(callback);
         }
 
-        private void QueueTarget(BranchTarget target, int offset)
-        {
-            var sourceBlockOrdinal = _basicBlocks.Count;
-            QueueBlockCallback(offset, block =>
-            {
-                _edges.Add(new IrEdge(sourceBlockOrdinal, block.Ordinal));
-                target.SetBlock(block);
-            });
-        }
-
+        private int CurrentBlockOrdinal => _basicBlocks.Count;
         private BasicBlock FinalizeBlock()
         {
-            var basicBlock = new BasicBlock(_basicBlocks.Count, _instructions.ToImmutable());
+            var basicBlock = new BasicBlock(CurrentBlockOrdinal, _instructions.ToImmutable());
 
             if (_targetQueue.Count > 0)
             {
@@ -203,10 +193,10 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             var endTarget = new BranchTarget();
 
             // Queue branch targets
-            var ifTrue = new BranchTarget();
-            var ifFalse = new BranchTarget();
-            QueueTarget(ifTrue, 1);
-            QueueTarget(ifFalse, 2);
+            var ifTrue = new BranchTarget(CurrentBlockOrdinal + 1);
+            _edges.Add(new IrEdge(CurrentBlockOrdinal, CurrentBlockOrdinal + 1));
+            var ifFalse = new BranchTarget(CurrentBlockOrdinal + 2);
+            _edges.Add(new IrEdge(CurrentBlockOrdinal, CurrentBlockOrdinal + 2));
 
             // Add entry condition and end the block with the branch
             var ifCond = LowerExpression(ifStatementSyntax.Condition);
@@ -221,12 +211,10 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
 
             foreach (var clause in ifStatementSyntax.ElseIfClauses)
             {
-                ifTrue = new BranchTarget();
-                ifFalse = new BranchTarget();
-
-                // Queue branch targets
-                QueueTarget(ifTrue, 1);
-                QueueTarget(ifFalse, 2);
+                ifTrue = new BranchTarget(CurrentBlockOrdinal + 1);
+                _edges.Add(new IrEdge(CurrentBlockOrdinal, CurrentBlockOrdinal + 1));
+                ifFalse = new BranchTarget(CurrentBlockOrdinal + 2);
+                _edges.Add(new IrEdge(CurrentBlockOrdinal, CurrentBlockOrdinal + 2));
 
                 // Create entry condition block
                 var elseIfCond = LowerExpression(clause.Condition);
@@ -255,7 +243,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             {
                 foreach (var ordinal in bodyBlockOrdinals)
                     _edges.Add(new IrEdge(ordinal, block.Ordinal));
-                endTarget.SetBlock(block);
+                endTarget.SetBlock(block.Ordinal);
             });
         }
 

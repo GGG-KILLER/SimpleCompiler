@@ -96,4 +96,25 @@ public static class InstructionListExtensions
             ? instructions.AddFirst(assignment)
             : instructions.AddAfter(node, assignment);
     }
+
+    public static int NonDebugCount(this LinkedList<Instruction> instructions)
+    {
+        var count = 0;
+        for(var node = instructions.First; node is not null; node = node.Next)
+        {
+            if (node.Value.Kind != InstructionKind.DebugLocation)
+                count++;
+        }
+        return count;
+    }
+
+    public static Instruction? FirstNonDebug(this LinkedList<Instruction> instructions)
+    {
+        for(var node = instructions.First; node is not null; node = node.Next)
+        {
+            if (node.Value.Kind != InstructionKind.DebugLocation)
+                return node.Value;
+        }
+        return null;
+    }
 }

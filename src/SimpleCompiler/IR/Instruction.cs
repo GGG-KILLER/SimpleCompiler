@@ -154,7 +154,7 @@ public sealed class Branch(BranchTarget target) : Instruction
 
     // Branch targets don't need to be cloned because they are "immutable".
     public override Branch Clone() => new(Target);
-    public override string ToRepr() => $"br BB{Target.Block.Ordinal}";
+    public override string ToRepr() => $"br BB{Target.BlockOrdinal}";
 }
 
 public sealed class ConditionalBranch(Operand condition, BranchTarget ifTrue, BranchTarget ifFalse) : Instruction
@@ -168,5 +168,5 @@ public sealed class ConditionalBranch(Operand condition, BranchTarget ifTrue, Br
     public override bool References(Operand operand) => Condition == operand;
     // Branch targets don't need to be cloned because they are "immutable".
     public override ConditionalBranch Clone() => new(Condition, TargetIfTrue, TargetIfFalse);
-    public override string ToRepr() => $"br BB{TargetIfTrue.Block.Ordinal} if {Condition} else BB{TargetIfFalse.Block.Ordinal}";
+    public override string ToRepr() => $"br BB{TargetIfTrue.BlockOrdinal} if {Condition} else BB{TargetIfFalse.BlockOrdinal}";
 }

@@ -23,7 +23,7 @@ public sealed class DeadCodeElimination : IOptimizationPass
                         // Turn the instruction into a condition-less branch
                         instruction = new Branch(conditionIsFalse ? branch.TargetIfFalse : branch.TargetIfTrue);
                         // Remove the edge from the current block to the removed target
-                        graph.Edges.RemoveAll(x => x.SourceBlockOrdinal == block.Ordinal && x.TargetBlockOrdinal == removed.Block.Ordinal);
+                        graph.Edges.RemoveAll(x => x.SourceBlockOrdinal == block.Ordinal && x.TargetBlockOrdinal == removed.BlockOrdinal);
                     }
                 }
                 else if (instruction.IsAssignment && instruction.Kind is not InstructionKind.FunctionAssignment && !graph.FindUses(instruction.Assignee).Any())

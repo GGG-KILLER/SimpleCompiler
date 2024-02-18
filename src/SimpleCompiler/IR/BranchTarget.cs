@@ -2,31 +2,31 @@ namespace SimpleCompiler.IR;
 
 public sealed class BranchTarget
 {
-    private BasicBlock? _lazyBlock = null;
+    private int _lazyBlockOrdinal = -1;
 
     public BranchTarget()
     {
     }
 
-    public BranchTarget(BasicBlock basicBlock)
+    public BranchTarget(int basicBlockOrdinal)
     {
-        _lazyBlock = basicBlock;
+        _lazyBlockOrdinal = basicBlockOrdinal;
     }
 
-    public BasicBlock Block
+    public int BlockOrdinal
     {
         get
         {
-            if (_lazyBlock == null)
+            if (_lazyBlockOrdinal == -1)
                 throw new InvalidOperationException("Target block has not been defined yet.");
 
-            return _lazyBlock;
+            return _lazyBlockOrdinal;
         }
     }
 
-    public void SetBlock(BasicBlock block)
+    public void SetBlock(int block)
     {
-        if (Interlocked.CompareExchange(ref _lazyBlock, block, null) != null)
+        if (Interlocked.CompareExchange(ref _lazyBlockOrdinal, block, -1) != -1)
             throw new InvalidOperationException("Target block cannot be set more than once.");
     }
 }
