@@ -1,15 +1,13 @@
-using System.Collections.Immutable;
-
 namespace SimpleCompiler.IR;
 
 public sealed class IrGraph(
-    ImmutableArray<BasicBlock> basicBlocks,
-    ImmutableArray<IrEdge> edges,
-    ImmutableArray<BasicBlock> entryBlocks)
+    IEnumerable<BasicBlock> basicBlocks,
+    IEnumerable<IrEdge> edges,
+    BasicBlock entryBlock)
 {
-    public ImmutableArray<BasicBlock> BasicBlocks { get; } = basicBlocks;
-    public ImmutableArray<IrEdge> Edges { get; } = edges;
-    public ImmutableArray<BasicBlock> EntryBlocks { get; } = entryBlocks;
+    public List<BasicBlock> BasicBlocks { get; } = basicBlocks.ToList();
+    public List<IrEdge> Edges { get; } = edges.ToList();
+    public BasicBlock EntryBlock { get; set; } = entryBlock;
 
     public IEnumerable<BasicBlock> GetPredecessors(int blockOrdinal) =>
         Edges.Where(x => x.TargetBlockOrdinal == blockOrdinal).Select(x => BasicBlocks[x.SourceBlockOrdinal]);
