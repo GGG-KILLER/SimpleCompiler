@@ -16,9 +16,8 @@ public static class GraphRewriter
 
     public static void ReplaceOperand(this BasicBlock block, Operand oldOperand, Operand newOperand)
     {
-        for (var node = block.Instructions.First; node is not null; node = node.Next)
+        foreach (var instruction in block.Instructions)
         {
-            var instruction = node.Value;
             instruction.ReplaceOperand(oldOperand, newOperand);
         }
     }

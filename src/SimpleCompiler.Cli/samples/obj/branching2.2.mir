@@ -28,9 +28,7 @@ Edges:
 BB0:
   L_EF627A_b₁ = nil
   # samples/branching2.lua 2,4:2,14
-  t₅ = eq 1, 0
-  # samples/branching2.lua 2,4:2,14
-  br BB1 if t₅ else BB2
+  br BB1 if False else BB2
 
 BB1:
   # samples/branching2.lua 3,5:3,14
@@ -41,9 +39,7 @@ BB1:
 
 BB2:
   # samples/branching2.lua 5,8:5,18
-  t₁₂ = eq 1, 0
-  # samples/branching2.lua 5,8:5,18
-  br BB3 if t₁₂ else BB4
+  br BB3 if False else BB4
 
 BB3:
   # samples/branching2.lua 6,5:6,14
@@ -52,9 +48,7 @@ BB3:
 
 BB4:
   # samples/branching2.lua 7,8:7,18
-  t₁₈ = eq 1, 0
-  # samples/branching2.lua 7,8:7,18
-  br BB5 if t₁₈ else BB6
+  br BB5 if False else BB6
 
 BB5:
   # samples/branching2.lua 8,5:8,14
@@ -65,9 +59,7 @@ BB5:
 
 BB6:
   # samples/branching2.lua 10,8:10,18
-  t₂₅ = eq 1, 0
-  # samples/branching2.lua 10,8:10,18
-  br BB7 if t₂₅ else BB8
+  br BB7 if False else BB8
 
 BB7:
   # samples/branching2.lua 11,5:11,14
@@ -76,9 +68,7 @@ BB7:
 
 BB8:
   # samples/branching2.lua 12,8:12,18
-  t₃₁ = eq 1, 0
-  # samples/branching2.lua 12,8:12,18
-  br BB9 if t₃₁ else BB10
+  br BB9 if False else BB10
 
 BB9:
   # samples/branching2.lua 13,5:13,14
@@ -89,9 +79,7 @@ BB9:
 
 BB10:
   # samples/branching2.lua 15,8:15,18
-  t₃₈ = eq 1, 0
-  # samples/branching2.lua 15,8:15,18
-  br BB11 if t₃₈ else BB12
+  br BB11 if False else BB12
 
 BB11:
   # samples/branching2.lua 16,5:16,14
@@ -100,9 +88,7 @@ BB11:
 
 BB12:
   # samples/branching2.lua 17,8:17,18
-  t₄₄ = eq 1, 0
-  # samples/branching2.lua 17,8:17,18
-  br BB13 if t₄₄ else BB14
+  br BB13 if False else BB14
 
 BB13:
   # samples/branching2.lua 18,5:18,14
@@ -113,9 +99,7 @@ BB13:
 
 BB14:
   # samples/branching2.lua 20,8:20,18
-  t₅₁ = eq 1, 0
-  # samples/branching2.lua 20,8:20,18
-  br BB15 if t₅₁ else BB16
+  br BB15 if False else BB16
 
 BB15:
   # samples/branching2.lua 21,5:21,14

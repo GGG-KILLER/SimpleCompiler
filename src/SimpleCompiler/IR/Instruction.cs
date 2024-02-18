@@ -157,12 +157,13 @@ public sealed class Branch(BranchTarget target) : Instruction
     public override string ToRepr() => $"br BB{Target.Block.Ordinal}";
 }
 
-public sealed class ConditionalBranch(Operand operand, BranchTarget ifTrue, BranchTarget ifFalse) : Instruction
+public sealed class ConditionalBranch(Operand condition, BranchTarget ifTrue, BranchTarget ifFalse) : Instruction
 {
     public override InstructionKind Kind => InstructionKind.ConditionalBranch;
-    public Operand Condition { get; set; } = operand;
+    public Operand Condition { get; set; } = condition;
     public BranchTarget TargetIfTrue { get; set; } = ifTrue;
     public BranchTarget TargetIfFalse { get; set; } = ifFalse;
+    public override IEnumerable<Operand> Operands => [Condition];
 
     public override bool References(Operand operand) => Condition == operand;
     // Branch targets don't need to be cloned because they are "immutable".
