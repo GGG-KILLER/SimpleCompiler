@@ -5,14 +5,28 @@ This project uses Loretta (https://github.com/LorettaDevs/Loretta) as the parser
 
 Current status:
 
-- [x] Lowering of Lua into the IR.
+- [ ] Lowering of Lua into the IR:
+    - [x] Basic literals (boolean, int, double, string, hash string).
+    - [x] Unary expressions.
+    - [x] Binary expressions.
+    - [x] Function calls.
+    - [ ] Tables.
+    - [x] If statements.
+    - [ ] While loops.
+    - [ ] Numeric for loops.
+    - [ ] Iterator for loops.
+    - [ ] Local function declarations.
+    - [ ] Function declarations.
 - [ ] IR SSA rewriting.
 - [ ] IR Optimizations:
-    - [ ] Inlining.
+    - [ ] Variable inlining.
     - [ ] Constant folding.
     - [ ] Invariant extraction.
     - [ ] Auto vectorization.
     - [ ] Dead code elimination.
+    - [ ] Value numbering.
+    - [ ] Inter-procedural analysis.
+    - [ ] Function inlining.
 - [ ] CIL emitting.
 - [ ] PDB generation.
 
