@@ -1,0 +1,254 @@
+Edges:
+  BB0 => BB1
+  BB0 => BB2
+  BB2 => BB3
+  BB2 => BB4
+  BB4 => BB5
+  BB4 => BB6
+  BB6 => BB7
+  BB6 => BB8
+  BB8 => BB9
+  BB8 => BB10
+  BB10 => BB11
+  BB10 => BB12
+  BB12 => BB13
+  BB12 => BB14
+  BB14 => BB15
+  BB14 => BB16
+  BB1 => BB17
+  BB3 => BB17
+  BB5 => BB17
+  BB7 => BB17
+  BB9 => BB17
+  BB11 => BB17
+  BB13 => BB17
+  BB15 => BB17
+  BB16 => BB17
+
+BB0:
+  L_3C6E312_print₁ = nil
+  L_3C6E312_print₂ = $print
+  # samples/branching2.lua  1,14:1,15
+  t₁ = 1
+  # samples/branching2.lua  1,1:1,15
+  L_223C672_a₁ = t₁
+  L_223C672_b₁ = nil
+  # samples/branching2.lua  2,8:2,9
+  t₂ = 2
+  # samples/branching2.lua  2,4:2,9
+  t₃ = mod L_223C672_a₁, t₂
+  # samples/branching2.lua  2,13:2,14
+  t₄ = 0
+  # samples/branching2.lua  2,4:2,14
+  t₅ = eq t₃, t₄
+  # samples/branching2.lua  2,4:2,14
+  br BB1 if t₅ else BB2
+
+BB1:
+  L_223C672_a₂ = L_223C672_a₁
+  # samples/branching2.lua  3,13:3,14
+  t₆ = 2
+  # samples/branching2.lua  3,9:3,14
+  t₇ = add L_223C672_a₂, t₆
+  # samples/branching2.lua  3,5:3,14
+  L_223C672_a₃ = t₇
+  # samples/branching2.lua  4,9:4,10
+  t₈ = 2
+  # samples/branching2.lua  4,5:4,10
+  L_223C672_b₂ = t₈
+  br BB17
+
+BB2:
+  L_223C672_a₄ = L_223C672_a₁
+  # samples/branching2.lua  5,12:5,13
+  t₉ = 3
+  # samples/branching2.lua  5,8:5,13
+  t₁₀ = mod L_223C672_a₄, t₉
+  # samples/branching2.lua  5,17:5,18
+  t₁₁ = 0
+  # samples/branching2.lua  5,8:5,18
+  t₁₂ = eq t₁₀, t₁₁
+  # samples/branching2.lua  5,8:5,18
+  br BB3 if t₅ else BB4
+
+BB3:
+  L_223C672_a₅ = L_223C672_a₄
+  # samples/branching2.lua  6,13:6,14
+  t₁₃ = 3
+  # samples/branching2.lua  6,9:6,14
+  t₁₄ = add L_223C672_a₅, t₁₃
+  # samples/branching2.lua  6,5:6,14
+  L_223C672_a₆ = t₁₄
+  br BB17
+
+BB4:
+  L_223C672_a₇ = L_223C672_a₄
+  # samples/branching2.lua  7,12:7,13
+  t₁₅ = 4
+  # samples/branching2.lua  7,8:7,13
+  t₁₆ = mod L_223C672_a₇, t₁₅
+  # samples/branching2.lua  7,17:7,18
+  t₁₇ = 0
+  # samples/branching2.lua  7,8:7,18
+  t₁₈ = eq t₁₆, t₁₇
+  # samples/branching2.lua  7,8:7,18
+  br BB5 if t₅ else BB6
+
+BB5:
+  L_223C672_a₈ = L_223C672_a₇
+  # samples/branching2.lua  8,13:8,14
+  t₁₉ = 4
+  # samples/branching2.lua  8,9:8,14
+  t₂₀ = add L_223C672_a₈, t₁₉
+  # samples/branching2.lua  8,5:8,14
+  L_223C672_a₉ = t₂₀
+  # samples/branching2.lua  9,9:9,10
+  t₂₁ = 4
+  # samples/branching2.lua  9,5:9,10
+  L_223C672_b₃ = t₂₁
+  br BB17
+
+BB6:
+  L_223C672_a₁₀ = L_223C672_a₇
+  # samples/branching2.lua  10,12:10,13
+  t₂₂ = 5
+  # samples/branching2.lua  10,8:10,13
+  t₂₃ = mod L_223C672_a₁₀, t₂₂
+  # samples/branching2.lua  10,17:10,18
+  t₂₄ = 0
+  # samples/branching2.lua  10,8:10,18
+  t₂₅ = eq t₂₃, t₂₄
+  # samples/branching2.lua  10,8:10,18
+  br BB7 if t₅ else BB8
+
+BB7:
+  L_223C672_a₁₁ = L_223C672_a₁₀
+  # samples/branching2.lua  11,13:11,14
+  t₂₆ = 5
+  # samples/branching2.lua  11,9:11,14
+  t₂₇ = add L_223C672_a₁₁, t₂₆
+  # samples/branching2.lua  11,5:11,14
+  L_223C672_a₁₂ = t₂₇
+  br BB17
+
+BB8:
+  L_223C672_a₁₃ = L_223C672_a₁₀
+  # samples/branching2.lua  12,12:12,13
+  t₂₈ = 6
+  # samples/branching2.lua  12,8:12,13
+  t₂₉ = mod L_223C672_a₁₃, t₂₈
+  # samples/branching2.lua  12,17:12,18
+  t₃₀ = 0
+  # samples/branching2.lua  12,8:12,18
+  t₃₁ = eq t₂₉, t₃₀
+  # samples/branching2.lua  12,8:12,18
+  br BB9 if t₅ else BB10
+
+BB9:
+  L_223C672_a₁₄ = L_223C672_a₁₃
+  # samples/branching2.lua  13,13:13,14
+  t₃₂ = 6
+  # samples/branching2.lua  13,9:13,14
+  t₃₃ = add L_223C672_a₁₄, t₃₂
+  # samples/branching2.lua  13,5:13,14
+  L_223C672_a₁₅ = t₃₃
+  # samples/branching2.lua  14,9:14,10
+  t₃₄ = 6
+  # samples/branching2.lua  14,5:14,10
+  L_223C672_b₄ = t₃₄
+  br BB17
+
+BB10:
+  L_223C672_a₁₆ = L_223C672_a₁₃
+  # samples/branching2.lua  15,12:15,13
+  t₃₅ = 7
+  # samples/branching2.lua  15,8:15,13
+  t₃₆ = mod L_223C672_a₁₆, t₃₅
+  # samples/branching2.lua  15,17:15,18
+  t₃₇ = 0
+  # samples/branching2.lua  15,8:15,18
+  t₃₈ = eq t₃₆, t₃₇
+  # samples/branching2.lua  15,8:15,18
+  br BB11 if t₅ else BB12
+
+BB11:
+  L_223C672_a₁₇ = L_223C672_a₁₆
+  # samples/branching2.lua  16,13:16,14
+  t₃₉ = 7
+  # samples/branching2.lua  16,9:16,14
+  t₄₀ = add L_223C672_a₁₇, t₃₉
+  # samples/branching2.lua  16,5:16,14
+  L_223C672_a₁₈ = t₄₀
+  br BB17
+
+BB12:
+  L_223C672_a₁₉ = L_223C672_a₁₆
+  # samples/branching2.lua  17,12:17,13
+  t₄₁ = 8
+  # samples/branching2.lua  17,8:17,13
+  t₄₂ = mod L_223C672_a₁₉, t₄₁
+  # samples/branching2.lua  17,17:17,18
+  t₄₃ = 0
+  # samples/branching2.lua  17,8:17,18
+  t₄₄ = eq t₄₂, t₄₃
+  # samples/branching2.lua  17,8:17,18
+  br BB13 if t₅ else BB14
+
+BB13:
+  L_223C672_a₂₀ = L_223C672_a₁₉
+  # samples/branching2.lua  18,13:18,14
+  t₄₅ = 8
+  # samples/branching2.lua  18,9:18,14
+  t₄₆ = add L_223C672_a₂₀, t₄₅
+  # samples/branching2.lua  18,5:18,14
+  L_223C672_a₂₁ = t₄₆
+  # samples/branching2.lua  19,9:19,10
+  t₄₇ = 8
+  # samples/branching2.lua  19,5:19,10
+  L_223C672_b₅ = t₄₇
+  br BB17
+
+BB14:
+  L_223C672_a₂₂ = L_223C672_a₁₉
+  # samples/branching2.lua  20,12:20,13
+  t₄₈ = 9
+  # samples/branching2.lua  20,8:20,13
+  t₄₉ = mod L_223C672_a₂₂, t₄₈
+  # samples/branching2.lua  20,17:20,18
+  t₅₀ = 0
+  # samples/branching2.lua  20,8:20,18
+  t₅₁ = eq t₄₉, t₅₀
+  # samples/branching2.lua  20,8:20,18
+  br BB15 if t₅ else BB16
+
+BB15:
+  L_223C672_a₂₃ = L_223C672_a₂₂
+  # samples/branching2.lua  21,13:21,14
+  t₅₂ = 9
+  # samples/branching2.lua  21,9:21,14
+  t₅₃ = add L_223C672_a₂₃, t₅₂
+  # samples/branching2.lua  21,5:21,14
+  L_223C672_a₂₄ = t₅₃
+  br BB17
+
+BB16:
+  L_223C672_a₂₅ = L_223C672_a₂₂
+  # samples/branching2.lua  23,13:23,15
+  t₅₄ = 10
+  # samples/branching2.lua  23,9:23,15
+  t₅₅ = add L_223C672_a₂₅, t₅₄
+  # samples/branching2.lua  23,5:23,15
+  L_223C672_a₂₆ = t₅₅
+  # samples/branching2.lua  24,9:24,11
+  t₅₆ = 10
+  # samples/branching2.lua  24,5:24,11
+  L_223C672_b₆ = t₅₆
+  br BB17
+
+BB17:
+  L_3C6E312_print₃ = L_3C6E312_print₂
+  L_223C672_a₂₇ = ϕ([BB1: L_223C672_a₃], [BB3: L_223C672_a₆], [BB5: L_223C672_a₉], [BB7: L_223C672_a₁₂], [BB9: L_223C672_a₁₅], [BB11: L_223C672_a₁₈], [BB13: L_223C672_a₂₁], [BB15: L_223C672_a₂₄], [BB16: L_223C672_a₂₆])
+  L_223C672_b₇ = ϕ([BB1: L_223C672_b₂], [BB0: L_223C672_b₁], [BB5: L_223C672_b₃], [BB9: L_223C672_b₄], [BB13: L_223C672_b₅], [BB16: L_223C672_b₆])
+  # samples/branching2.lua  26,1:26,12
+  t₅₇ = L_3C6E312_print₃(L_223C672_a₂₇, L_223C672_b₇)
+

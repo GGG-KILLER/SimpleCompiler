@@ -189,9 +189,9 @@ public sealed partial class SsaRewriter
             if (phi.Instruction.Phi.Values.Length == 1)
             {
                 // Cleanup
-                phi.Block.Instructions.Remove(phi.Instruction);
-                var values = phi.Instruction.Phi.Values;
-                _source.ReplaceOperand(phi.Instruction.Name, findDefName(values[0].SourceBlockOrdinal, values[0].Value.Name));
+                var index = phi.Block.Instructions.IndexOf(phi.Instruction);
+                var (sourceBlockOrdinal, value) = phi.Instruction.Phi.Values[0];
+                phi.Block.Instructions[index] = Instruction.Assignment(phi.Instruction.Name, findDefName(sourceBlockOrdinal, value.Name));
             }
             else
             {
