@@ -1,5 +1,6 @@
 ﻿using System.CodeDom.Compiler;
 using System.Diagnostics;
+using System.Reflection;
 using Cocona;
 using Loretta.CodeAnalysis;
 using Loretta.CodeAnalysis.Lua;
@@ -8,13 +9,13 @@ using SimpleCompiler.Backends.Cil;
 using SimpleCompiler.Cli;
 using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.Compiler;
-using SimpleCompiler.FileSystem;
 using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.IR;
 using Tsu.Numerics;
 
 await CoconaLiteApp.RunAsync(async (
     [Argument][FileExists] string path,
+    [Option("lua")] string luaVersion,
     [Option('d')] bool debug,
     [Option('O')] bool optimize,
     CoconaAppContext ctx) =>
@@ -23,8 +24,16 @@ await CoconaLiteApp.RunAsync(async (
     using (var stream = File.OpenRead(path))
         sourceText = SourceText.From(stream, throwIfBinaryDetected: true);
 
+    var presetField = typeof(LuaSyntaxOptions).GetField(luaVersion, BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.IgnoreCase);
+    if (presetField is null)
+    {
+        await Console.Error.WriteLineAsync($"Preset for Lua version {luaVersion} was not found.");
+        return -1;
+    }
+    var preset = (LuaSyntaxOptions) presetField.GetValue(null)!;
+
     var s = Stopwatch.StartNew();
-    var syntaxTree = LuaSyntaxTree.ParseText(sourceText, new LuaParseOptions(LuaSyntaxOptions.Lua51), path, ctx.CancellationToken);
+    var syntaxTree = LuaSyntaxTree.ParseText(sourceText, new LuaParseOptions(preset), path, ctx.CancellationToken);
     Console.WriteLine($"Parsed input file in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (syntaxTree.GetDiagnostics().Any())
@@ -49,7 +58,7 @@ await CoconaLiteApp.RunAsync(async (
     var compilation = new Compilation<SyntaxTree>(luaFrontend, cilBackend);
 
     s.Restart();
-    var ir = compilation.GetTree(syntaxTree);
+    var ir = compilation.GetIrGraph(syntaxTree);
     Console.WriteLine($"Syntax lowering done in {Duration.Format(s.Elapsed.Ticks)}");
 
     if (debug)
@@ -62,7 +71,7 @@ await CoconaLiteApp.RunAsync(async (
     {
         s.Restart();
         Console.WriteLine($"Optimizing...");
-        ir = compilation.GetOptimizedTree(syntaxTree, debug ? (ir, stage) =>
+        ir = compilation.GetOptimizedIrGraph(syntaxTree, debug ? (ir, stage) =>
         {
             Console.WriteLine($"  {c}: {stage}");
 
@@ -79,7 +88,7 @@ await CoconaLiteApp.RunAsync(async (
         }
     }
 
-    // TODO: Re-enable when compilation has been implemented.
+    // TODO: Re-enable when compilation has been implemented again.
     // var outputDir = Path.GetDirectoryName(path);
     // Console.WriteLine($"Compiling to {outputDir}");
     // await compilation.EmitAsync(syntaxTree, name, new OutputDirectory(outputDir!), optimize, cancellationToken: ctx.CancellationToken)
@@ -91,15 +100,22 @@ await CoconaLiteApp.RunAsync(async (
     return 0;
 });
 
-static async Task dumpIr(ObjectFileManager objectFileManager, string name, int num, ComputedIr ir, CancellationToken cancellationToken = default)
+static async Task dumpIr(ObjectFileManager objectFileManager, string name, int num, IrGraph ir, CancellationToken cancellationToken = default)
 {
     using var writer = objectFileManager.CreateText(Path.ChangeExtension(name, $"{num}.mir"));
 
     var indentedWriter = new IndentedTextWriter(writer, "  ");
+    await indentedWriter.WriteLineAsync("Edges:");
+    indentedWriter.Indent++;
+    foreach (var edge in ir.Edges)
+        await indentedWriter.WriteLineAsync($"BB{edge.SourceBlockOrdinal} => BB{edge.TargetBlockOrdinal}");
+    indentedWriter.Indent--;
+    await indentedWriter.WriteLineNoTabsAsync("");
+
     foreach (var block in ir.BasicBlocks)
     {
         await indentedWriter.WriteAsync("BB");
-        await indentedWriter.WriteAsync(block.BlockId.ToString());
+        await indentedWriter.WriteAsync(block.Ordinal.ToString());
         await indentedWriter.WriteLineAsync(":");
 
         indentedWriter.Indent++;

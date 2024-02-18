@@ -7,6 +7,12 @@ if [ "$1" = "-O" ]; then
     OPTIMIZE=true
 fi
 
+VERSION="AllWithIntegers"
+if [ "$1" = "--lua" ]; then
+    VERSION=$2
+    shift 2
+fi
+
 while [ $# -gt 0 ]; do
     FILE_DIR=$(dirname "$1")
     FILE_NAME=$(basename -s.lua "$1")
@@ -20,11 +26,11 @@ while [ $# -gt 0 ]; do
 
     if [ "$OPTIMIZE" = true ]; then
         echo "$FILE_DIR/$FILE_NAME.lua (Release):"
-        dotnet run -c Debug -v quiet -- -Od "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
-        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
+        dotnet run -c Debug -v quiet -- -Od --lua "$VERSION"  "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
+        # dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
     else
         echo "$FILE_DIR/$FILE_NAME.lua (Debug):"
-        dotnet run -c Debug -v quiet -- -d "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
-        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
+        dotnet run -c Debug -v quiet -- -d --lua "$VERSION" "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
+        # dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
     fi
 done
