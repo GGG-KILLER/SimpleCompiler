@@ -1,7 +1,3 @@
-#if !DEBUG
-using System.Runtime.CompilerServices;
-#endif
-
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
