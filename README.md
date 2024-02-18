@@ -17,13 +17,13 @@ Current status:
     - [ ] Iterator for loops.
     - [ ] Local function declarations.
     - [ ] Function declarations.
-- [ ] IR SSA rewriting.
+- [x] IR SSA rewriting.
 - [ ] IR Optimizations:
-    - [ ] Variable inlining.
-    - [ ] Constant folding.
+    - [x] Variable inlining.
+    - [x] Constant folding.
     - [ ] Invariant extraction.
     - [ ] Auto vectorization.
-    - [ ] Dead code elimination.
+    - [x] Dead code elimination.
     - [ ] Value numbering.
     - [ ] Inter-procedural analysis.
     - [ ] Function inlining.

@@ -4,3 +4,7 @@
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Binary expressions.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Function calls.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx If statements.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QSimpleCompiler\nA not-so-simple optimizing compiler that aims to compile Lua (or other sources, given a proper frontend) into CIL (or other targets, given a proper backend).\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx IR SSA rewriting.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Constant folding.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Dead code elimination.\\E$"}
