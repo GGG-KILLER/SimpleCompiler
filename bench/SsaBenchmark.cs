@@ -50,16 +50,8 @@ public class SsaBenchmark
     [Benchmark]
     public IrGraph Rewrite()
     {
-        var graph = Clone(_refGraph);
+        var graph = _refGraph.Clone();
         SsaRewriter.RewriteGraph(graph);
         return graph;
-    }
-
-    private static IrGraph Clone(IrGraph graph)
-    {
-        var basicBlocks = graph.BasicBlocks.Select(b => new BasicBlock(b.Ordinal, [.. b.Instructions])).ToList();
-        var edges = graph.Edges.ToList();
-        var entryBlock = basicBlocks[graph.EntryBlock.Ordinal];
-        return new IrGraph(basicBlocks, edges, entryBlock);
     }
 }

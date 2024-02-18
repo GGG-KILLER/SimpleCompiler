@@ -13,6 +13,8 @@ public sealed class BasicBlock(int blockOrdinal, IEnumerable<Instruction> instru
     /// This block's instructions.
     /// </summary>
     public LinkedList<Instruction> Instructions { get; } = new LinkedList<Instruction>(instructions);
+
+    public BasicBlock Clone() => new(Ordinal, [.. Instructions.Select(x => x.Clone())]);
 }
 
 public static class InstructionListExtensions

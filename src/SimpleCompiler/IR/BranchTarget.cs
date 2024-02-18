@@ -4,6 +4,15 @@ public sealed class BranchTarget
 {
     private BasicBlock? _lazyBlock = null;
 
+    public BranchTarget()
+    {
+    }
+
+    public BranchTarget(BasicBlock basicBlock)
+    {
+        _lazyBlock = basicBlock;
+    }
+
     public BasicBlock Block
     {
         get

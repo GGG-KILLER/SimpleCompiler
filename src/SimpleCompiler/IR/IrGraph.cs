@@ -23,6 +23,14 @@ public sealed class IrGraph(
 
     public IEnumerable<Instruction> FindUses(NameValue name) =>
         BasicBlocks.SelectMany(x => x.Instructions).Where(x => x.References(name));
+
+    public IrGraph Clone()
+    {
+        var basicBlocks = BasicBlocks.Select(x => x.Clone()).ToList();
+        var edges = Edges.ToList();
+        var entryBlock = basicBlocks[EntryBlock.Ordinal];
+        return new(basicBlocks, edges, entryBlock);
+    }
 }
 
 public readonly record struct IrEdge(int SourceBlockOrdinal, int TargetBlockOrdinal);
