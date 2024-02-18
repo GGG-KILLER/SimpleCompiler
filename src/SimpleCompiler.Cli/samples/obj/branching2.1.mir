@@ -69,7 +69,7 @@ BB2:
   # samples/branching2.lua 5,8:5,18
   t₁₂ = eq t₁₀, t₁₁
   # samples/branching2.lua 5,8:5,18
-  br BB3 if t₅ else BB4
+  br BB3 if t₁₂ else BB4
 
 BB3:
   L_223C672_a₅ = L_223C672_a₄
@@ -92,7 +92,7 @@ BB4:
   # samples/branching2.lua 7,8:7,18
   t₁₈ = eq t₁₆, t₁₇
   # samples/branching2.lua 7,8:7,18
-  br BB5 if t₅ else BB6
+  br BB5 if t₁₈ else BB6
 
 BB5:
   L_223C672_a₈ = L_223C672_a₇
@@ -119,7 +119,7 @@ BB6:
   # samples/branching2.lua 10,8:10,18
   t₂₅ = eq t₂₃, t₂₄
   # samples/branching2.lua 10,8:10,18
-  br BB7 if t₅ else BB8
+  br BB7 if t₂₅ else BB8
 
 BB7:
   L_223C672_a₁₁ = L_223C672_a₁₀
@@ -142,7 +142,7 @@ BB8:
   # samples/branching2.lua 12,8:12,18
   t₃₁ = eq t₂₉, t₃₀
   # samples/branching2.lua 12,8:12,18
-  br BB9 if t₅ else BB10
+  br BB9 if t₃₁ else BB10
 
 BB9:
   L_223C672_a₁₄ = L_223C672_a₁₃
@@ -169,7 +169,7 @@ BB10:
   # samples/branching2.lua 15,8:15,18
   t₃₈ = eq t₃₆, t₃₇
   # samples/branching2.lua 15,8:15,18
-  br BB11 if t₅ else BB12
+  br BB11 if t₃₈ else BB12
 
 BB11:
   L_223C672_a₁₇ = L_223C672_a₁₆
@@ -192,7 +192,7 @@ BB12:
   # samples/branching2.lua 17,8:17,18
   t₄₄ = eq t₄₂, t₄₃
   # samples/branching2.lua 17,8:17,18
-  br BB13 if t₅ else BB14
+  br BB13 if t₄₄ else BB14
 
 BB13:
   L_223C672_a₂₀ = L_223C672_a₁₉
@@ -219,7 +219,7 @@ BB14:
   # samples/branching2.lua 20,8:20,18
   t₅₁ = eq t₄₉, t₅₀
   # samples/branching2.lua 20,8:20,18
-  br BB15 if t₅ else BB16
+  br BB15 if t₅₁ else BB16
 
 BB15:
   L_223C672_a₂₃ = L_223C672_a₂₂

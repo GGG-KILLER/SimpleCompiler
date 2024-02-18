@@ -41,7 +41,7 @@ BB2:
   # samples/branching.lua 5,8:5,18
   t₉ = eq t₇, t₈
   # samples/branching.lua 5,8:5,18
-  br BB3 if t₄ else BB4
+  br BB3 if t₉ else BB4
 
 BB3:
   # samples/branching.lua 6,9:6,10

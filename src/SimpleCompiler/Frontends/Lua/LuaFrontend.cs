@@ -231,7 +231,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                 // Create entry condition block
                 var elseIfCond = LowerExpression(clause.Condition);
                 EmitDebugLocation(clause.Condition);
-                _instructions.Add(new ConditionalBranch(ifCond, ifTrue, ifFalse));
+                _instructions.Add(new ConditionalBranch(elseIfCond, ifTrue, ifFalse));
                 FinalizeBlock();
 
                 // Finalize the block for the body
