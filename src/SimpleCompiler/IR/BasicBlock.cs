@@ -12,31 +12,31 @@ public sealed class BasicBlock(int blockOrdinal, IEnumerable<Instruction> instru
     /// <summary>
     /// This block's instructions.
     /// </summary>
-    public InstructionList Instructions { get; } = new InstructionList(instructions);
+    public LinkedList<Instruction> Instructions { get; } = new LinkedList<Instruction>(instructions);
 
     public BasicBlock Clone() => new(Ordinal, [.. Instructions.Select(x => x.Clone())]);
 }
 
 public static class InstructionListExtensions
 {
-    public readonly struct Enumerable(InstructionList instructions) : IEnumerable<InstructionListNode>
+    public readonly struct Enumerable(LinkedList<Instruction> instructions) : IEnumerable<LinkedListNode<Instruction>>
     {
         public Enumerator GetEnumerator() => new(instructions);
         public Reverse Reversed() => new(instructions);
-        IEnumerator<InstructionListNode> IEnumerable<InstructionListNode>.GetEnumerator() => GetEnumerator();
+        IEnumerator<LinkedListNode<Instruction>> IEnumerable<LinkedListNode<Instruction>>.GetEnumerator() => GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public readonly struct Reverse(InstructionList instructions) : IEnumerable<InstructionListNode>
+        public readonly struct Reverse(LinkedList<Instruction> instructions) : IEnumerable<LinkedListNode<Instruction>>
         {
             public Enumerator GetEnumerator() => new(instructions);
-            IEnumerator<InstructionListNode> IEnumerable<InstructionListNode>.GetEnumerator() => GetEnumerator();
+            IEnumerator<LinkedListNode<Instruction>> IEnumerable<LinkedListNode<Instruction>>.GetEnumerator() => GetEnumerator();
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-            public struct Enumerator(InstructionList instructions) : IEnumerator<InstructionListNode>
+            public struct Enumerator(LinkedList<Instruction> instructions) : IEnumerator<LinkedListNode<Instruction>>
             {
                 private bool _first = true;
-                private InstructionListNode? _node = instructions.Last;
-                public readonly InstructionListNode Current => _node is null ? throw new InvalidOperationException() : _node;
+                private LinkedListNode<Instruction>? _node = instructions.Last;
+                public readonly LinkedListNode<Instruction> Current => _node is null ? throw new InvalidOperationException() : _node;
                 readonly object IEnumerator.Current => Current;
 
                 public bool MoveNext()
@@ -53,11 +53,11 @@ public static class InstructionListExtensions
             }
         }
 
-        public struct Enumerator(InstructionList instructions) : IEnumerator<InstructionListNode>
+        public struct Enumerator(LinkedList<Instruction> instructions) : IEnumerator<LinkedListNode<Instruction>>
         {
             private bool _first = true;
-            private InstructionListNode? _node = instructions.First;
-            public readonly InstructionListNode Current => _node is null ? throw new InvalidOperationException() : _node;
+            private LinkedListNode<Instruction>? _node = instructions.First;
+            public readonly LinkedListNode<Instruction> Current => _node is null ? throw new InvalidOperationException() : _node;
             readonly object IEnumerator.Current => Current;
 
             public bool MoveNext()
@@ -74,11 +74,11 @@ public static class InstructionListExtensions
         }
     }
 
-    public static Enumerable Nodes(this InstructionList instructions) => new(instructions);
+    public static Enumerable Nodes(this LinkedList<Instruction> instructions) => new(instructions);
 
-    public static InstructionListNode? FindLastPhi(this InstructionList instructions)
+    public static LinkedListNode<Instruction>? FindLastPhi(this LinkedList<Instruction> instructions)
     {
-        InstructionListNode? phiNode = null;
+        LinkedListNode<Instruction>? phiNode = null;
         for (var node = instructions.First; node is not null; node = node.Next)
         {
             if (node.Value.Kind == InstructionKind.PhiAssignment)
@@ -89,7 +89,7 @@ public static class InstructionListExtensions
         return phiNode;
     }
 
-    public static InstructionListNode AppendPhi(this InstructionList instructions, PhiAssignment assignment)
+    public static LinkedListNode<Instruction> AppendPhi(this LinkedList<Instruction> instructions, PhiAssignment assignment)
     {
         var node = instructions.FindLastPhi();
         return node is null
