@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using SimpleCompiler.IR.Debug;
 
 namespace SimpleCompiler.IR;
@@ -14,6 +15,7 @@ public enum InstructionKind
     ConditionalBranch,
 }
 
+[DebuggerDisplay($"{{{nameof(ToRepr)}(),nq}}")]
 public abstract class Instruction
 {
     public abstract InstructionKind Kind { get; }
@@ -44,13 +46,13 @@ public sealed class Assignment(NameValue name, Operand operand) : Instruction
     public override InstructionKind Kind => InstructionKind.Assignment;
     public override bool IsAssignment => true;
     public NameValue Name { get; set; } = name;
-    public Operand Operand { get; set; } = operand;
+    public Operand Value { get; set; } = operand;
     public override NameValue Assignee { get => Name; set => Name = value; }
-    public override IEnumerable<Operand> Operands => [Operand];
+    public override IEnumerable<Operand> Operands => [Value];
 
-    public override bool References(Operand operand) => Operand == operand;
-    public override Assignment Clone() => new(Name, Operand);
-    public override string ToRepr() => $"{Name} = {Operand}";
+    public override bool References(Operand operand) => Value == operand;
+    public override Assignment Clone() => new(Name, Value);
+    public override string ToRepr() => $"{Name} = {Value}";
 }
 
 public sealed class UnaryAssignment(NameValue name, UnaryOperationKind operationKind, Operand operand) : Instruction

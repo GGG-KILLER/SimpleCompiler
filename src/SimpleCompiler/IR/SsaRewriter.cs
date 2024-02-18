@@ -110,7 +110,7 @@ public sealed partial class SsaRewriter
                         case InstructionKind.Assignment:
                         {
                             var assignment = CastHelper.FastCast<Assignment>(instruction);
-                            assignment.Operand = versionOperand(assignment.Operand);
+                            assignment.Value = versionOperand(assignment.Value);
                             break;
                         }
                         case InstructionKind.UnaryAssignment:

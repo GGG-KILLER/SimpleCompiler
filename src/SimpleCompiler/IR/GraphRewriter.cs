@@ -39,7 +39,7 @@ public static class GraphRewriter
                 var assignment = CastHelper.FastCast<Assignment>(instruction);
                 if (newOperand is NameValue newName)
                     assignment.Name = assignment.Name == oldOperand ? newName : assignment.Name;
-                assignment.Operand = assignment.Operand == oldOperand ? newOperand : assignment.Operand;
+                assignment.Value = assignment.Value == oldOperand ? newOperand : assignment.Value;
                 break;
             }
             case InstructionKind.UnaryAssignment:
