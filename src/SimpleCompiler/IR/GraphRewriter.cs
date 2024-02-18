@@ -16,13 +16,14 @@ public static class GraphRewriter
 
     public static void ReplaceOperand(this BasicBlock block, Operand oldOperand, Operand newOperand)
     {
-        for (var i = 0; i < block.Instructions.Count; i++)
+        for(var node = block.Instructions.First; node is not null; node = node.Next)
         {
-            var instruction = block.Instructions[i];
+            var instruction = node.Value;
+
             if ((!instruction.IsAssignment || instruction.Assignee != oldOperand) && !instruction.Operands.Contains(oldOperand))
                 continue;
 
-            block.Instructions[i] = instruction.ReplaceOperand(oldOperand, newOperand);
+            node.Value = instruction.ReplaceOperand(oldOperand, newOperand);
         }
     }
 
