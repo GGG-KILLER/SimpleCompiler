@@ -14,6 +14,10 @@ public sealed class Compilation<TInput>(
 {
     private readonly ImmutableArray<IOptimizationPass> _optimizationPasses = optimizationPasses.ToImmutableArray();
 
+    public Compilation(IFrontend<TInput> frontend, IBackend backend) : this(frontend, OptimizationPasses.All, backend)
+    {
+    }
+
     public IrGraph GetIrGraph(TInput input) => frontend.Lower(input);
 
     public IrGraph GetOptimizedIrGraph(TInput input, Action<IrGraph, string>? onOptimizationRan = null)

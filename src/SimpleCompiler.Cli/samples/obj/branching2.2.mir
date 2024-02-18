@@ -1,0 +1,137 @@
+Edges:
+  BB0 => BB1
+  BB0 => BB2
+  BB2 => BB3
+  BB2 => BB4
+  BB4 => BB5
+  BB4 => BB6
+  BB6 => BB7
+  BB6 => BB8
+  BB8 => BB9
+  BB8 => BB10
+  BB10 => BB11
+  BB10 => BB12
+  BB12 => BB13
+  BB12 => BB14
+  BB14 => BB15
+  BB14 => BB16
+  BB1 => BB17
+  BB3 => BB17
+  BB5 => BB17
+  BB7 => BB17
+  BB9 => BB17
+  BB11 => BB17
+  BB13 => BB17
+  BB15 => BB17
+  BB16 => BB17
+
+BB0:
+  L_EF627A_b₁ = nil
+  # samples/branching2.lua 2,4:2,14
+  t₅ = eq 1, 0
+  # samples/branching2.lua 2,4:2,14
+  br BB1 if t₅ else BB2
+
+BB1:
+  # samples/branching2.lua 3,5:3,14
+  L_EF627A_a₃ = 3
+  # samples/branching2.lua 4,5:4,10
+  L_EF627A_b₂ = 2
+  br BB17
+
+BB2:
+  # samples/branching2.lua 5,8:5,18
+  t₁₂ = eq 1, 0
+  # samples/branching2.lua 5,8:5,18
+  br BB3 if t₁₂ else BB4
+
+BB3:
+  # samples/branching2.lua 6,5:6,14
+  L_EF627A_a₆ = 4
+  br BB17
+
+BB4:
+  # samples/branching2.lua 7,8:7,18
+  t₁₈ = eq 1, 0
+  # samples/branching2.lua 7,8:7,18
+  br BB5 if t₁₈ else BB6
+
+BB5:
+  # samples/branching2.lua 8,5:8,14
+  L_EF627A_a₉ = 5
+  # samples/branching2.lua 9,5:9,10
+  L_EF627A_b₃ = 4
+  br BB17
+
+BB6:
+  # samples/branching2.lua 10,8:10,18
+  t₂₅ = eq 1, 0
+  # samples/branching2.lua 10,8:10,18
+  br BB7 if t₂₅ else BB8
+
+BB7:
+  # samples/branching2.lua 11,5:11,14
+  L_EF627A_a₁₂ = 6
+  br BB17
+
+BB8:
+  # samples/branching2.lua 12,8:12,18
+  t₃₁ = eq 1, 0
+  # samples/branching2.lua 12,8:12,18
+  br BB9 if t₃₁ else BB10
+
+BB9:
+  # samples/branching2.lua 13,5:13,14
+  L_EF627A_a₁₅ = 7
+  # samples/branching2.lua 14,5:14,10
+  L_EF627A_b₄ = 6
+  br BB17
+
+BB10:
+  # samples/branching2.lua 15,8:15,18
+  t₃₈ = eq 1, 0
+  # samples/branching2.lua 15,8:15,18
+  br BB11 if t₃₈ else BB12
+
+BB11:
+  # samples/branching2.lua 16,5:16,14
+  L_EF627A_a₁₈ = 8
+  br BB17
+
+BB12:
+  # samples/branching2.lua 17,8:17,18
+  t₄₄ = eq 1, 0
+  # samples/branching2.lua 17,8:17,18
+  br BB13 if t₄₄ else BB14
+
+BB13:
+  # samples/branching2.lua 18,5:18,14
+  L_EF627A_a₂₁ = 9
+  # samples/branching2.lua 19,5:19,10
+  L_EF627A_b₅ = 8
+  br BB17
+
+BB14:
+  # samples/branching2.lua 20,8:20,18
+  t₅₁ = eq 1, 0
+  # samples/branching2.lua 20,8:20,18
+  br BB15 if t₅₁ else BB16
+
+BB15:
+  # samples/branching2.lua 21,5:21,14
+  L_EF627A_a₂₄ = 10
+  br BB17
+
+BB16:
+  # samples/branching2.lua 23,5:23,15
+  L_EF627A_a₂₆ = 11
+  # samples/branching2.lua 24,5:24,11
+  L_EF627A_b₆ = 10
+  br BB17
+
+BB17:
+  L_EF627A_a₂₇ = ϕ([BB1: L_EF627A_a₃], [BB3: L_EF627A_a₆], [BB5: L_EF627A_a₉], [BB7: L_EF627A_a₁₂], [BB9: L_EF627A_a₁₅], [BB11: L_EF627A_a₁₈], [BB13: L_EF627A_a₂₁], [BB15: L_EF627A_a₂₄], [BB16: L_EF627A_a₂₆])
+  L_EF627A_b₇ = ϕ([BB1: L_EF627A_b₂], [BB0: L_EF627A_b₁], [BB5: L_EF627A_b₃], [BB9: L_EF627A_b₄], [BB13: L_EF627A_b₅], [BB16: L_EF627A_b₆])
+  # samples/branching2.lua 26,1:26,12
+  t₅₇ = $print(L_EF627A_a₂₇, L_EF627A_b₇)
+

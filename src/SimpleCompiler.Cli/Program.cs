@@ -55,7 +55,7 @@ await CoconaLiteApp.RunAsync(async (
         cilDebugWriter = objDir.CreateText(name + ".cil");
     var cilBackend = new CilBackend(cilDebugWriter);
 
-    var compilation = new Compilation<SyntaxTree>(luaFrontend, [], cilBackend);
+    var compilation = new Compilation<SyntaxTree>(luaFrontend, cilBackend);
 
     s.Restart();
     var ir = compilation.GetIrGraph(syntaxTree);
@@ -81,11 +81,6 @@ await CoconaLiteApp.RunAsync(async (
         }
         : (ir, stage) => { });
         Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
-
-        if (debug)
-        {
-            await dumpIr(objDir, name, c++, ir, ctx.CancellationToken);
-        }
     }
 
     // TODO: Re-enable when compilation has been implemented again.
