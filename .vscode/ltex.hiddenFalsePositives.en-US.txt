@@ -1,2 +1,6 @@
 {"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QSimpleCompiler\nA not-so-simple optimizing compiler that aims to compile Lua into CIL (or other targets).\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Lowering of Lua into the IR.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Unary expressions.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Binary expressions.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Function calls.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx If statements.\\E$"}
