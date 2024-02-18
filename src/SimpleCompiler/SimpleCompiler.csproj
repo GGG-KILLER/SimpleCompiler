@@ -6,42 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Enable output of generated files back into our Generated directory -->
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Folder Include="Generated\" />
-
-    <!-- Don't include the output from a previous source generator execution into future runs; the */** trick here ensures that there's
-      at least one subdirectory, which is our key that it's coming from a source generator as opposed to something that is coming from
-      some other tool. -->
-    <Compile Remove="$(CompilerGeneratedFilesOutputPath)/*/**/*.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.12-nightly.24" />
     <PackageReference Include="Loretta.CodeAnalysis.Lua.Experimental" Version="0.2.12-nightly.24" />
     <PackageReference Include="Sigil" Version="5.0.0" />
-    <PackageReference Include="Tsu.Trees.RedGreen" Version="0.2.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <!-- <ProjectReference Include="..\..\..\Tsu\Tsu.Trees.RedGreen\src\Tsu.Trees.RedGreen.csproj">
-      <OutputItemType>Analyzer</OutputItemType>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
-    </ProjectReference> -->
-    <ProjectReference Include="..\SimpleCompiler.ClassEnumGen\SimpleCompiler.ClassEnumGen.csproj">
-      <OutputItemType>Analyzer</OutputItemType>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <SetTargetFramework>TargetFramework=netstandard2.0</SetTargetFramework>
-    </ProjectReference>
     <ProjectReference Include="..\SimpleCompiler.Runtime\SimpleCompiler.Runtime.csproj" />
     <ProjectReference Include="..\ILPack\src\Lokad.ILPack.csproj" />
   </ItemGroup>
