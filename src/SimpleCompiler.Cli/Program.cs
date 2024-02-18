@@ -5,10 +5,10 @@ using Cocona;
 using Loretta.CodeAnalysis;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Text;
+using SimpleCompiler;
 using SimpleCompiler.Backends.Cil;
 using SimpleCompiler.Cli;
 using SimpleCompiler.Cli.Validation;
-using SimpleCompiler.Compiler;
 using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.IR;
 using Tsu.Numerics;
@@ -55,7 +55,7 @@ await CoconaLiteApp.RunAsync(async (
         cilDebugWriter = objDir.CreateText(name + ".cil");
     var cilBackend = new CilBackend(cilDebugWriter);
 
-    var compilation = new Compilation<SyntaxTree>(luaFrontend, cilBackend);
+    var compilation = new Compilation<SyntaxTree>(luaFrontend, [], cilBackend);
 
     s.Restart();
     var ir = compilation.GetIrGraph(syntaxTree);
