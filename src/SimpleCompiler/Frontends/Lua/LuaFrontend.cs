@@ -11,7 +11,7 @@ namespace SimpleCompiler.Frontends.Lua;
 
 public sealed class LuaFrontend : IFrontend<SyntaxTree>
 {
-    public IrGraph Lower(SyntaxTree input)
+    public static IrGraph LowerWithoutSsa(SyntaxTree input)
     {
         var script = new Script([input]);
         var walker = new Walker(script);
@@ -21,7 +21,12 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             out var edges,
             out var entryBlocks);
 
-        var graph = new IrGraph(basicBlocks, edges, entryBlocks);
+        return new IrGraph(basicBlocks, edges, entryBlocks);
+    }
+
+    public IrGraph Lower(SyntaxTree input)
+    {
+        var graph = LowerWithoutSsa(input);
         SsaRewriter.RewriteGraph(graph);
         return graph;
     }
