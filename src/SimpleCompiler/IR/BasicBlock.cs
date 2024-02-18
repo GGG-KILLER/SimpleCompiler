@@ -34,36 +34,42 @@ public static class InstructionListExtensions
 
             public struct Enumerator(LinkedList<Instruction> instructions) : IEnumerator<LinkedListNode<Instruction>>
             {
+                private bool _first = true;
                 private LinkedListNode<Instruction>? _node = instructions.Last;
                 public readonly LinkedListNode<Instruction> Current => _node is null ? throw new InvalidOperationException() : _node;
                 readonly object IEnumerator.Current => Current;
 
                 public bool MoveNext()
                 {
-                    if (_node?.Previous is null)
+                    if ((_first ? _node : _node?.Previous) is null)
                         return false;
-                    _node = _node.Previous;
+                    if (!_first)
+                        _node = _node!.Previous;
+                    _first = false;
                     return true;
                 }
-                public void Reset() => _node = instructions.Last;
+                public void Reset() => (_first, _node) = (true, instructions.Last);
                 public readonly void Dispose() { }
             }
         }
 
         public struct Enumerator(LinkedList<Instruction> instructions) : IEnumerator<LinkedListNode<Instruction>>
         {
+            private bool _first = true;
             private LinkedListNode<Instruction>? _node = instructions.First;
             public readonly LinkedListNode<Instruction> Current => _node is null ? throw new InvalidOperationException() : _node;
             readonly object IEnumerator.Current => Current;
 
             public bool MoveNext()
             {
-                if (_node?.Next is null)
+                if ((_first ? _node : _node?.Next) is null)
                     return false;
-                _node = _node.Next;
+                if (!_first)
+                    _node = _node!.Next;
+                _first = false;
                 return true;
             }
-            public void Reset() => _node = instructions.First;
+            public void Reset() => (_first, _node) = (true, instructions.First);
             public readonly void Dispose() { }
         }
     }
