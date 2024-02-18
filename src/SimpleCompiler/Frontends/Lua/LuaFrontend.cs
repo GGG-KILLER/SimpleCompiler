@@ -99,7 +99,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
         private void EmitDebugLocation(SyntaxNode node)
         {
             var lineSpan = node.GetLocation().GetLineSpan();
-            _instructions.Add(Instruction.DebugLocation(new SourceLocation(
+            _instructions.Add(new DebugLocation(new SourceLocation(
                 lineSpan.Path,
                 lineSpan.StartLinePosition.Line + 1,
                 lineSpan.StartLinePosition.Character + 1,
@@ -118,7 +118,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             foreach (var variable in script.RootScope.DeclaredVariables)
             {
                 var name = GetName(variable);
-                _instructions.Add(Instruction.Assignment(name, Constant.Nil));
+                _instructions.Add(new Assignment(name, Constant.Nil));
             }
 
             // Setup builtins as locals in the entry point.
@@ -131,7 +131,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                     continue;
 
                 var name = GetName(variable!);
-                _instructions.Add(Instruction.Assignment(name, new Builtin(builtin)));
+                _instructions.Add(new Assignment(name, new Builtin(builtin)));
             }
 
             LowerStatementList(node.Statements);
@@ -211,11 +211,11 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             // Add entry condition and end the block with the branch
             var ifCond = LowerExpression(ifStatementSyntax.Condition);
             EmitDebugLocation(ifStatementSyntax.Condition);
-            _instructions.Add(Instruction.CondBranch(ifCond, ifTrue, ifFalse));
+            _instructions.Add(new ConditionalBranch(ifCond, ifTrue, ifFalse));
             FinalizeBlock();
 
             LowerStatementList(ifStatementSyntax.Body, false);
-            _instructions.Add(Instruction.Branch(endTarget));
+            _instructions.Add(new Branch(endTarget));
             var ifBodyBlock = FinalizeBlock();
             bodyBlockOrdinals.Add(ifBodyBlock.Ordinal);
 
@@ -231,12 +231,12 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                 // Create entry condition block
                 var elseIfCond = LowerExpression(clause.Condition);
                 EmitDebugLocation(clause.Condition);
-                _instructions.Add(Instruction.CondBranch(ifCond, ifTrue, ifFalse));
+                _instructions.Add(new ConditionalBranch(ifCond, ifTrue, ifFalse));
                 FinalizeBlock();
 
                 // Finalize the block for the body
                 LowerStatementList(clause.Body, false);
-                _instructions.Add(Instruction.Branch(endTarget));
+                _instructions.Add(new Branch(endTarget));
                 var elseIfBodyBlock = FinalizeBlock();
                 bodyBlockOrdinals.Add(elseIfBodyBlock.Ordinal);
             }
@@ -245,7 +245,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             {
                 // Else has no condition so no entry block to it
                 LowerStatementList(ifStatementSyntax.ElseClause.ElseBody, false);
-                _instructions.Add(Instruction.Branch(endTarget));
+                _instructions.Add(new Branch(endTarget));
                 var elseBodyBlock = FinalizeBlock();
                 bodyBlockOrdinals.Add(elseBodyBlock.Ordinal);
             }
@@ -276,7 +276,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                 var name = node.Names[index: idx];
                 var variable = FindVariable(name);
 
-                _instructions.Add(Instruction.Assignment(
+                _instructions.Add(new Assignment(
                     GetName(variable),
                     idx < values.Count ? values[idx] : Constant.Nil));
             }
@@ -302,7 +302,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
 
                 var variable = FindVariable(name);
 
-                _instructions.Add(Instruction.Assignment(
+                _instructions.Add(new Assignment(
                     GetName(variable),
                     idx < values.Count ? values[idx] : Constant.Nil));
             }
@@ -316,7 +316,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             var assignee = GetName(FindVariable(node.Variable));
             var operand = LowerExpression(node.Expression);
 
-            _instructions.Add(Instruction.BinaryAssignment(
+            _instructions.Add(new BinaryAssignment(
                 assignee,
                 assignee,
                 ToBinaryKind(
@@ -357,7 +357,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                     EmitDebugLocation(node);
                     var name = _nameTracker.NewTemporary();
                     var operand = Constant.True;
-                    _instructions.Add(Instruction.Assignment(name, operand));
+                    _instructions.Add(new Assignment(name, operand));
                     return name;
                 }
                 case SyntaxKind.FalseLiteralExpression:
@@ -365,7 +365,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                     EmitDebugLocation(node);
                     var name = _nameTracker.NewTemporary();
                     var operand = Constant.False;
-                    _instructions.Add(Instruction.Assignment(name, operand));
+                    _instructions.Add(new Assignment(name, operand));
                     return name;
                 }
                 case SyntaxKind.StringLiteralExpression:
@@ -373,7 +373,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                     EmitDebugLocation(node);
                     var name = _nameTracker.NewTemporary();
                     var operand = new Constant(ConstantKind.String, CastHelper.FastCast<LiteralExpressionSyntax>(node).Token.Value);
-                    _instructions.Add(Instruction.Assignment(name, operand));
+                    _instructions.Add(new Assignment(name, operand));
                     return name;
                 }
                 case SyntaxKind.NumericalLiteralExpression:
@@ -382,7 +382,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                     EmitDebugLocation(node);
                     var name = _nameTracker.NewTemporary();
                     var operand = new Constant(ConstantKind.Number, CastHelper.FastCast<LiteralExpressionSyntax>(node).Token.Value);
-                    _instructions.Add(Instruction.Assignment(name, operand));
+                    _instructions.Add(new Assignment(name, operand));
                     return name;
                 }
                 case SyntaxKind.IdentifierName:
@@ -404,7 +404,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
         {
             var name = _nameTracker.NewTemporary();
             var operand = Constant.Nil;
-            _instructions.Add(Instruction.Assignment(name, operand));
+            _instructions.Add(new Assignment(name, operand));
             return name;
         }
 
@@ -418,7 +418,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
                                                                        .Expressions
                                                                        .Select(LowerExpression)
                                                                        .Cast<Operand>()
-                                                                       .ToImmutableArray(),
+                                                                       .ToList(),
                 _ => throw new UnreachableException()
             };
 
@@ -426,7 +426,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
 
             EmitDebugLocation(node);
             var name = _nameTracker.NewTemporary();
-            _instructions.Add(Instruction.FunctionAssignment(name, callee, arguments));
+            _instructions.Add(new FunctionAssignment(name, callee, arguments));
 
             return name;
         }
@@ -438,7 +438,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
 
             EmitDebugLocation(node);
             var name = _nameTracker.NewTemporary();
-            _instructions.Add(Instruction.BinaryAssignment(
+            _instructions.Add(new BinaryAssignment(
                 name,
                 left,
                 ToBinaryKind(node, node.Kind()),
@@ -452,7 +452,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
 
             EmitDebugLocation(node);
             var name = _nameTracker.NewTemporary();
-            _instructions.Add(Instruction.UnaryAssignment(
+            _instructions.Add(new UnaryAssignment(
                 name,
                 node.Kind() switch
                 {

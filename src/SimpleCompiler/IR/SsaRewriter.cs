@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Diagnostics;
 using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.Helpers;
@@ -28,7 +27,7 @@ public sealed partial class SsaRewriter
 
     private void InsertPhis()
     {
-        Parallel.ForEach(_source.BasicBlocks, block =>
+        foreach (var block in _source.BasicBlocks)
         {
             var assigned = new HashSet<NameValue>();
             for (var node = block.Instructions.First; node is not null; node = node.Next)
@@ -43,22 +42,22 @@ public sealed partial class SsaRewriter
                 foreach (var name in instruction.Operands.OfType<NameValue>().Where(x => x.IsUnversioned).Except(assigned))
                 {
                     // Insert phi and mark as assigned.
-                    block.Instructions.AppendPhi(Instruction.PhiAssignment(name, new Phi([])));
+                    block.Instructions.AppendPhi(new PhiAssignment(name, new Phi([])));
                     assigned.Add(name);
                 }
             }
-        });
+        }
     }
 
     private void FillInPhis()
     {
-        var phis = _source.BasicBlocks.SelectMany(x => x.Instructions.Nodes().Where(x => x.Value.Kind == InstructionKind.PhiAssignment).Select(y => (Block: x, Node: y))).ToArray();
+        var phis = _source.BasicBlocks.SelectMany(x => x.Instructions.Nodes().Where(x => x.Value.Kind == InstructionKind.PhiAssignment).Select(y => (Block: x, Node: y)));
 
-        foreach (var phi in phis)
+        foreach (var (block, node) in phis)
         {
-            var instruction = CastHelper.FastCast<PhiAssignment>(phi.Node.Value); ;
-            var defs = findDefs(phi.Block.Ordinal, instruction.Name).Distinct();
-            phi.Node.Value = instruction with { Phi = new Phi(defs.Select(x => (x, instruction.Name)).ToImmutableArray()) };
+            var instruction = CastHelper.FastCast<PhiAssignment>(node.Value); ;
+            var defs = findDefs(block.Ordinal, instruction.Name).Distinct();
+            instruction.Phi.Values.AddRange(defs.Select(x => (x, instruction.Name)));
         }
 
         IEnumerable<int> findDefs(int useBlockOrdinal, NameValue nameValue)
@@ -111,39 +110,34 @@ public sealed partial class SsaRewriter
                         case InstructionKind.Assignment:
                         {
                             var assignment = CastHelper.FastCast<Assignment>(instruction);
-                            node.Value = instruction = assignment with { Operand = versions[((NameValue) assignment.Operand).Name] };
+                            assignment.Operand = versionOperand(assignment.Operand);
                             break;
                         }
                         case InstructionKind.UnaryAssignment:
                         {
                             var assignment = CastHelper.FastCast<UnaryAssignment>(instruction);
-                            node.Value = instruction = assignment with { Operand = versionOperand(assignment.Operand) };
+                            assignment.Operand = versionOperand(assignment.Operand);
                             break;
                         }
                         case InstructionKind.BinaryAssignment:
                         {
                             var assignment = CastHelper.FastCast<BinaryAssignment>(instruction);
-                            node.Value = instruction = assignment with
-                            {
-                                Left = versionOperand(assignment.Left),
-                                Right = versionOperand(assignment.Right),
-                            };
+                            assignment.Left = versionOperand(assignment.Left);
+                            assignment.Right = versionOperand(assignment.Right);
                             break;
                         }
                         case InstructionKind.FunctionAssignment:
                         {
                             var assignment = CastHelper.FastCast<FunctionAssignment>(instruction);
-                            node.Value = instruction = assignment with
-                            {
-                                Callee = versionOperand(assignment.Callee),
-                                Arguments = assignment.Arguments.Select(versionOperand).ToImmutableArray(),
-                            };
+                            assignment.Callee = versionOperand(assignment.Callee);
+                            for (var idx = 0; idx < assignment.Arguments.Count; idx++)
+                                assignment.Arguments[idx] = versionOperand(assignment.Arguments[idx]);
                             break;
                         }
-                        case InstructionKind.CondBranch:
+                        case InstructionKind.ConditionalBranch:
                         {
-                            var branch = CastHelper.FastCast<CondBranch>(instruction);
-                            node.Value = instruction = branch with { Operand = versionOperand(branch.Operand) };
+                            var branch = CastHelper.FastCast<ConditionalBranch>(instruction);
+                            branch.Condition = versionOperand(branch.Condition);
                             break;
                         }
                     }
@@ -151,16 +145,7 @@ public sealed partial class SsaRewriter
 
                 if (instruction.IsAssignment && instruction.Assignee is not null && instruction.Assignee.IsUnversioned)
                 {
-                    node.Value = instruction = instruction.Kind switch
-                    {
-                        InstructionKind.Assignment => CastHelper.FastCast<Assignment>(instruction) with { Name = tracker.NewValue(instruction.Assignee.Name) },
-                        InstructionKind.UnaryAssignment => CastHelper.FastCast<UnaryAssignment>(instruction) with { Name = tracker.NewValue(instruction.Assignee.Name) },
-                        InstructionKind.BinaryAssignment => CastHelper.FastCast<BinaryAssignment>(instruction) with { Name = tracker.NewValue(instruction.Assignee.Name) },
-                        InstructionKind.FunctionAssignment => CastHelper.FastCast<FunctionAssignment>(instruction) with { Name = tracker.NewValue(instruction.Assignee.Name) },
-                        InstructionKind.PhiAssignment => CastHelper.FastCast<PhiAssignment>(instruction) with { Name = tracker.NewValue(instruction.Assignee.Name) },
-                        _ => throw new InvalidOperationException($"Unknown assignment instruction {instruction.Kind}.")
-                    };
-
+                    instruction.Assignee = tracker.NewValue(instruction.Assignee.Name);
                     versions[instruction.Assignee!.Name] = instruction.Assignee;
                 }
             }
@@ -172,25 +157,23 @@ public sealed partial class SsaRewriter
 
     private void FixAndCleanupPhis()
     {
-        var phis = _source.BasicBlocks.SelectMany(x => x.Instructions.Nodes().Where(x => x.Value.Kind == InstructionKind.PhiAssignment).Select(y => (Block: x, Node: y)))
-            .ToArray();
+        var phis = _source.BasicBlocks.SelectMany(x => x.Instructions.Nodes().Where(x => x.Value.Kind == InstructionKind.PhiAssignment).Select(y => (Block: x, Node: y)));
 
-        foreach (var phi in phis)
+        foreach (var (block, node) in phis)
         {
-            var instruction = CastHelper.FastCast<PhiAssignment>(phi.Node.Value);
-            if (instruction.Phi.Values.Length == 1)
+            var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
+            if (instruction.Phi.Values.Count == 1)
             {
                 // Cleanup
                 var (sourceBlockOrdinal, value) = instruction.Phi.Values[0];
-                phi.Node.Value = Instruction.Assignment(instruction.Name, findDefName(sourceBlockOrdinal, value.Name));
+                node.Value = new Assignment(instruction.Name, findDefName(sourceBlockOrdinal, value.Name));
             }
             else
             {
                 // Fix Target
-                var values = instruction.Phi.Values.ToBuilder();
+                var values = instruction.Phi.Values;
                 for (var idx = 0; idx < values.Count; idx++)
-                    values[idx] = (values[idx].SourceBlockOrdinal, findDefName(values[idx].SourceBlockOrdinal, values[idx].Value.Name));
-                phi.Node.Value = instruction with { Phi = new Phi(values.DrainToImmutable()) };
+                    values[idx] = values[idx] with { Value = findDefName(values[idx].SourceBlockOrdinal, values[idx].Value.Name) };
             }
         }
 

@@ -1,12 +1,12 @@
 namespace SimpleCompiler.IR;
 
 public sealed class IrGraph(
-    IEnumerable<BasicBlock> basicBlocks,
-    IEnumerable<IrEdge> edges,
+    List<BasicBlock> basicBlocks,
+    List<IrEdge> edges,
     BasicBlock entryBlock)
 {
-    public List<BasicBlock> BasicBlocks { get; } = basicBlocks.ToList();
-    public List<IrEdge> Edges { get; } = edges.ToList();
+    public List<BasicBlock> BasicBlocks { get; } = basicBlocks;
+    public List<IrEdge> Edges { get; } = edges;
     public BasicBlock EntryBlock { get; set; } = entryBlock;
 
     public IEnumerable<BasicBlock> GetPredecessors(int blockOrdinal) =>

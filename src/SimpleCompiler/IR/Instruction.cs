@@ -1,152 +1,169 @@
-using System.Collections.Immutable;
-using System.Diagnostics;
-using ClassEnumGen;
-using SimpleCompiler.Helpers;
 using SimpleCompiler.IR.Debug;
 
 namespace SimpleCompiler.IR;
 
-[ClassEnum]
-[DebuggerDisplay($"{{{nameof(ToRepr)}(),nq}}")]
-public abstract partial record Instruction(InstructionKind Kind)
+public enum InstructionKind
 {
-    public static partial DebugLocation DebugLocation(SourceLocation location);
+    DebugLocation,
+    Assignment,
+    UnaryAssignment,
+    BinaryAssignment,
+    FunctionAssignment,
+    PhiAssignment,
+    Branch,
+    ConditionalBranch,
+}
 
-    public static partial Assignment Assignment(NameValue name, Operand operand);
-    public static partial UnaryAssignment UnaryAssignment(NameValue? name, UnaryOperationKind operationKind, Operand operand);
-    public static partial BinaryAssignment BinaryAssignment(NameValue? name, Operand left, BinaryOperationKind operatorKind, Operand right);
-    public static partial FunctionAssignment FunctionAssignment(NameValue name, Operand callee, ImmutableArray<Operand> arguments);
-    public static partial PhiAssignment PhiAssignment(NameValue name, Phi phi);
-
-    public static partial Branch Branch(BranchTarget target);
-    public static partial CondBranch CondBranch(Operand operand, BranchTarget ifTrue, BranchTarget ifFalse);
-
-    public bool IsAssignment => Kind is InstructionKind.Assignment or InstructionKind.UnaryAssignment
-                                     or InstructionKind.BinaryAssignment or InstructionKind.FunctionAssignment
-                                     or InstructionKind.PhiAssignment;
-
-    public NameValue? Assignee => Kind switch
+public abstract class Instruction
+{
+    public abstract InstructionKind Kind { get; }
+    public virtual bool IsAssignment => false;
+    public virtual NameValue Assignee
     {
-        InstructionKind.Assignment => CastHelper.FastCast<Assignment>(this).Name,
-        InstructionKind.UnaryAssignment => CastHelper.FastCast<UnaryAssignment>(this).Name,
-        InstructionKind.BinaryAssignment => CastHelper.FastCast<BinaryAssignment>(this).Name,
-        InstructionKind.FunctionAssignment => CastHelper.FastCast<FunctionAssignment>(this).Name,
-        InstructionKind.PhiAssignment => CastHelper.FastCast<PhiAssignment>(this).Name,
-        _ => null
-    };
-
-    public IEnumerable<Operand> Operands
-    {
-        get
-        {
-            switch (Kind)
-            {
-                case InstructionKind.Assignment:
-                    return [CastHelper.FastCast<Assignment>(this).Operand];
-                case InstructionKind.UnaryAssignment:
-                    return [CastHelper.FastCast<UnaryAssignment>(this).Operand];
-                case InstructionKind.BinaryAssignment:
-                {
-                    var asg = CastHelper.FastCast<BinaryAssignment>(this);
-                    return [asg.Left, asg.Right];
-                }
-                case InstructionKind.FunctionAssignment:
-                {
-                    var fna = CastHelper.FastCast<FunctionAssignment>(this);
-                    return [fna.Callee, .. fna.Arguments];
-                }
-                case InstructionKind.PhiAssignment:
-                    return CastHelper.FastCast<PhiAssignment>(this)
-                                     .Phi
-                                     .Values
-                                     .Select(x => x.Value);
-                case InstructionKind.CondBranch:
-                    return [CastHelper.FastCast<CondBranch>(this).Operand];
-                case InstructionKind.DebugLocation:
-                case InstructionKind.Branch:
-                    return [];
-                default:
-                    throw new NotImplementedException($"Operands not implemented for instruction {Kind}.");
-            }
-        }
+        get => throw new InvalidOperationException("Instruction is not an assignment");
+        set => throw new InvalidOperationException("Instruction is not an assignment");
     }
+    public virtual IEnumerable<Operand> Operands => [];
 
-    public bool References(Operand operand)
-    {
-        switch (Kind)
+    public virtual bool References(Operand operand) => false;
+    public abstract Instruction Clone();
+    public abstract string ToRepr();
+}
+
+public sealed class DebugLocation(SourceLocation location) : Instruction
+{
+    public override InstructionKind Kind => InstructionKind.DebugLocation;
+    public SourceLocation Location { get; set; } = location;
+
+    public override DebugLocation Clone() => new(Location);
+    public override string ToRepr() => $"# {Location.Path} {Location.StartLine},{Location.StartColumn}:{Location.EndLine},{Location.EndColumn}";
+}
+
+public sealed class Assignment(NameValue name, Operand operand) : Instruction
+{
+    public override InstructionKind Kind => InstructionKind.Assignment;
+    public override bool IsAssignment => true;
+    public NameValue Name { get; set; } = name;
+    public Operand Operand { get; set; } = operand;
+    public override NameValue Assignee { get => Name; set => Name = value; }
+    public override IEnumerable<Operand> Operands => [Operand];
+
+    public override bool References(Operand operand) => Operand == operand;
+    public override Assignment Clone() => new(Name, Operand);
+    public override string ToRepr() => $"{Name} = {Operand}";
+}
+
+public sealed class UnaryAssignment(NameValue name, UnaryOperationKind operationKind, Operand operand) : Instruction
+{
+    public override InstructionKind Kind => InstructionKind.UnaryAssignment;
+    public override bool IsAssignment => true;
+    public NameValue Name { get; set; } = name;
+    public UnaryOperationKind OperationKind { get; set; } = operationKind;
+    public Operand Operand { get; set; } = operand;
+    public override NameValue Assignee { get => Name; set => Name = value; }
+    public override IEnumerable<Operand> Operands => [Operand];
+
+    public override bool References(Operand operand) => Operand == operand;
+    public override UnaryAssignment Clone() => new(Name, OperationKind, Operand);
+    public override string ToRepr() =>
+        $"{Name} = {OperationKind switch
         {
-            case InstructionKind.Assignment:
-                return CastHelper.FastCast<Assignment>(this).Operand == operand;
-            case InstructionKind.UnaryAssignment:
-                return CastHelper.FastCast<UnaryAssignment>(this).Operand == operand;
-            case InstructionKind.BinaryAssignment:
-            {
-                var asg = CastHelper.FastCast<BinaryAssignment>(this);
-                return asg.Left == operand || asg.Right == operand;
-            }
-            case InstructionKind.FunctionAssignment:
-            {
-                var fn = CastHelper.FastCast<FunctionAssignment>(this);
-                return fn.Callee == operand || fn.Arguments.Contains(operand);
-            }
-            case InstructionKind.PhiAssignment:
-                return CastHelper.FastCast<PhiAssignment>(this)
-                                 .Phi
-                                 .Values
-                                 .Select(x => x.Value)
-                                 .Contains(operand);
-            case InstructionKind.CondBranch:
-                return CastHelper.FastCast<CondBranch>(this).Operand == operand;
-            default:
-                return false;
-        }
-    }
+            UnaryOperationKind.LogicalNegation => "not",
+            UnaryOperationKind.BitwiseNegation => "bnot",
+            UnaryOperationKind.NumericalNegation => "neg",
+            UnaryOperationKind.LengthOf => "len",
+            _ => throw new InvalidOperationException($"Invalid unary operation kind {OperationKind}"),
+        }} {Operand}";
+}
 
-    public string ToRepr()
-    {
-        return this switch
+public sealed class BinaryAssignment(NameValue name, Operand left, BinaryOperationKind operationKind, Operand right) : Instruction
+{
+    public override InstructionKind Kind => InstructionKind.BinaryAssignment;
+    public override bool IsAssignment => true;
+    public NameValue Name { get; set; } = name;
+    public Operand Left { get; set; } = left;
+    public BinaryOperationKind OperationKind { get; set; } = operationKind;
+    public Operand Right { get; set; } = right;
+    public override NameValue Assignee { get => Name; set => Name = value; }
+    public override IEnumerable<Operand> Operands => [Left, Right];
+
+    public override bool References(Operand operand) => Left == operand || Right == operand;
+    public override BinaryAssignment Clone() => new(Name, Left, OperationKind, Right);
+    public override string ToRepr() =>
+        $"{Name} = {OperationKind switch
         {
-            DebugLocation debug => $"# {debug.Location.Path}  {debug.Location.StartLine},{debug.Location.StartColumn}:{debug.Location.EndLine},{debug.Location.EndColumn}",
+            BinaryOperationKind.Addition => "add",
+            BinaryOperationKind.Subtraction => "sub",
+            BinaryOperationKind.Multiplication => "mul",
+            BinaryOperationKind.Division => "div",
+            BinaryOperationKind.IntegerDivision => "idiv",
+            BinaryOperationKind.Exponentiation => "pow",
+            BinaryOperationKind.Modulo => "mod",
+            BinaryOperationKind.Concatenation => "cat",
+            BinaryOperationKind.BitwiseAnd => "band",
+            BinaryOperationKind.BitwiseOr => "bor",
+            BinaryOperationKind.BitwiseXor => "xor",
+            BinaryOperationKind.LeftShift => "lsh",
+            BinaryOperationKind.RightShift => "rsh",
+            BinaryOperationKind.Equals => "eq",
+            BinaryOperationKind.NotEquals => "neq",
+            BinaryOperationKind.LessThan => "lt",
+            BinaryOperationKind.LessThanOrEquals => "lte",
+            BinaryOperationKind.GreaterThan => "gt",
+            BinaryOperationKind.GreaterThanOrEquals => "gte",
+            _ => throw new InvalidOperationException($"Invalid binary operation kind {OperationKind}"),
+        }} {Left}, {Right}";
+}
 
-            Assignment asg => $"{asg.Name} = {asg.Operand}",
-            UnaryAssignment una => $"{(una.Name != null ? $"{una.Name} = " : "")}{una.OperationKind switch
-            {
-                UnaryOperationKind.LogicalNegation => "not",
-                UnaryOperationKind.BitwiseNegation => "bnot",
-                UnaryOperationKind.NumericalNegation => "neg",
-                UnaryOperationKind.LengthOf => "len",
-                _ => throw new InvalidOperationException($"Invalid unary operation kind {una.OperationKind}"),
-            }} {una.Operand}",
-            BinaryAssignment bina => $"{(bina.Name != null ? $"{bina.Name} = " : "")}{bina.OperatorKind switch
-            {
-                BinaryOperationKind.Addition => "add",
-                BinaryOperationKind.Subtraction => "sub",
-                BinaryOperationKind.Multiplication => "mul",
-                BinaryOperationKind.Division => "div",
-                BinaryOperationKind.IntegerDivision => "idiv",
-                BinaryOperationKind.Exponentiation => "pow",
-                BinaryOperationKind.Modulo => "mod",
-                BinaryOperationKind.Concatenation => "cat",
-                BinaryOperationKind.BitwiseAnd => "band",
-                BinaryOperationKind.BitwiseOr => "bor",
-                BinaryOperationKind.BitwiseXor => "xor",
-                BinaryOperationKind.LeftShift => "lsh",
-                BinaryOperationKind.RightShift => "rsh",
-                BinaryOperationKind.Equals => "eq",
-                BinaryOperationKind.NotEquals => "neq",
-                BinaryOperationKind.LessThan => "lt",
-                BinaryOperationKind.LessThanOrEquals => "lte",
-                BinaryOperationKind.GreaterThan => "gt",
-                BinaryOperationKind.GreaterThanOrEquals => "gte",
-                _ => throw new InvalidOperationException($"Invalid binary operation kind {bina.OperatorKind}"),
-            }} {bina.Left}, {bina.Right}",
-            FunctionAssignment fna => $"{(fna.Name != null ? $"{fna.Name} = " : "")}{fna.Callee}({string.Join(", ", fna.Arguments)})",
-            PhiAssignment phi => $"{phi.Name} = {phi.Phi}",
+public sealed class FunctionAssignment(NameValue name, Operand callee, List<Operand> arguments) : Instruction
+{
+    public override InstructionKind Kind => InstructionKind.FunctionAssignment;
+    public override bool IsAssignment => true;
+    public NameValue Name { get; set; } = name;
+    public Operand Callee { get; set; } = callee;
+    public List<Operand> Arguments { get; } = arguments;
+    public override NameValue Assignee { get => Name; set => Name = value; }
+    public override IEnumerable<Operand> Operands => [Callee, .. Arguments];
 
-            Branch br => $"br BB{br.Target.Block.Ordinal}",
-            CondBranch cbr => $"br BB{cbr.IfTrue.Block.Ordinal} if {cbr.Operand} else BB{cbr.IfFalse.Block.Ordinal}",
+    public override bool References(Operand operand) => Callee == operand || Arguments.Contains(operand);
+    public override FunctionAssignment Clone() => new(Name, Callee, [.. Arguments]);
+    public override string ToRepr() =>
+        $"{Name} = {Callee}({string.Join(", ", Arguments)})";
+}
 
-            _ => throw new NotImplementedException($"ToRepr hasn't been implemented for {Kind}.")
-        };
-    }
+public sealed class PhiAssignment(NameValue name, Phi phi) : Instruction
+{
+    public override InstructionKind Kind => InstructionKind.PhiAssignment;
+    public override bool IsAssignment => true;
+    public NameValue Name { get; set; } = name;
+    public Phi Phi { get; set; } = phi;
+    public override NameValue Assignee { get => Name; set => Name = value; }
+    public override IEnumerable<Operand> Operands => Phi.Values.Select(x => x.Value);
+
+    public override bool References(Operand operand) => Phi.Values.Any(x => x.Value == operand);
+    public override PhiAssignment Clone() => new(Name, new Phi([.. Phi.Values]));
+    public override string ToRepr() => $"{Name} = {Phi}";
+}
+
+public sealed class Branch(BranchTarget target) : Instruction
+{
+    public override InstructionKind Kind => InstructionKind.Branch;
+    public BranchTarget Target { get; set; } = target;
+
+    // Branch targets don't need to be cloned because they are "immutable".
+    public override Branch Clone() => new(Target);
+    public override string ToRepr() => $"br BB{Target.Block.Ordinal}";
+}
+
+public sealed class ConditionalBranch(Operand operand, BranchTarget ifTrue, BranchTarget ifFalse) : Instruction
+{
+    public override InstructionKind Kind => InstructionKind.ConditionalBranch;
+    public Operand Condition { get; set; } = operand;
+    public BranchTarget TargetIfTrue { get; set; } = ifTrue;
+    public BranchTarget TargetIfFalse { get; set; } = ifFalse;
+
+    public override bool References(Operand operand) => Condition == operand;
+    // Branch targets don't need to be cloned because they are "immutable".
+    public override ConditionalBranch Clone() => new(Condition, TargetIfTrue, TargetIfFalse);
+    public override string ToRepr() => $"br BB{TargetIfTrue.Block.Ordinal} if {Condition} else BB{TargetIfFalse.Block.Ordinal}";
 }

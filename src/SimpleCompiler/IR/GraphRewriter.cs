@@ -16,79 +16,75 @@ public static class GraphRewriter
 
     public static void ReplaceOperand(this BasicBlock block, Operand oldOperand, Operand newOperand)
     {
-        for(var node = block.Instructions.First; node is not null; node = node.Next)
+        for (var node = block.Instructions.First; node is not null; node = node.Next)
         {
             var instruction = node.Value;
-
-            if ((!instruction.IsAssignment || instruction.Assignee != oldOperand) && !instruction.Operands.Contains(oldOperand))
-                continue;
-
-            node.Value = instruction.ReplaceOperand(oldOperand, newOperand);
+            instruction.ReplaceOperand(oldOperand, newOperand);
         }
     }
 
-    public static Instruction ReplaceOperand(this Instruction instruction, Operand oldOperand, Operand newOperand)
+    public static void ReplaceOperand(this Instruction instruction, Operand oldOperand, Operand newOperand)
     {
         if ((!instruction.IsAssignment || instruction.Assignee != oldOperand) && !instruction.Operands.Contains(oldOperand))
-            return instruction;
+            return;
 
         switch (instruction.Kind)
         {
             case InstructionKind.DebugLocation:
             case InstructionKind.Branch:
-                return instruction;
+                return;
 
             case InstructionKind.Assignment:
             {
                 var assignment = CastHelper.FastCast<Assignment>(instruction);
-                return assignment with
-                {
-                    Name = assignment.Name == oldOperand ? (NameValue) newOperand : assignment.Name,
-                    Operand = assignment.Operand == oldOperand ? newOperand : assignment.Operand
-                };
+                if (newOperand is NameValue newName)
+                    assignment.Name = assignment.Name == oldOperand ? newName : assignment.Name;
+                assignment.Operand = assignment.Operand == oldOperand ? newOperand : assignment.Operand;
+                break;
             }
             case InstructionKind.UnaryAssignment:
             {
                 var assignment = CastHelper.FastCast<UnaryAssignment>(instruction);
-                return assignment with
-                {
-                    Name = assignment.Name == oldOperand ? (NameValue) newOperand : assignment.Name,
-                    Operand = assignment.Operand == oldOperand ? newOperand : assignment.Operand
-                };
+                if (newOperand is NameValue newName)
+                    assignment.Name = assignment.Name == oldOperand ? newName : assignment.Name;
+                assignment.Operand = assignment.Operand == oldOperand ? newOperand : assignment.Operand;
+                break;
             }
             case InstructionKind.BinaryAssignment:
             {
                 var assignment = CastHelper.FastCast<BinaryAssignment>(instruction);
-                return assignment with
-                {
-                    Name = assignment.Name == oldOperand ? (NameValue) newOperand : assignment.Name,
-                    Left = assignment.Left == oldOperand ? newOperand : assignment.Left,
-                    Right = assignment.Right == oldOperand ? newOperand : assignment.Right
-                };
+                if (newOperand is NameValue newName)
+                    assignment.Name = assignment.Name == oldOperand ? newName : assignment.Name;
+                assignment.Left = assignment.Left == oldOperand ? newOperand : assignment.Left;
+                assignment.Right = assignment.Right == oldOperand ? newOperand : assignment.Right;
+                break;
             }
             case InstructionKind.FunctionAssignment:
             {
                 var assignment = CastHelper.FastCast<FunctionAssignment>(instruction);
-                return assignment with
-                {
-                    Name = assignment.Name == oldOperand ? (NameValue) newOperand : assignment.Name,
-                    Callee = assignment.Callee == oldOperand ? newOperand : assignment.Callee,
-                    Arguments = assignment.Arguments.Select(x => x == oldOperand ? newOperand : x).ToImmutableArray()
-                };
+                if (newOperand is NameValue newName)
+                    assignment.Name = assignment.Name == oldOperand ? newName : assignment.Name;
+                assignment.Callee = assignment.Callee == oldOperand ? newOperand : assignment.Callee;
+                for (var idx = 0; idx < assignment.Arguments.Count; idx++)
+                    assignment.Arguments[idx] = assignment.Arguments[idx] == oldOperand ? newOperand : assignment.Arguments[idx];
+                break;
             }
             case InstructionKind.PhiAssignment:
             {
                 var assignment = CastHelper.FastCast<PhiAssignment>(instruction);
-                return assignment with
+                if (newOperand is NameValue newName)
                 {
-                    Name = assignment.Name == oldOperand ? (NameValue) newOperand : assignment.Name,
-                    Phi = oldOperand is NameValue oldValue ? assignment.Phi.ReplaceOperand(oldValue, (NameValue) newOperand) : assignment.Phi,
-                };
+                    assignment.Name = assignment.Name == oldOperand ? newName : assignment.Name;
+                    if (oldOperand is NameValue oldName)
+                        assignment.Phi.ReplaceOperand(oldName, newName);
+                }
+                break;
             }
-            case InstructionKind.CondBranch:
+            case InstructionKind.ConditionalBranch:
             {
-                var branch = CastHelper.FastCast<CondBranch>(instruction);
-                return branch with { Operand = newOperand };
+                var branch = CastHelper.FastCast<ConditionalBranch>(instruction);
+                branch.Condition = newOperand;
+                break;
             }
 
             default:
@@ -96,17 +92,15 @@ public static class GraphRewriter
         }
     }
 
-    public static Phi ReplaceOperand(this Phi phi, NameValue oldOperand, NameValue newOperand)
+    public static void ReplaceOperand(this Phi phi, NameValue oldOperand, NameValue newOperand)
     {
         if (!phi.Values.Any(x => x.Value == oldOperand))
-            return phi;
+            return;
 
-        var builder = phi.Values.ToBuilder();
-        for (var idx = 0; idx < builder.Count; idx++)
+        for (var idx = 0; idx < phi.Values.Count; idx++)
         {
-            if (builder[idx].Value == oldOperand)
-                builder[idx] = (builder[idx].SourceBlockOrdinal, newOperand);
+            if (phi.Values[idx].Value == oldOperand)
+                phi.Values[idx] = (phi.Values[idx].SourceBlockOrdinal, newOperand);
         }
-        return new Phi(builder.DrainToImmutable());
     }
 }
