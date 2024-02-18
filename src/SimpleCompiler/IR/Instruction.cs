@@ -144,7 +144,7 @@ public abstract partial record Instruction(InstructionKind Kind)
             PhiAssignment phi => $"{phi.Name} = {phi.Phi}",
 
             Branch br => $"br BB{br.Target.Block.Ordinal}",
-            CondBranch cbr => $"if {cbr.Operand}: br BB{cbr.IfTrue.Block.Ordinal}; else: br BB{cbr.IfFalse.Block.Ordinal}",
+            CondBranch cbr => $"br BB{cbr.IfTrue.Block.Ordinal} if {cbr.Operand} else {cbr.IfFalse.Block.Ordinal}",
 
             _ => throw new NotImplementedException($"ToRepr hasn't been implemented for {Kind}.")
         };
