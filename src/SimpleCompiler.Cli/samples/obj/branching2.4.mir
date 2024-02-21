@@ -1,22 +1,14 @@
 Edges:
-  BB0 => BB1
-  BB1 => BB2
 
 BB0:
-  L_184B673_b₁ = nil
+  L_EF627A_b₁ = nil
   # samples/branching2.lua 2,4:2,14
-  br BB1
-
-BB1:
   # samples/branching2.lua 23,5:23,15
-  L_184B673_a₂₆ = 11
+  L_EF627A_a₂₆ = 11
   # samples/branching2.lua 24,5:24,11
-  L_184B673_b₆ = 10
-  br BB2
-
-BB2:
-  L_184B673_a₂₇ = L_184B673_a₂₆
-  L_184B673_b₇ = ϕ([BB0: L_184B673_b₁], [BB1: L_184B673_b₆])
+  L_EF627A_b₁₇ = 10
+  L_EF627A_a₂₇ = L_EF627A_a₂₆
+  L_EF627A_b₁₈ = L_EF627A_b₁₇
   # samples/branching2.lua 26,1:26,12
-  t₅₇ = $print(L_184B673_a₂₇, L_184B673_b₇)
+  t₅₇ = $print(L_EF627A_a₂₇, L_EF627A_b₁₈)
 
