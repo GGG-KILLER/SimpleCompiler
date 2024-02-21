@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.Helpers;
 using Tsu.Buffers;
@@ -20,76 +21,87 @@ public sealed partial class SsaRewriter
     public void Rewrite()
     {
         InsertPhis();
-        FillInPhis();
         RenameVariables();
         FixAndCleanupPhis();
     }
 
     private void InsertPhis()
     {
-        foreach (var block in _source.BasicBlocks)
+        Span<byte> buffer = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
+        var worklist = new Worklist(_source, buffer);
+        foreach (var block in _source.BasicBlocks) worklist.SetClean(block.Ordinal, false);
+
+        var modified = false;
+        do
         {
-            var assigned = new HashSet<NameValue>();
-            for (var node = block.Instructions.First; node is not null; node = node.Next)
+            modified = false;
+            foreach (var block in _source.BasicBlocks)
             {
-                var instruction = node.Value;
-
-                // Add assignees
-                if (instruction.IsAssignment && instruction.Name is not null)
-                    assigned.Add(instruction.Name);
-
-                // Add phis for references
-                foreach (var name in instruction.Operands.OfType<NameValue>().Where(x => x.IsUnversioned).Except(assigned))
-                {
-                    // Insert phi and mark as assigned.
-                    block.Instructions.AppendPhi(new PhiAssignment(name, new Phi([])));
-                    assigned.Add(name);
-                }
-            }
-        }
-    }
-
-    private void FillInPhis()
-    {
-        var phis = _source.BasicBlocks.SelectMany(x => x.Instructions.Nodes().Where(x => x.Value.Kind == InstructionKind.PhiAssignment).Select(y => (Block: x, Node: y)));
-
-        foreach (var (block, node) in phis)
-        {
-            var instruction = CastHelper.FastCast<PhiAssignment>(node.Value); ;
-            var defs = findDefs(block.Ordinal, instruction.Name).Distinct();
-            instruction.Phi.Values.AddRange(defs.Select(x => (x, instruction.Name)));
-        }
-
-        IEnumerable<int> findDefs(int useBlockOrdinal, NameValue nameValue)
-        {
-            Span<byte> buffer = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
-            var worklist = new Worklist(buffer, _source);
-            worklist.MarkAll(false);
-
-            var result = new HashSet<int>();
-            findDefsCore(useBlockOrdinal, nameValue, worklist, result);
-            return result;
-        }
-
-        void findDefsCore(int blockOrdinal, NameValue nameValue, Worklist visited, HashSet<int> definitionBlockOrdinals)
-        {
-            foreach (var predecessor in _source.GetPredecessors(blockOrdinal))
-            {
-                if (visited[predecessor.Ordinal])
+                if (worklist.IsClean(block.Ordinal))
                     continue;
+                worklist.SetClean(block.Ordinal, true);
 
-                if (predecessor.Instructions.Any(x => x.IsAssignment && x.Assignee == nameValue))
+                var assigned = new HashSet<NameValue>();
+                for (var node = block.Instructions.First; node is not null; node = node.Next)
                 {
-                    visited[predecessor.Ordinal] = true;
-                    definitionBlockOrdinals.Add(predecessor.Ordinal);
+                    var instruction = node.Value;
+
+                    // Add assignees
+                    if (instruction.IsAssignment) assigned.Add(instruction.Name);
+
+                    // Add phis for references
+                    foreach (var name in instruction.Operands.OfType<NameValue>().Where(x => x.IsUnversioned).Except(assigned))
+                    {
+                        // Initialize the phi assignment
+                        var values = new List<(int SourceBlockOrdinal, NameValue Value)>(_source.Edges.GetPredecessors(block.Ordinal).Count());
+                        var assignment = new PhiAssignment(name, new Phi(values));
+
+                        // Insert phi and mark as assigned.
+                        block.Instructions.AppendPhi(assignment);
+                        assigned.Add(name);
+
+                        // Fill in the phi
+                        fillPhi(worklist, assignment, name);
+
+                        modified = true;
+                    }
+
+                    // Fill in empty phis
+                    if (instruction.Kind == InstructionKind.PhiAssignment)
+                    {
+                        var assignment = CastHelper.FastCast<PhiAssignment>(instruction);
+                        if (assignment.Phi.Values.Count == 0)
+                        {
+                            fillPhi(worklist, assignment, assignment.Name);
+
+                            modified = true;
+                        }
+                    }
                 }
-                else
+
+                void fillPhi(Worklist worklist, PhiAssignment assignment, NameValue name)
                 {
-                    visited[predecessor.Ordinal] = true;
-                    findDefsCore(predecessor.Ordinal, nameValue, visited, definitionBlockOrdinals);
+                    assignment.Phi.Values.EnsureCapacity(_source.Edges.GetPredecessors(block.Ordinal).Count());
+                    foreach (var predecessor in _source.GetPredecessors(block.Ordinal))
+                    {
+                        assignment.Phi.Values.Add((predecessor.Ordinal, name));
+
+                        // Add phi to predecessor if it needs one.
+                        if (!predecessor.Instructions.Any(x => x.IsAssignment && x.Name == name))
+                        {
+                            predecessor.Instructions.AppendPhi(new PhiAssignment(name, new Phi([])));
+
+                            // Mark predecessor as dirty for phi-filling.
+                            worklist.SetClean(predecessor.Ordinal, false);
+
+                            modified = true;
+                        }
+                    }
+                    assignment.Phi.Values.TrimExcess();
                 }
             }
         }
+        while (modified);
     }
 
     private void RenameVariables()
@@ -181,40 +193,35 @@ public sealed partial class SsaRewriter
         {
             foreach (var node in _source.BasicBlocks[defOrdinal].Instructions.Nodes().Reversed())
             {
-                if (node.Value.IsAssignment && node.Value.Assignee?.Name == name)
-                    return node.Value.Assignee;
+                if (node.Value.IsAssignment && node.Value.Name.Name == name)
+                    return node.Value.Name;
             }
 
             throw new UnreachableException($"Didn't expect to not find a definition for {name} in BB{defOrdinal}.");
         }
     }
 
-    private readonly ref struct Worklist(Span<byte> buffer, IrGraph graph)
+    private readonly ref struct Worklist(IrGraph graph, Span<byte> bitVec)
     {
-        private readonly Span<byte> _buffer = buffer;
-
-        public bool this[int index]
-        {
-            get => BitVectorHelpers.GetByteVectorBitValue(_buffer, index);
-            set => BitVectorHelpers.SetByteVectorBitValue(_buffer, index, value);
-        }
-
-        public void MarkAll(bool isClean) => _buffer.Fill(isClean ? byte.MaxValue : byte.MinValue);
+        private readonly Span<byte> _bitVec = bitVec;
 
         public void MarkPredecessors(int blockOrdinal, bool isClean)
         {
-            foreach (var incomingEdge in graph.Edges.Where(x => x.TargetBlockOrdinal == blockOrdinal))
+            foreach (var ordinal in graph.Edges.GetPredecessors(blockOrdinal))
             {
-                this[incomingEdge.SourceBlockOrdinal] = isClean;
+                SetClean(ordinal, isClean);
             }
         }
 
         public void MarkSuccessors(int blockOrdinal, bool isClean)
         {
-            foreach (var incomingEdge in graph.Edges.Where(x => x.SourceBlockOrdinal == blockOrdinal))
+            foreach (var ordinal in graph.Edges.GetSuccessors(blockOrdinal))
             {
-                this[incomingEdge.TargetBlockOrdinal] = isClean;
+                SetClean(ordinal, isClean);
             }
         }
+
+        public bool IsClean(int ordinal) => BitVectorHelpers.GetByteVectorBitValue(_bitVec, ordinal);
+        public void SetClean(int ordinal, bool isClean) => BitVectorHelpers.SetByteVectorBitValue(_bitVec, ordinal, isClean);
     }
 }
