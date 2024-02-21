@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using SimpleCompiler.Helpers;
 
 namespace SimpleCompiler.IR;
 
+[DebuggerDisplay($"{{{nameof(GetDebuggerDisplay)}(),nq}}")]
 public sealed class NameValue(string name, int version) : Operand, IEquatable<NameValue>
 {
     private const string TemporaryName = "t";
@@ -17,6 +19,7 @@ public sealed class NameValue(string name, int version) : Operand, IEquatable<Na
     public bool IsUnversioned => Version == UnversionedVersion;
 
     public override bool Equals(object? obj) => Equals(obj as NameValue);
+    public override bool Equals(Operand? other) => Equals(other as NameValue);
     public bool Equals(NameValue? other) =>
         other is not null
         && Name == other.Name
@@ -25,4 +28,8 @@ public sealed class NameValue(string name, int version) : Operand, IEquatable<Na
     public override int GetHashCode() => HashCode.Combine(Name, Version);
 
     public override string ToString() => IsUnversioned ? Name : $"{Name}{Version.ToSubscript()}";
+    private string GetDebuggerDisplay() => ToString();
+
+    public static bool operator ==(NameValue left, NameValue right) => left.Equals(right);
+    public static bool operator !=(NameValue left, NameValue right) => !(left == right);
 }
