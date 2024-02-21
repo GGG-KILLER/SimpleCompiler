@@ -83,6 +83,12 @@ await CoconaLiteApp.RunAsync(async (
         Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
     }
 
+    if (debug)
+    {
+        SsaDestructor.DestructSsa(ir);
+        await dumpIr(objDir, name, c++, ir, ctx.CancellationToken);
+    }
+
     // TODO: Re-enable when compilation has been implemented again.
     // var outputDir = Path.GetDirectoryName(path);
     // Console.WriteLine($"Compiling to {outputDir}");
