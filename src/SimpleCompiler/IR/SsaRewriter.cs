@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using SimpleCompiler.Frontends.Lua;
@@ -22,7 +23,8 @@ public sealed partial class SsaRewriter
     {
         InsertPhis();
         RenameVariables();
-        FixAndCleanupPhis();
+        FixPhis();
+        CleanupPhis();
     }
 
     private void InsertPhis()
@@ -167,25 +169,21 @@ public sealed partial class SsaRewriter
             operand is NameValue name && name.IsUnversioned ? versions[name.Name] : operand;
     }
 
-    private void FixAndCleanupPhis()
+    private void FixPhis()
     {
-        var phis = _source.BasicBlocks.SelectMany(x => x.Instructions.Nodes().Where(x => x.Value.Kind == InstructionKind.PhiAssignment).Select(y => (Block: x, Node: y)));
+        var phis = _source.BasicBlocks.SelectMany(x => x.Instructions.Nodes().Where(x => x.Value.Kind == InstructionKind.PhiAssignment).Select(y => (Block: x, Node: y))).ToArray();
 
+        // Fix names for phis
         foreach (var (block, node) in phis)
         {
             var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
-            if (instruction.Phi.Values.Count == 1)
+
+            // Fix Target
+            var values = CollectionsMarshal.AsSpan(instruction.Phi.Values);
+            for (var idx = 0; idx < values.Length; idx++)
             {
-                // Cleanup
-                var (sourceBlockOrdinal, value) = instruction.Phi.Values[0];
-                node.Value = new Assignment(instruction.Name, findDefName(sourceBlockOrdinal, value.Name));
-            }
-            else
-            {
-                // Fix Target
-                var values = instruction.Phi.Values;
-                for (var idx = 0; idx < values.Count; idx++)
-                    values[idx] = values[idx] with { Value = findDefName(values[idx].SourceBlockOrdinal, values[idx].Value.Name) };
+                ref var value = ref values[idx];
+                value = value with { Value = findDefName(value.SourceBlockOrdinal, value.Value.Name) };
             }
         }
 
@@ -198,6 +196,79 @@ public sealed partial class SsaRewriter
             }
 
             throw new UnreachableException($"Didn't expect to not find a definition for {name} in BB{defOrdinal}.");
+        }
+    }
+
+    private void CleanupPhis()
+    {
+        Span<byte> buffer = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
+        Span<byte> visited = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
+        var redirects = new Dictionary<NameValue, NameValue>();
+        var worklist = new Worklist(_source, buffer);
+        foreach (var block in _source.BasicBlocks) worklist.SetClean(block.Ordinal, true);
+
+        // Start by entry block
+        worklist.SetClean(_source.EntryBlock.Ordinal, false);
+
+        // Mark all as unvisited
+        visited.Clear();
+
+        // Then remove single-var phis in descendant order
+        var modified = false;
+        do
+        {
+            foreach (var block in _source.BasicBlocks)
+            {
+                if (BitVectorHelpers.GetByteVectorBitValue(visited, block.Ordinal))
+                    worklist.SetClean(block.Ordinal, true);
+                if (worklist.IsClean(block.Ordinal))
+                    continue;
+                worklist.MarkSuccessors(block.Ordinal, false);
+                worklist.SetClean(block.Ordinal, true);
+
+                var node = block.Instructions.First;
+                while (node is not null)
+                {
+                    if (node.Value.Kind != InstructionKind.PhiAssignment)
+                        goto next;
+
+                    var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
+
+                    // If node only has one distinct source, then we can just replace it by the actual source.
+                    if (instruction.Phi.Values.DistinctBy(x => findFinalValue(x.Value)).Count() == 1)
+                    {
+                        // Cleanup:
+                        //   1. Remove the instruction from the node
+                        var next = node.Next;
+                        block.Instructions.Remove(node);
+                        node = next;
+
+                        //   2. Rename the references to the old phi to the name that it had in its predecessor.
+                        var (sourceBlockOrdinal, value) = instruction.Phi.Values.DistinctBy(x => x.Value).Single();
+                        value = findFinalValue(value);
+                        redirects[instruction.Name] = value;
+
+                        // Replace the name with the final value.
+                        _source.ReplaceOperand(instruction.Name, value);
+
+                        continue;
+                    }
+
+                next:
+                    node = node.Next;
+                }
+
+                // Mark block as visited
+                BitVectorHelpers.SetByteVectorBitValue(visited, block.Ordinal, true);
+            }
+        }
+        while (modified);
+
+        NameValue findFinalValue(NameValue name)
+        {
+            while (redirects.TryGetValue(name, out var newName))
+                name = newName;
+            return name;
         }
     }
 
