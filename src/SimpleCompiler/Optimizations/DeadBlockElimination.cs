@@ -1,46 +1,64 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.IR;
+using Tsu.Buffers;
 
 namespace SimpleCompiler.Optimizations;
 
 public sealed class DeadBlockElimination : IOptimizationPass
 {
+    private static readonly BasicBlock s_placeholder = new(-1, []);
+
     public void Execute(IrGraph graph)
     {
-        var placeholder = new BasicBlock(-1, []);
-
         var phis = graph.BasicBlocks.SelectMany(x => x.Instructions).OfType<PhiAssignment>().ToImmutableArray();
 
         var initialCount = graph.BasicBlocks.Count;
-        var toRemove = new List<int>();
-        do
+
+        // Remove blocks that cannot be reached by any other ones.
+        RemoveUnreachableBlocks(graph);
+
+        // Remove blocks that jump to other blocks straight away.
+        RemoveRedirectBlocks(graph);
+
+        // Clean up phis
+        RemoveAliasingPhis(graph);
+
+        // Join together blocks.
+        JoinBlocks(graph);
+
+        if (graph.BasicBlocks.Contains(s_placeholder))
         {
-            toRemove.Clear();
-
-            for (var ordinal = 0; ordinal < graph.BasicBlocks.Count; ordinal++)
+            for (var idx = 0; idx < graph.BasicBlocks.Count; idx++)
             {
-                var block = graph.BasicBlocks[ordinal];
-                // Find blocks that aren't reachable by other blocks
-                if (block.Ordinal != graph.EntryBlock.Ordinal
-                    && block != placeholder
-                    && !graph.Edges.Any(x => x.TargetBlockOrdinal == block.Ordinal && x.SourceBlockOrdinal != block.Ordinal))
+                if (graph.BasicBlocks[idx] == s_placeholder)
                 {
-                    toRemove.Add(ordinal);
+                    graph.BasicBlocks.RemoveAt(idx);
+                    idx--; // Re-visit index.
+                    continue;
                 }
-            }
 
-            foreach (var ordinal in toRemove)
-            {
-                var block = graph.BasicBlocks[ordinal];
-                graph.BasicBlocks[ordinal] = placeholder;
-                graph.Edges.RemoveAll(x => x.SourceBlockOrdinal == ordinal);
-                RemoveBlock(graph, block.Ordinal);
+                var previous = graph.BasicBlocks[idx].Ordinal;
+                graph.BasicBlocks[idx] = new BasicBlock(idx, graph.BasicBlocks[idx].Instructions);
+                for (var i = 0; i < graph.Edges.Count; i++)
+                {
+                    var edge = graph.Edges[i];
+                    if (edge.SourceBlockOrdinal == previous || edge.TargetBlockOrdinal == previous)
+                    {
+                        graph.Edges[i] = new IrEdge(
+                            edge.SourceBlockOrdinal == previous ? idx : edge.SourceBlockOrdinal,
+                            edge.TargetBlockOrdinal == previous ? idx : edge.TargetBlockOrdinal);
+                    }
+                }
+                RetargetBlocks(graph, previous, idx);
             }
         }
-        while (toRemove.Count > 0);
+    }
 
-        // Remove jump only blocks.
+    private static void RemoveRedirectBlocks(IrGraph graph)
+    {
+        var toRemove = new List<int>();
         do
         {
             toRemove.Clear();
@@ -69,106 +87,190 @@ public sealed class DeadBlockElimination : IOptimizationPass
                 graph.Edges.RemoveAll(x => x.SourceBlockOrdinal == block.Ordinal);
 
                 // Remove the block
-                graph.BasicBlocks[ordinal] = placeholder;
+                graph.BasicBlocks[ordinal] = s_placeholder;
                 RemoveBlock(graph, block.Ordinal);
             }
         }
         while (toRemove.Count > 0);
+    }
 
-        // TODO: Fix phis.
-        // // Join together blocks.
-        // var toJoin = new List<(int First, int Second)>();
-        // do
-        // {
-        //     toJoin.Clear();
-
-        //     foreach (var block in graph.BasicBlocks)
-        //     {
-        //         // If block only has 1 successor
-        //         if (graph.Edges.Count(x => x.SourceBlockOrdinal == block.Ordinal) == 1)
-        //         {
-        //             var successor = graph.Edges.Single(x => x.SourceBlockOrdinal == block.Ordinal).TargetBlockOrdinal;
-        //             // And successor only has block as predecessor
-        //             if (graph.Edges.Count(x => x.TargetBlockOrdinal == successor) == 1)
-        //             {
-        //                 // Then join both of them
-        //                 toJoin.Add((block.Ordinal, successor));
-        //             }
-        //         }
-        //     }
-
-        //     foreach (var pair in toJoin)
-        //     {
-        //         var (firstOrdinal, secondOrdinal) = pair;
-
-        //         // Handle case when first was already joined with someone else.
-        //         if (toJoin.Any(x => x.Second == firstOrdinal))
-        //             firstOrdinal = toJoin.Single(x => x.Second == firstOrdinal).First;
-
-        //         var instructions = new List<Instruction>();
-        //         var firstBlock = graph.BasicBlocks[firstOrdinal];
-        //         var secondBlock = graph.BasicBlocks[secondOrdinal];
-
-        //         firstBlock.Instructions.RemoveLast(); // Remove jump to 2nd block
-
-        //         var phi = firstBlock.Instructions.FindLastPhi();
-        //         foreach (var instruction in secondBlock.Instructions)
-        //         {
-        //             if (instruction.Kind == InstructionKind.PhiAssignment)
-        //             {
-        //                 if (phi is not null)
-        //                     phi = firstBlock.Instructions.AddAfter(phi, instruction);
-        //                 else
-        //                     phi = firstBlock.Instructions.AddFirst(instruction);
-        //             }
-        //             else
-        //             {
-        //                 firstBlock.Instructions.AddLast(instruction);
-        //             }
-        //         }
-
-        //         // Remove the edge that went from first to second
-        //         graph.Edges.RemoveAll(x => x.SourceBlockOrdinal == firstOrdinal);
-
-        //         // Rewrite the edges that came from second to come from first
-        //         for (var idx = 0; idx < graph.Edges.Count; idx++)
-        //         {
-        //             if (graph.Edges[idx].SourceBlockOrdinal == secondOrdinal)
-        //                 graph.Edges[idx] = graph.Edges[idx] with { SourceBlockOrdinal = firstOrdinal };
-        //         }
-
-        //         // Replace second with placeholder
-        //         graph.BasicBlocks[secondOrdinal] = placeholder;
-        //     }
-        // }
-        // while (toJoin.Count > 0);
-
-        if (graph.BasicBlocks.Contains(placeholder))
+    private static void RemoveUnreachableBlocks(IrGraph graph)
+    {
+        var toRemove = new List<int>();
+        do
         {
-            for (var idx = 0; idx < graph.BasicBlocks.Count; idx++)
-            {
-                if (graph.BasicBlocks[idx] == placeholder)
-                {
-                    graph.BasicBlocks.RemoveAt(idx);
-                    idx--; // Re-visit index.
-                    continue;
-                }
+            toRemove.Clear();
 
-                var previous = graph.BasicBlocks[idx].Ordinal;
-                graph.BasicBlocks[idx] = new BasicBlock(idx, graph.BasicBlocks[idx].Instructions);
-                for (var i = 0; i < graph.Edges.Count; i++)
+            for (var ordinal = 0; ordinal < graph.BasicBlocks.Count; ordinal++)
+            {
+                var block = graph.BasicBlocks[ordinal];
+                // Find blocks that aren't reachable by other blocks
+                if (block.Ordinal != graph.EntryBlock.Ordinal
+                    && block != s_placeholder
+                    && !graph.Edges.Any(x => x.TargetBlockOrdinal == block.Ordinal && x.SourceBlockOrdinal != block.Ordinal))
                 {
-                    var edge = graph.Edges[i];
-                    if (edge.SourceBlockOrdinal == previous || edge.TargetBlockOrdinal == previous)
-                    {
-                        graph.Edges[i] = new IrEdge(
-                            edge.SourceBlockOrdinal == previous ? idx : edge.SourceBlockOrdinal,
-                            edge.TargetBlockOrdinal == previous ? idx : edge.TargetBlockOrdinal);
-                    }
+                    toRemove.Add(ordinal);
                 }
-                RetargetBlocks(graph, previous, idx);
+            }
+
+            foreach (var ordinal in toRemove)
+            {
+                var block = graph.BasicBlocks[ordinal];
+                graph.BasicBlocks[ordinal] = s_placeholder;
+                graph.Edges.RemoveAll(x => x.SourceBlockOrdinal == ordinal);
+                RemoveBlock(graph, block.Ordinal);
             }
         }
+        while (toRemove.Count > 0);
+    }
+
+    private static void RemoveAliasingPhis(IrGraph graph)
+    {
+        Span<byte> buffer = stackalloc byte[MathEx.RoundUpDivide(graph.BasicBlocks.Count, 8)];
+        Span<byte> visited = stackalloc byte[MathEx.RoundUpDivide(graph.BasicBlocks.Count, 8)];
+        var redirects = new Dictionary<NameValue, NameValue>();
+        var worklist = new StackWorklist(graph, buffer);
+        foreach (var block in graph.BasicBlocks)
+        {
+            if (block != s_placeholder) worklist.SetClean(block.Ordinal, true);
+        }
+
+        // Start by entry block
+        worklist.SetClean(graph.EntryBlock.Ordinal, false);
+
+        // Mark all as unvisited
+        visited.Clear();
+
+        // Then remove single-var phis in descendant order
+        var modified = false;
+        do
+        {
+            foreach (var block in graph.BasicBlocks)
+            {
+                // Skip placeholders
+                if (block == s_placeholder)
+                    continue;
+
+                // Don't re-visit blocks.
+                if (BitVectorHelpers.GetByteVectorBitValue(visited, block.Ordinal))
+                    worklist.SetClean(block.Ordinal, true);
+                if (worklist.IsClean(block.Ordinal))
+                    continue;
+                worklist.MarkSuccessors(block.Ordinal, false);
+                worklist.SetClean(block.Ordinal, true);
+
+                var node = block.Instructions.First;
+                while (node is not null)
+                {
+                    if (node.Value.Kind != InstructionKind.PhiAssignment)
+                        goto next;
+
+                    var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
+
+                    // If node only has one distinct source, then we can just replace it by the actual source.
+                    if (instruction.Phi.Values.DistinctBy(x => findFinalValue(x.Value)).Count() == 1)
+                    {
+                        // Cleanup:
+                        //   1. Remove the instruction from the node
+                        var next = node.Next;
+                        block.Instructions.Remove(node);
+                        node = next;
+
+                        //   2. Rename the references to the old phi to the name that it had in its predecessor.
+                        var (sourceBlockOrdinal, value) = instruction.Phi.Values.DistinctBy(x => x.Value).Single();
+                        value = findFinalValue(value);
+                        redirects[instruction.Name] = value;
+
+                        // Replace the name with the final value.
+                        graph.ReplaceOperand(instruction.Name, value);
+
+                        continue;
+                    }
+
+                next:
+                    node = node.Next;
+                }
+
+                // Mark block as visited
+                BitVectorHelpers.SetByteVectorBitValue(visited, block.Ordinal, true);
+            }
+        }
+        while (modified);
+
+        NameValue findFinalValue(NameValue name)
+        {
+            while (redirects.TryGetValue(name, out var newName))
+                name = newName;
+            return name;
+        }
+    }
+
+    private static void JoinBlocks(IrGraph graph)
+    {
+        var toJoin = new List<(int First, int Second)>();
+        do
+        {
+            toJoin.Clear();
+
+            foreach (var block in graph.BasicBlocks)
+            {
+                // If block only has 1 successor
+                if (graph.Edges.GetSuccessors(block.Ordinal).Count() == 1)
+                {
+                    var successor = graph.Edges.Single(x => x.SourceBlockOrdinal == block.Ordinal).TargetBlockOrdinal;
+                    // And successor only has block as predecessor
+                    if (graph.Edges.Count(x => x.TargetBlockOrdinal == successor) == 1)
+                    {
+                        Debug.Assert(!graph.BasicBlocks[successor].Instructions.Any(x => x.Kind == InstructionKind.PhiAssignment), "Blocks with single predecessors shouldn't have phis.");
+
+                        // Then join both of them
+                        toJoin.Add((block.Ordinal, successor));
+                    }
+                }
+            }
+
+            foreach (var pair in toJoin)
+            {
+                var (firstOrdinal, secondOrdinal) = pair;
+
+                // Handle case when first was already joined with someone else.
+                if (toJoin.Any(x => x.Second == firstOrdinal))
+                    firstOrdinal = toJoin.Single(x => x.Second == firstOrdinal).First;
+
+                var instructions = new List<Instruction>();
+                var firstBlock = graph.BasicBlocks[firstOrdinal];
+                var secondBlock = graph.BasicBlocks[secondOrdinal];
+
+                firstBlock.Instructions.RemoveLast(); // Remove jump to 2nd block
+
+                var phi = firstBlock.Instructions.FindLastPhi();
+                foreach (var instruction in secondBlock.Instructions)
+                {
+                    if (instruction.Kind == InstructionKind.PhiAssignment)
+                    {
+                        throw new UnreachableException("Shouldn't have any phi instructions in the 2nd block.");
+                    }
+                    else
+                    {
+                        firstBlock.Instructions.AddLast(instruction);
+                    }
+                }
+
+                // Remove the edge that went from first to second
+                graph.Edges.RemoveAll(x => x.SourceBlockOrdinal == firstOrdinal);
+
+                // Rewrite the edges that came from second to come from first
+                for (var idx = 0; idx < graph.Edges.Count; idx++)
+                {
+                    if (graph.Edges[idx].SourceBlockOrdinal == secondOrdinal)
+                        graph.Edges[idx] = graph.Edges[idx] with { SourceBlockOrdinal = firstOrdinal };
+                }
+
+                // Replace second with s_placeholder
+                graph.BasicBlocks[secondOrdinal] = s_placeholder;
+            }
+        }
+        while (toJoin.Count > 0);
     }
 
     private static void RemoveBlock(IrGraph graph, int ordinal)
