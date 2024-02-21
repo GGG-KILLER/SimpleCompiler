@@ -30,7 +30,7 @@ public sealed partial class SsaRewriter
     private void InsertPhis()
     {
         Span<byte> buffer = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
-        var worklist = new Worklist(_source, buffer);
+        var worklist = new StackWorklist(_source, buffer);
         foreach (var block in _source.BasicBlocks) worklist.SetClean(block.Ordinal, false);
 
         var modified = false;
@@ -81,7 +81,7 @@ public sealed partial class SsaRewriter
                     }
                 }
 
-                void fillPhi(Worklist worklist, PhiAssignment assignment, NameValue name)
+                void fillPhi(StackWorklist worklist, PhiAssignment assignment, NameValue name)
                 {
                     assignment.Phi.Values.EnsureCapacity(_source.Edges.GetPredecessors(block.Ordinal).Count());
                     foreach (var predecessor in _source.GetPredecessors(block.Ordinal))
@@ -204,7 +204,7 @@ public sealed partial class SsaRewriter
         Span<byte> buffer = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
         Span<byte> visited = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
         var redirects = new Dictionary<NameValue, NameValue>();
-        var worklist = new Worklist(_source, buffer);
+        var worklist = new StackWorklist(_source, buffer);
         foreach (var block in _source.BasicBlocks) worklist.SetClean(block.Ordinal, true);
 
         // Start by entry block
@@ -270,29 +270,5 @@ public sealed partial class SsaRewriter
                 name = newName;
             return name;
         }
-    }
-
-    private readonly ref struct Worklist(IrGraph graph, Span<byte> bitVec)
-    {
-        private readonly Span<byte> _bitVec = bitVec;
-
-        public void MarkPredecessors(int blockOrdinal, bool isClean)
-        {
-            foreach (var ordinal in graph.Edges.GetPredecessors(blockOrdinal))
-            {
-                SetClean(ordinal, isClean);
-            }
-        }
-
-        public void MarkSuccessors(int blockOrdinal, bool isClean)
-        {
-            foreach (var ordinal in graph.Edges.GetSuccessors(blockOrdinal))
-            {
-                SetClean(ordinal, isClean);
-            }
-        }
-
-        public bool IsClean(int ordinal) => BitVectorHelpers.GetByteVectorBitValue(_bitVec, ordinal);
-        public void SetClean(int ordinal, bool isClean) => BitVectorHelpers.SetByteVectorBitValue(_bitVec, ordinal, isClean);
     }
 }
