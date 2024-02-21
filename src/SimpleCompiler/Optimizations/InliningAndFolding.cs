@@ -19,9 +19,9 @@ public sealed class InliningAndFolding : IOptimizationPass
 
                 if (instruction.IsAssignment)
                 {
-                    foreach (var use in graph.FindUses(instruction.Assignee))
+                    foreach (var use in graph.FindUses(instruction.Name))
                     {
-                        if (use.IsAssignment && use.Assignee == instruction.Assignee)
+                        if (use.IsAssignment && use.Name == instruction.Name)
                             continue;
 
                         hasUses = true;

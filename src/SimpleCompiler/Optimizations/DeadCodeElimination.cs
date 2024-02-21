@@ -26,7 +26,7 @@ public sealed class DeadCodeElimination : IOptimizationPass
                         graph.Edges.RemoveAll(x => x.SourceBlockOrdinal == block.Ordinal && x.TargetBlockOrdinal == removed.BlockOrdinal);
                     }
                 }
-                else if (instruction.IsAssignment && instruction.Kind is not InstructionKind.FunctionAssignment && !graph.FindUses(instruction.Assignee).Any())
+                else if (instruction.IsAssignment && instruction.Kind is not InstructionKind.FunctionAssignment && !graph.FindUses(instruction.Name).Any())
                 {
                     var temp = node.Next;
                     block.Instructions.Remove(node);

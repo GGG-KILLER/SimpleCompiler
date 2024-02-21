@@ -20,7 +20,7 @@ public abstract class Instruction
 {
     public abstract InstructionKind Kind { get; }
     public virtual bool IsAssignment => false;
-    public virtual NameValue Assignee
+    public virtual NameValue Name
     {
         get => throw new InvalidOperationException("Instruction is not an assignment");
         set => throw new InvalidOperationException("Instruction is not an assignment");
@@ -45,9 +45,8 @@ public sealed class Assignment(NameValue name, Operand operand) : Instruction
 {
     public override InstructionKind Kind => InstructionKind.Assignment;
     public override bool IsAssignment => true;
-    public NameValue Name { get; set; } = name;
+    public override NameValue Name { get; set; } = name;
     public Operand Value { get; set; } = operand;
-    public override NameValue Assignee { get => Name; set => Name = value; }
     public override IEnumerable<Operand> Operands => [Value];
 
     public override bool References(Operand operand) => Value == operand;
@@ -59,10 +58,9 @@ public sealed class UnaryAssignment(NameValue name, UnaryOperationKind operation
 {
     public override InstructionKind Kind => InstructionKind.UnaryAssignment;
     public override bool IsAssignment => true;
-    public NameValue Name { get; set; } = name;
+    public override NameValue Name { get; set; } = name;
     public UnaryOperationKind OperationKind { get; set; } = operationKind;
     public Operand Operand { get; set; } = operand;
-    public override NameValue Assignee { get => Name; set => Name = value; }
     public override IEnumerable<Operand> Operands => [Operand];
 
     public override bool References(Operand operand) => Operand == operand;
@@ -82,11 +80,10 @@ public sealed class BinaryAssignment(NameValue name, Operand left, BinaryOperati
 {
     public override InstructionKind Kind => InstructionKind.BinaryAssignment;
     public override bool IsAssignment => true;
-    public NameValue Name { get; set; } = name;
+    public override NameValue Name { get; set; } = name;
     public Operand Left { get; set; } = left;
     public BinaryOperationKind OperationKind { get; set; } = operationKind;
     public Operand Right { get; set; } = right;
-    public override NameValue Assignee { get => Name; set => Name = value; }
     public override IEnumerable<Operand> Operands => [Left, Right];
 
     public override bool References(Operand operand) => Left == operand || Right == operand;
@@ -121,10 +118,9 @@ public sealed class FunctionAssignment(NameValue name, Operand callee, List<Oper
 {
     public override InstructionKind Kind => InstructionKind.FunctionAssignment;
     public override bool IsAssignment => true;
-    public NameValue Name { get; set; } = name;
+    public override NameValue Name { get; set; } = name;
     public Operand Callee { get; set; } = callee;
     public List<Operand> Arguments { get; } = arguments;
-    public override NameValue Assignee { get => Name; set => Name = value; }
     public override IEnumerable<Operand> Operands => [Callee, .. Arguments];
 
     public override bool References(Operand operand) => Callee == operand || Arguments.Contains(operand);
@@ -137,9 +133,8 @@ public sealed class PhiAssignment(NameValue name, Phi phi) : Instruction
 {
     public override InstructionKind Kind => InstructionKind.PhiAssignment;
     public override bool IsAssignment => true;
-    public NameValue Name { get; set; } = name;
+    public override NameValue Name { get; set; } = name;
     public Phi Phi { get; set; } = phi;
-    public override NameValue Assignee { get => Name; set => Name = value; }
     public override IEnumerable<Operand> Operands => Phi.Values.Select(x => x.Value);
 
     public override bool References(Operand operand) => Phi.Values.Any(x => x.Value == operand);

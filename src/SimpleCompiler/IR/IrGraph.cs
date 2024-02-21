@@ -19,7 +19,7 @@ public sealed class IrGraph(
         BasicBlocks.Single(x => x.Instructions.Contains(instruction));
 
     public Instruction FindDefinition(NameValue name) =>
-        BasicBlocks.SelectMany(x => x.Instructions).Single(x => x.IsAssignment && x.Assignee == name);
+        BasicBlocks.SelectMany(x => x.Instructions).Single(x => x.IsAssignment && x.Name == name);
 
     public IEnumerable<Instruction> FindUses(NameValue name) =>
         BasicBlocks.SelectMany(x => x.Instructions).Where(x => x.References(name));
@@ -34,3 +34,12 @@ public sealed class IrGraph(
 }
 
 public readonly record struct IrEdge(int SourceBlockOrdinal, int TargetBlockOrdinal);
+
+public static class IrGraphExtensions
+{
+    public static IEnumerable<int> GetPredecessors(this IReadOnlyList<IrEdge> edges, int blockOrdinal) =>
+        edges.Where(x => x.TargetBlockOrdinal == blockOrdinal).Select(x => x.SourceBlockOrdinal);
+
+    public static IEnumerable<int> GetSuccessors(this IReadOnlyList<IrEdge> edges, int blockOrdinal) =>
+        edges.Where(x => x.SourceBlockOrdinal == blockOrdinal).Select(x => x.TargetBlockOrdinal);
+}

@@ -35,8 +35,8 @@ public sealed partial class SsaRewriter
                 var instruction = node.Value;
 
                 // Add assignees
-                if (instruction.IsAssignment && instruction.Assignee is not null)
-                    assigned.Add(instruction.Assignee);
+                if (instruction.IsAssignment && instruction.Name is not null)
+                    assigned.Add(instruction.Name);
 
                 // Add phis for references
                 foreach (var name in instruction.Operands.OfType<NameValue>().Where(x => x.IsUnversioned).Except(assigned))
@@ -143,10 +143,10 @@ public sealed partial class SsaRewriter
                     }
                 }
 
-                if (instruction.IsAssignment && instruction.Assignee is not null && instruction.Assignee.IsUnversioned)
+                if (instruction.IsAssignment && instruction.Name is not null && instruction.Name.IsUnversioned)
                 {
-                    instruction.Assignee = tracker.NewValue(instruction.Assignee.Name);
-                    versions[instruction.Assignee!.Name] = instruction.Assignee;
+                    instruction.Name = tracker.NewValue(instruction.Name.Name);
+                    versions[instruction.Name!.Name] = instruction.Name;
                 }
             }
         }

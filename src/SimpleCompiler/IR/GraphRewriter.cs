@@ -24,7 +24,7 @@ public static class GraphRewriter
 
     public static void ReplaceOperand(this Instruction instruction, Operand oldOperand, Operand newOperand)
     {
-        if ((!instruction.IsAssignment || instruction.Assignee != oldOperand) && !instruction.Operands.Contains(oldOperand))
+        if ((!instruction.IsAssignment || instruction.Name != oldOperand) && !instruction.Operands.Contains(oldOperand))
             return;
 
         switch (instruction.Kind)
