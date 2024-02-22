@@ -28,7 +28,9 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
 
     private Emit<Func<LuaValue, LuaValue>> EmitLuaEntryPoint(ModuleBuilder moduleBuilder, TypeBuilder programBuilder, IrGraph ir)
     {
-        var compiler = MethodCompiler.Create(moduleBuilder, programBuilder, ir, "TopLevel");
+        var symbolTable = InformationCollector.CollectSymbolInfomation(ir);
+        SsaDestructor.DestructSsa(ir);
+        var compiler = MethodCompiler.Create(programBuilder, ir, symbolTable, "TopLevel");
 
         compiler.Compile();
         cilDebugWriter?.WriteLine(compiler.Method.Instructions());
