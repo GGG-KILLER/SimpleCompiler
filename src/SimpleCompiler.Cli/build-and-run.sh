@@ -27,10 +27,10 @@ while [ $# -gt 0 ]; do
     if [ "$OPTIMIZE" = true ]; then
         echo "$FILE_DIR/$FILE_NAME.lua (Release):"
         dotnet run -c Debug -v quiet -- -Od --lua "$VERSION"  "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
-        # dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
+        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /' || true
     else
         echo "$FILE_DIR/$FILE_NAME.lua (Debug):"
         dotnet run -c Debug -v quiet -- -d --lua "$VERSION" "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
-        # dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
+        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /' || true
     fi
 done

@@ -9,6 +9,7 @@ using SimpleCompiler;
 using SimpleCompiler.Backends.Cil;
 using SimpleCompiler.Cli;
 using SimpleCompiler.Cli.Validation;
+using SimpleCompiler.FileSystem;
 using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.IR;
 using Tsu.Numerics;
@@ -94,14 +95,13 @@ await CoconaLiteApp.RunAsync(async (
         await dumpIrAsDot(objDir, name, c++, ir, ctx.CancellationToken);
     }
 
-    // TODO: Re-enable when compilation has been implemented again.
-    // var outputDir = Path.GetDirectoryName(path);
-    // Console.WriteLine($"Compiling to {outputDir}");
-    // await compilation.EmitAsync(syntaxTree, name, new OutputDirectory(outputDir!), optimize, cancellationToken: ctx.CancellationToken)
-    //                  .ConfigureAwait(false);
-    // Console.WriteLine($"Compiled in {Duration.Format(s.Elapsed.Ticks)}");
-    // cilDebugWriter?.Flush();
-    // cilDebugWriter?.Dispose();
+    var outputDir = Path.GetDirectoryName(path);
+    Console.WriteLine($"Compiling to {outputDir}");
+    await compilation.EmitAsync(syntaxTree, name, new OutputDirectory(outputDir!), optimize, cancellationToken: ctx.CancellationToken)
+                     .ConfigureAwait(false);
+    Console.WriteLine($"Compiled in {Duration.Format(s.Elapsed.Ticks)}");
+    cilDebugWriter?.Flush();
+    cilDebugWriter?.Dispose();
 
     return 0;
 });
