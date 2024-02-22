@@ -1,3 +1,6 @@
+using SimpleCompiler.Helpers;
+using Tsu.Buffers;
+
 namespace SimpleCompiler.IR;
 
 public sealed class IrGraph(
@@ -42,4 +45,25 @@ public static class IrGraphExtensions
 
     public static IEnumerable<int> GetSuccessors(this IReadOnlyList<IrEdge> edges, int blockOrdinal) =>
         edges.Where(x => x.SourceBlockOrdinal == blockOrdinal).Select(x => x.TargetBlockOrdinal);
+
+    public static IEnumerable<int> EnumerateBlocksBreadthFirst(this IrGraph graph)
+    {
+        Span<byte> visitedSet = stackalloc byte[MathEx.RoundUpDivide(graph.BasicBlocks.Count, 8)];
+        visitedSet.Clear();
+
+        var queue = new Queue<int>(graph.BasicBlocks.Count);
+        queue.Enqueue(graph.EntryBlock.Ordinal);
+
+        while (queue.TryDequeue(out var blockOrdinal))
+        {
+            if (BitVectorHelpers.GetByteVectorBitValue(visitedSet, blockOrdinal))
+                continue;
+            BitVectorHelpers.SetByteVectorBitValue(visitedSet, blockOrdinal, true);
+
+            foreach (var successor in graph.Edges.GetSuccessors(blockOrdinal))
+                queue.Enqueue(successor);
+
+            yield return blockOrdinal;
+        }
+    }
 }
