@@ -48,17 +48,17 @@ public static class IrGraphExtensions
 
     public static IEnumerable<int> EnumerateBlocksBreadthFirst(this IrGraph graph)
     {
-        Span<byte> visitedSet = stackalloc byte[MathEx.RoundUpDivide(graph.BasicBlocks.Count, 8)];
-        visitedSet.Clear();
+        var visitedSet = new byte[MathEx.RoundUpDivide(graph.BasicBlocks.Count, 8)];
+        Array.Fill(visitedSet, (byte) 0);
 
         var queue = new Queue<int>(graph.BasicBlocks.Count);
         queue.Enqueue(graph.EntryBlock.Ordinal);
 
         while (queue.TryDequeue(out var blockOrdinal))
         {
-            if (BitVectorHelpers.GetByteVectorBitValue(visitedSet, blockOrdinal))
+            if (BitVectorHelpers.GetByteVectorBitValue(visitedSet.AsSpan(), blockOrdinal))
                 continue;
-            BitVectorHelpers.SetByteVectorBitValue(visitedSet, blockOrdinal, true);
+            BitVectorHelpers.SetByteVectorBitValue(visitedSet.AsSpan(), blockOrdinal, true);
 
             foreach (var successor in graph.Edges.GetSuccessors(blockOrdinal))
                 queue.Enqueue(successor);
