@@ -6,7 +6,7 @@ namespace SimpleCompiler.Backends.Cil;
 
 internal sealed class SlotPool(Emit<Func<LuaValue, LuaValue>> method)
 {
-    private static ConditionalWeakTable<Local, SlotPool> _localOwners = [];
+    private static readonly ConditionalWeakTable<Local, SlotPool> s_localOwners = [];
     private readonly Stack<Local> _luaValueSlotPool = [];
 
     public Local DangerousRentSlot()
@@ -16,15 +16,15 @@ internal sealed class SlotPool(Emit<Func<LuaValue, LuaValue>> method)
             local = method.DeclareLocal<LuaValue>();
         }
 
-        _localOwners.Add(local, this);
+        s_localOwners.Add(local, this);
         return local;
     }
 
     public void ReturnSlot(Local local)
     {
-        if (!_localOwners.TryGetValue(local, out var owner) || !ReferenceEquals(this, owner))
+        if (!s_localOwners.TryGetValue(local, out var owner) || !ReferenceEquals(this, owner))
             throw new InvalidOperationException("Slot returned to wrong owner.");
-        _localOwners.Remove(local);
+        s_localOwners.Remove(local);
 
         // Even though we shouldn't grow unlimitedly as a pool,
         // we also don't want to infinitely create locals, so
