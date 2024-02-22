@@ -13,6 +13,10 @@ public sealed class LuaException(string? message) : Exception(message)
         throw new LuaException($"Attemp to perform bitwise operation on a {valueType} value.");
 
     [DoesNotReturn]
+    public static void ThrowLength(string valueType) =>
+        throw new LuaException($"Attempt to get length of a {valueType} value.");
+
+    [DoesNotReturn]
     public static void ThrowConcat(string valueType) =>
         throw new LuaException($"Attempt to concatenate a {valueType} value.");
 
