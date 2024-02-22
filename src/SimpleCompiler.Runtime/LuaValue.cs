@@ -7,7 +7,7 @@ namespace SimpleCompiler.Runtime;
 
 public readonly struct LuaValue : IEquatable<LuaValue>
 {
-    public static readonly LuaValue Nil = new(ValueKind.Nil, null, null, default);
+    public static readonly LuaValue Nil = default;
     public static readonly LuaValue True = new(true);
     public static readonly LuaValue False = new(false);
 
