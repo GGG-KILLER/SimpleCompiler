@@ -1,0 +1,5 @@
+digraph {
+  node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
+  BB0 [label="BB0:\nL_3197088_print₁ = nil\lL_3197088_print₂ = $print\l# samples/002.lua 1,11:1,12\lt₁ = 1\l# samples/002.lua 1,1:1,12\lL_365F4AB_a₁ = t₁\l# samples/002.lua 2,11:2,12\lt₂ = 2\l# samples/002.lua 2,1:2,12\lL_365F4AB_b₁ = t₂\l# samples/002.lua 3,11:3,16\lt₃ = add L_365F4AB_a₁, L_365F4AB_b₁\l# samples/002.lua 3,1:3,16\lL_365F4AB_c₁ = t₃\l# samples/002.lua 4,16:4,21\lt₄ = add L_365F4AB_a₁, L_365F4AB_b₁\l# samples/002.lua 4,23:4,28\lt₅ = add L_365F4AB_a₁, L_365F4AB_b₁\l# samples/002.lua 4,23:4,32\lt₆ = add t₅, L_365F4AB_c₁\l# samples/002.lua 4,1:4,33\lt₇ = L_3197088_print₂(L_365F4AB_a₁, L_365F4AB_b₁, L_365F4AB_c₁, t₄, t₆)\l"];
+
+}

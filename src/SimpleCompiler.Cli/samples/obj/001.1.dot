@@ -1,0 +1,5 @@
+digraph {
+  node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
+  BB0 [label="BB0:\nL_39CE30F_print₁ = nil\lL_39CE30F_print₂ = $print\l# samples/001.lua 1,11:1,12\lt₁ = 1\l# samples/001.lua 1,1:1,12\lL_34D5664_a₁ = t₁\l# samples/001.lua 2,1:2,9\lt₂ = L_39CE30F_print₂(L_34D5664_a₁)\l"];
+
+}

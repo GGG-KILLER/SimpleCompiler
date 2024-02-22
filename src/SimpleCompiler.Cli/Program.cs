@@ -64,6 +64,7 @@ await CoconaLiteApp.RunAsync(async (
     if (debug)
     {
         await dumpIr(objDir, name, 1, ir, ctx.CancellationToken);
+        await dumpIrAsDot(objDir, name, 1, ir, ctx.CancellationToken);
     }
 
     var c = 2;
@@ -75,7 +76,10 @@ await CoconaLiteApp.RunAsync(async (
         {
             Console.WriteLine($"  {c}: {stage}");
 
-            dumpIr(objDir, name, c++, ir, ctx.CancellationToken)
+            dumpIr(objDir, name, c, ir, ctx.CancellationToken)
+                .GetAwaiter()
+                .GetResult();
+            dumpIrAsDot(objDir, name, c++, ir, ctx.CancellationToken)
                 .GetAwaiter()
                 .GetResult();
         }
@@ -86,7 +90,8 @@ await CoconaLiteApp.RunAsync(async (
     if (debug)
     {
         SsaDestructor.DestructSsa(ir);
-        await dumpIr(objDir, name, c++, ir, ctx.CancellationToken);
+        await dumpIr(objDir, name, c, ir, ctx.CancellationToken);
+        await dumpIrAsDot(objDir, name, c++, ir, ctx.CancellationToken);
     }
 
     // TODO: Re-enable when compilation has been implemented again.
@@ -125,6 +130,34 @@ static async Task dumpIr(ObjectFileManager objectFileManager, string name, int n
         indentedWriter.Indent--;
         await indentedWriter.WriteLineNoTabsAsync("");
     }
+
+    await indentedWriter.FlushAsync(cancellationToken)
+                        .ConfigureAwait(false);
+}
+
+static async Task dumpIrAsDot(ObjectFileManager objectFileManager, string name, int num, IrGraph ir, CancellationToken cancellationToken = default)
+{
+    using var writer = objectFileManager.CreateText(Path.ChangeExtension(name, $"{num}.dot"));
+
+    var indentedWriter = new IndentedTextWriter(writer, "  ");
+    await indentedWriter.WriteLineAsync("digraph {");
+    indentedWriter.Indent++;
+    await indentedWriter.WriteLineAsync("node[shape=box style=filled fontsize=8 fontname=\"Cascadia Code\" fillcolor=\"#efefef\"];");
+    foreach (var block in ir.BasicBlocks)
+    {
+        await indentedWriter.WriteAsync($"BB{block.Ordinal} [label=\"BB{block.Ordinal}:\\n");
+        foreach (var instruction in block.Instructions)
+        {
+            await indentedWriter.WriteAsync(instruction.ToRepr());
+            await indentedWriter.WriteAsync("\\l");
+        }
+        await indentedWriter.WriteLineAsync("\"];");
+    }
+    await indentedWriter.WriteLineNoTabsAsync("");
+    foreach (var edge in ir.Edges)
+        await indentedWriter.WriteLineAsync($"BB{edge.SourceBlockOrdinal} -> BB{edge.TargetBlockOrdinal};");
+    indentedWriter.Indent--;
+    await indentedWriter.WriteLineAsync("}");
 
     await indentedWriter.FlushAsync(cancellationToken)
                         .ConfigureAwait(false);
