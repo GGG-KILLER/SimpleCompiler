@@ -13,4 +13,13 @@ internal static class CastHelper
 #else
         Unsafe.As<T>(value);
 #endif
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [return: NotNullIfNotNull(nameof(value))]
+    public static T FastUnbox<T>(object value) where T : struct =>
+#if DEBUG
+        (T) value;
+#else
+        Unsafe.Unbox<T>(value);
+#endif
 }
