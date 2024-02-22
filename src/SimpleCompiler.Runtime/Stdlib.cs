@@ -17,6 +17,7 @@ public static class Stdlib
 
         return condition;
     }
+    public static readonly LuaFunction AssertFunction = Assert;
 
     public static LuaValue Type(ReadOnlySpan<LuaValue> args)
     {
@@ -32,6 +33,7 @@ public static class Stdlib
             _ => "unknown",
         });
     }
+    public static readonly LuaFunction TypeFunction = Type;
 
     // TODO: rawequal
 
@@ -57,6 +59,7 @@ public static class Stdlib
         Console.WriteLine();
         return LuaValue.Nil;
     }
+    public static readonly LuaFunction PrintFunction = Print;
 
     // TODO: rawset
 
@@ -65,12 +68,14 @@ public static class Stdlib
         FunctionHelper.Deconstruct(args, out var message, out _);
         throw new LuaException(message.ToString());
     }
+    public static readonly LuaFunction ErrorFunction = Error;
 
     public static LuaValue ToString(ReadOnlySpan<LuaValue> args)
     {
         FunctionHelper.Deconstruct(args, out var value, out _);
         return new LuaValue(value.ToString());
     }
+    public static readonly LuaFunction ToStringFunction = ToString;
 
     // NOTE: No require because that's supposed to be handled before the code is compiled.
 
