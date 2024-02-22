@@ -1,8 +1,5 @@
 ﻿using System.Reflection;
 using System.Reflection.Emit;
-using Sigil;
-using SimpleCompiler.IR;
-using SimpleCompiler.Runtime;
 
 namespace SimpleCompiler.Backends.Cil;
 
@@ -10,20 +7,8 @@ internal sealed class Scope(ModuleBuilder moduleBuilder)
 {
     private static int s_globalCounter;
     private readonly object _lock = new();
-    private int _counter;
-
-    public Dictionary<NameValue, Local> Locals { get; } = [];
     private TypeBuilder? _cacheType;
-
-    public Local? GetLocal(NameValue variable) =>
-        Locals.GetValueOrDefault(variable);
-
-    public Local GetOrCreateLocal(Emit<Func<LuaValue, LuaValue>> method, NameValue variable)
-    {
-        if (GetLocal(variable) is not { } local)
-            local = Locals[variable] = method.DeclareLocal<LuaValue>($"{variable.Name}_{variable.Version}");
-        return local;
-    }
+    private int _counter;
 
     public TypeBuilder GetCacheType(TypeBuilder currentType)
     {
