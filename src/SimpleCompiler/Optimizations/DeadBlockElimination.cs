@@ -23,7 +23,7 @@ public sealed class DeadBlockElimination : IOptimizationPass
         RemoveRedirectBlocks(graph);
 
         // Clean up phis
-        RemoveAliasingPhis(graph);
+        graph.CleanupPhis();
 
         // Join together blocks.
         JoinBlocks(graph);
@@ -122,52 +122,6 @@ public sealed class DeadBlockElimination : IOptimizationPass
             }
         }
         while (toRemove.Count > 0);
-    }
-
-    private static void RemoveAliasingPhis(IrGraph graph)
-    {
-        var redirects = new Dictionary<NameValue, NameValue>();
-        foreach (var block in graph.EnumerateBlocksBreadthFirst().Select(x => graph.BasicBlocks[x]))
-        {
-            var node = block.Instructions.First;
-            while (node is not null)
-            {
-                if (node.Value.Kind != InstructionKind.PhiAssignment)
-                    goto next;
-
-                var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
-
-                // If node only has one distinct source, then we can just replace it by the actual source.
-                if (instruction.Phi.Values.DistinctBy(x => findFinalValue(x.Value)).Count() == 1)
-                {
-                    // Cleanup:
-                    //   1. Remove the instruction from the node
-                    var next = node.Next;
-                    block.Instructions.Remove(node);
-                    node = next;
-
-                    //   2. Rename the references to the old phi to the name that it had in its predecessor.
-                    var (sourceBlockOrdinal, value) = instruction.Phi.Values.DistinctBy(x => x.Value).Single();
-                    value = findFinalValue(value);
-                    redirects[instruction.Name] = value;
-
-                    // Replace the name with the final value.
-                    graph.ReplaceOperand(instruction.Name, value);
-
-                    continue;
-                }
-
-            next:
-                node = node.Next;
-            }
-        }
-
-        NameValue findFinalValue(NameValue name)
-        {
-            while (redirects.TryGetValue(name, out var newName))
-                name = newName;
-            return name;
-        }
     }
 
     private static void JoinBlocks(IrGraph graph)
