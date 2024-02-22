@@ -102,6 +102,6 @@ internal static class LocalTypeExtensions
             LocalType.Double => ValueKind.Double,
             LocalType.String => ValueKind.String,
             LocalType.LuaFunction => ValueKind.String,
-            _ => throw new NotImplementedException()
+            _ => throw new ArgumentException($"No ValueKind for {type}.")
         };
 }
