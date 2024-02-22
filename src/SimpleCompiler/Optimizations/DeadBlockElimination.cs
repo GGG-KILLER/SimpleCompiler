@@ -126,76 +126,41 @@ public sealed class DeadBlockElimination : IOptimizationPass
 
     private static void RemoveAliasingPhis(IrGraph graph)
     {
-        Span<byte> buffer = stackalloc byte[MathEx.RoundUpDivide(graph.BasicBlocks.Count, 8)];
-        Span<byte> visited = stackalloc byte[MathEx.RoundUpDivide(graph.BasicBlocks.Count, 8)];
         var redirects = new Dictionary<NameValue, NameValue>();
-        var worklist = new StackWorklist(graph, buffer);
-        foreach (var block in graph.BasicBlocks)
+        foreach (var block in graph.EnumerateBlocksBreadthFirst().Select(x => graph.BasicBlocks[x]))
         {
-            if (block != s_placeholder) worklist.SetClean(block.Ordinal, true);
-        }
-
-        // Start by entry block
-        worklist.SetClean(graph.EntryBlock.Ordinal, false);
-
-        // Mark all as unvisited
-        visited.Clear();
-
-        // Then remove single-var phis in descendant order
-        var modified = false;
-        do
-        {
-            foreach (var block in graph.BasicBlocks)
+            var node = block.Instructions.First;
+            while (node is not null)
             {
-                // Skip placeholders
-                if (block == s_placeholder)
-                    continue;
+                if (node.Value.Kind != InstructionKind.PhiAssignment)
+                    goto next;
 
-                // Don't re-visit blocks.
-                if (BitVectorHelpers.GetByteVectorBitValue(visited, block.Ordinal))
-                    worklist.SetClean(block.Ordinal, true);
-                if (worklist.IsClean(block.Ordinal))
-                    continue;
-                worklist.MarkSuccessors(block.Ordinal, false);
-                worklist.SetClean(block.Ordinal, true);
+                var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
 
-                var node = block.Instructions.First;
-                while (node is not null)
+                // If node only has one distinct source, then we can just replace it by the actual source.
+                if (instruction.Phi.Values.DistinctBy(x => findFinalValue(x.Value)).Count() == 1)
                 {
-                    if (node.Value.Kind != InstructionKind.PhiAssignment)
-                        goto next;
+                    // Cleanup:
+                    //   1. Remove the instruction from the node
+                    var next = node.Next;
+                    block.Instructions.Remove(node);
+                    node = next;
 
-                    var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
+                    //   2. Rename the references to the old phi to the name that it had in its predecessor.
+                    var (sourceBlockOrdinal, value) = instruction.Phi.Values.DistinctBy(x => x.Value).Single();
+                    value = findFinalValue(value);
+                    redirects[instruction.Name] = value;
 
-                    // If node only has one distinct source, then we can just replace it by the actual source.
-                    if (instruction.Phi.Values.DistinctBy(x => findFinalValue(x.Value)).Count() == 1)
-                    {
-                        // Cleanup:
-                        //   1. Remove the instruction from the node
-                        var next = node.Next;
-                        block.Instructions.Remove(node);
-                        node = next;
+                    // Replace the name with the final value.
+                    graph.ReplaceOperand(instruction.Name, value);
 
-                        //   2. Rename the references to the old phi to the name that it had in its predecessor.
-                        var (sourceBlockOrdinal, value) = instruction.Phi.Values.DistinctBy(x => x.Value).Single();
-                        value = findFinalValue(value);
-                        redirects[instruction.Name] = value;
-
-                        // Replace the name with the final value.
-                        graph.ReplaceOperand(instruction.Name, value);
-
-                        continue;
-                    }
-
-                next:
-                    node = node.Next;
+                    continue;
                 }
 
-                // Mark block as visited
-                BitVectorHelpers.SetByteVectorBitValue(visited, block.Ordinal, true);
+            next:
+                node = node.Next;
             }
         }
-        while (modified);
 
         NameValue findFinalValue(NameValue name)
         {

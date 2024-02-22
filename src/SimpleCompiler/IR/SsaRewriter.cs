@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.Helpers;
-using Tsu.Buffers;
 
 namespace SimpleCompiler.IR;
 
@@ -201,68 +200,41 @@ public sealed partial class SsaRewriter
 
     private void CleanupPhis()
     {
-        Span<byte> buffer = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
-        Span<byte> visited = stackalloc byte[MathEx.RoundUpDivide(_source.BasicBlocks.Count, 8)];
         var redirects = new Dictionary<NameValue, NameValue>();
-        var worklist = new StackWorklist(_source, buffer);
-        foreach (var block in _source.BasicBlocks) worklist.SetClean(block.Ordinal, true);
-
-        // Start by entry block
-        worklist.SetClean(_source.EntryBlock.Ordinal, false);
-
-        // Mark all as unvisited
-        visited.Clear();
-
-        // Then remove single-var phis in descendant order
-        var modified = false;
-        do
+        foreach (var block in _source.EnumerateBlocksBreadthFirst().Select(x => _source.BasicBlocks[x]))
         {
-            foreach (var block in _source.BasicBlocks)
+            var node = block.Instructions.First;
+            while (node is not null)
             {
-                if (BitVectorHelpers.GetByteVectorBitValue(visited, block.Ordinal))
-                    worklist.SetClean(block.Ordinal, true);
-                if (worklist.IsClean(block.Ordinal))
-                    continue;
-                worklist.MarkSuccessors(block.Ordinal, false);
-                worklist.SetClean(block.Ordinal, true);
+                if (node.Value.Kind != InstructionKind.PhiAssignment)
+                    goto next;
 
-                var node = block.Instructions.First;
-                while (node is not null)
+                var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
+
+                // If node only has one distinct source, then we can just replace it by the actual source.
+                if (instruction.Phi.Values.DistinctBy(x => findFinalValue(x.Value)).Count() == 1)
                 {
-                    if (node.Value.Kind != InstructionKind.PhiAssignment)
-                        goto next;
+                    // Cleanup:
+                    //   1. Remove the instruction from the node
+                    var next = node.Next;
+                    block.Instructions.Remove(node);
+                    node = next;
 
-                    var instruction = CastHelper.FastCast<PhiAssignment>(node.Value);
+                    //   2. Rename the references to the old phi to the name that it had in its predecessor.
+                    var (sourceBlockOrdinal, value) = instruction.Phi.Values.DistinctBy(x => x.Value).Single();
+                    value = findFinalValue(value);
+                    redirects[instruction.Name] = value;
 
-                    // If node only has one distinct source, then we can just replace it by the actual source.
-                    if (instruction.Phi.Values.DistinctBy(x => findFinalValue(x.Value)).Count() == 1)
-                    {
-                        // Cleanup:
-                        //   1. Remove the instruction from the node
-                        var next = node.Next;
-                        block.Instructions.Remove(node);
-                        node = next;
+                    // Replace the name with the final value.
+                    _source.ReplaceOperand(instruction.Name, value);
 
-                        //   2. Rename the references to the old phi to the name that it had in its predecessor.
-                        var (sourceBlockOrdinal, value) = instruction.Phi.Values.DistinctBy(x => x.Value).Single();
-                        value = findFinalValue(value);
-                        redirects[instruction.Name] = value;
-
-                        // Replace the name with the final value.
-                        _source.ReplaceOperand(instruction.Name, value);
-
-                        continue;
-                    }
-
-                next:
-                    node = node.Next;
+                    continue;
                 }
 
-                // Mark block as visited
-                BitVectorHelpers.SetByteVectorBitValue(visited, block.Ordinal, true);
+            next:
+                node = node.Next;
             }
         }
-        while (modified);
 
         NameValue findFinalValue(NameValue name)
         {
