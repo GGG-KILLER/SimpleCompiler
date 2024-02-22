@@ -17,8 +17,8 @@ BB0:
 
 BB1:
   # samples/branching.lua 4,5:4,10
-  L_EF627A_a₂ = 3
-  L_EF627A_a₆ = L_EF627A_a₂
+  L_1DE93AF_a₂ = 3
+  L_1DE93AF_a₆ = L_1DE93AF_a₂
   br BB5
 
 BB2:
@@ -31,17 +31,17 @@ BB2:
 
 BB3:
   # samples/branching.lua 6,5:6,10
-  L_EF627A_a₄ = 5
-  L_EF627A_a₆ = L_EF627A_a₄
+  L_1DE93AF_a₄ = 5
+  L_1DE93AF_a₆ = L_1DE93AF_a₄
   br BB5
 
 BB4:
   # samples/branching.lua 8,5:8,10
-  L_EF627A_a₅ = 7
-  L_EF627A_a₆ = L_EF627A_a₅
+  L_1DE93AF_a₅ = 7
+  L_1DE93AF_a₆ = L_1DE93AF_a₅
   br BB5
 
 BB5:
   # samples/branching.lua 11,1:11,9
-  t₁₂ = $print(L_EF627A_a₆)
+  t₁₂ = $print(L_1DE93AF_a₆)
 

@@ -26,7 +26,7 @@
 <polygon fill="#efefef" stroke="black" points="160,-227.62 0,-227.62 0,-180.62 160,-180.62 160,-227.62"/>
 <text text-anchor="middle" x="80" y="-216.03" font-family="Cascadia Code" font-size="8.00">BB1:</text>
 <text text-anchor="start" x="8" y="-206.28" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 4,5:4,10</text>
-<text text-anchor="start" x="8" y="-196.53" font-family="Cascadia Code" font-size="8.00">L_EF627A_a₂ = 3</text>
+<text text-anchor="start" x="8" y="-196.53" font-family="Cascadia Code" font-size="8.00">L_1DE93AF_a₂ = 3</text>
 <text text-anchor="start" x="8" y="-186.78" font-family="Cascadia Code" font-size="8.00">br BB5</text>
 </g>
 <!-- BB0&#45;&gt;BB1 -->
@@ -56,11 +56,11 @@
 <!-- BB5 -->
 <g id="node6" class="node">
 <title>BB5</title>
-<polygon fill="#efefef" stroke="black" points="365.12,-47 10.88,-47 10.88,0 365.12,0 365.12,-47"/>
+<polygon fill="#efefef" stroke="black" points="374.12,-47 1.88,-47 1.88,0 374.12,0 374.12,-47"/>
 <text text-anchor="middle" x="188" y="-35.4" font-family="Cascadia Code" font-size="8.00">BB5:</text>
-<text text-anchor="start" x="18.88" y="-25.65" font-family="Cascadia Code" font-size="8.00">L_EF627A_a₆ = ϕ([BB1: L_EF627A_a₂], [BB3: L_EF627A_a₄], [BB4: L_EF627A_a₅])</text>
-<text text-anchor="start" x="18.88" y="-15.9" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 11,1:11,9</text>
-<text text-anchor="start" x="18.88" y="-6.15" font-family="Cascadia Code" font-size="8.00">t₁₂ = $print(L_EF627A_a₆)</text>
+<text text-anchor="start" x="9.88" y="-25.65" font-family="Cascadia Code" font-size="8.00">L_1DE93AF_a₆ = ϕ([BB1: L_1DE93AF_a₂], [BB3: L_1DE93AF_a₄], [BB4: L_1DE93AF_a₅])</text>
+<text text-anchor="start" x="9.88" y="-15.9" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 11,1:11,9</text>
+<text text-anchor="start" x="9.88" y="-6.15" font-family="Cascadia Code" font-size="8.00">t₁₂ = $print(L_1DE93AF_a₆)</text>
 </g>
 <!-- BB1&#45;&gt;BB5 -->
 <g id="edge5" class="edge">
@@ -74,7 +74,7 @@
 <polygon fill="#efefef" stroke="black" points="268,-130 108,-130 108,-83 268,-83 268,-130"/>
 <text text-anchor="middle" x="188" y="-118.4" font-family="Cascadia Code" font-size="8.00">BB3:</text>
 <text text-anchor="start" x="116" y="-108.65" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 6,5:6,10</text>
-<text text-anchor="start" x="116" y="-98.9" font-family="Cascadia Code" font-size="8.00">L_EF627A_a₄ = 5</text>
+<text text-anchor="start" x="116" y="-98.9" font-family="Cascadia Code" font-size="8.00">L_1DE93AF_a₄ = 5</text>
 <text text-anchor="start" x="116" y="-89.15" font-family="Cascadia Code" font-size="8.00">br BB5</text>
 </g>
 <!-- BB2&#45;&gt;BB3 -->
@@ -89,7 +89,7 @@
 <polygon fill="#efefef" stroke="black" points="446,-130 286,-130 286,-83 446,-83 446,-130"/>
 <text text-anchor="middle" x="366" y="-118.4" font-family="Cascadia Code" font-size="8.00">BB4:</text>
 <text text-anchor="start" x="294" y="-108.65" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 8,5:8,10</text>
-<text text-anchor="start" x="294" y="-98.9" font-family="Cascadia Code" font-size="8.00">L_EF627A_a₅ = 7</text>
+<text text-anchor="start" x="294" y="-98.9" font-family="Cascadia Code" font-size="8.00">L_1DE93AF_a₅ = 7</text>
 <text text-anchor="start" x="294" y="-89.15" font-family="Cascadia Code" font-size="8.00">br BB5</text>
 </g>
 <!-- BB2&#45;&gt;BB4 -->

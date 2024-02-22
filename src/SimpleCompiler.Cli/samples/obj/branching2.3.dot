@@ -1,23 +1,23 @@
 digraph {
   node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
-  BB0 [label="BB0:\nL_31E27EC_b₁ = nil\l# samples/branching2.lua 2,4:2,14\lbr BB2\l"];
-  BB1 [label="BB1:\n# samples/branching2.lua 3,5:3,14\lL_31E27EC_a₃ = 3\l# samples/branching2.lua 4,5:4,10\lL_31E27EC_b₂ = 2\lbr BB17\l"];
+  BB0 [label="BB0:\nL_184B673_b₁ = nil\l# samples/branching2.lua 2,4:2,14\lbr BB2\l"];
+  BB1 [label="BB1:\n# samples/branching2.lua 3,5:3,14\lL_184B673_a₃ = 3\l# samples/branching2.lua 4,5:4,10\lL_184B673_b₂ = 2\lbr BB17\l"];
   BB2 [label="BB2:\n# samples/branching2.lua 5,8:5,18\lbr BB4\l"];
-  BB3 [label="BB3:\n# samples/branching2.lua 6,5:6,14\lL_31E27EC_a₆ = 4\lbr BB17\l"];
+  BB3 [label="BB3:\n# samples/branching2.lua 6,5:6,14\lL_184B673_a₆ = 4\lbr BB17\l"];
   BB4 [label="BB4:\n# samples/branching2.lua 7,8:7,18\lbr BB6\l"];
-  BB5 [label="BB5:\n# samples/branching2.lua 8,5:8,14\lL_31E27EC_a₉ = 5\l# samples/branching2.lua 9,5:9,10\lL_31E27EC_b₆ = 4\lbr BB17\l"];
+  BB5 [label="BB5:\n# samples/branching2.lua 8,5:8,14\lL_184B673_a₉ = 5\l# samples/branching2.lua 9,5:9,10\lL_184B673_b₆ = 4\lbr BB17\l"];
   BB6 [label="BB6:\n# samples/branching2.lua 10,8:10,18\lbr BB8\l"];
-  BB7 [label="BB7:\n# samples/branching2.lua 11,5:11,14\lL_31E27EC_a₁₂ = 6\lbr BB17\l"];
+  BB7 [label="BB7:\n# samples/branching2.lua 11,5:11,14\lL_184B673_a₁₂ = 6\lbr BB17\l"];
   BB8 [label="BB8:\n# samples/branching2.lua 12,8:12,18\lbr BB10\l"];
-  BB9 [label="BB9:\n# samples/branching2.lua 13,5:13,14\lL_31E27EC_a₁₅ = 7\l# samples/branching2.lua 14,5:14,10\lL_31E27EC_b₁₀ = 6\lbr BB17\l"];
+  BB9 [label="BB9:\n# samples/branching2.lua 13,5:13,14\lL_184B673_a₁₅ = 7\l# samples/branching2.lua 14,5:14,10\lL_184B673_b₁₀ = 6\lbr BB17\l"];
   BB10 [label="BB10:\n# samples/branching2.lua 15,8:15,18\lbr BB12\l"];
-  BB11 [label="BB11:\n# samples/branching2.lua 16,5:16,14\lL_31E27EC_a₁₈ = 8\lbr BB17\l"];
+  BB11 [label="BB11:\n# samples/branching2.lua 16,5:16,14\lL_184B673_a₁₈ = 8\lbr BB17\l"];
   BB12 [label="BB12:\n# samples/branching2.lua 17,8:17,18\lbr BB14\l"];
-  BB13 [label="BB13:\n# samples/branching2.lua 18,5:18,14\lL_31E27EC_a₂₁ = 9\l# samples/branching2.lua 19,5:19,10\lL_31E27EC_b₁₄ = 8\lbr BB17\l"];
+  BB13 [label="BB13:\n# samples/branching2.lua 18,5:18,14\lL_184B673_a₂₁ = 9\l# samples/branching2.lua 19,5:19,10\lL_184B673_b₁₄ = 8\lbr BB17\l"];
   BB14 [label="BB14:\n# samples/branching2.lua 20,8:20,18\lbr BB16\l"];
-  BB15 [label="BB15:\n# samples/branching2.lua 21,5:21,14\lL_31E27EC_a₂₄ = 10\lbr BB17\l"];
-  BB16 [label="BB16:\n# samples/branching2.lua 23,5:23,15\lL_31E27EC_a₂₆ = 11\l# samples/branching2.lua 24,5:24,11\lL_31E27EC_b₁₇ = 10\lbr BB17\l"];
-  BB17 [label="BB17:\nL_31E27EC_a₂₇ = ϕ([BB1: L_31E27EC_a₃], [BB3: L_31E27EC_a₆], [BB5: L_31E27EC_a₉], [BB7: L_31E27EC_a₁₂], [BB9: L_31E27EC_a₁₅], [BB11: L_31E27EC_a₁₈], [BB13: L_31E27EC_a₂₁], [BB15: L_31E27EC_a₂₄], [BB16: L_31E27EC_a₂₆])\lL_31E27EC_b₁₈ = ϕ([BB1: L_31E27EC_b₂], [BB3: L_31E27EC_b₁], [BB5: L_31E27EC_b₆], [BB7: L_31E27EC_b₁], [BB9: L_31E27EC_b₁₀], [BB11: L_31E27EC_b₁], [BB13: L_31E27EC_b₁₄], [BB15: L_31E27EC_b₁], [BB16: L_31E27EC_b₁₇])\l# samples/branching2.lua 26,1:26,12\lt₅₇ = $print(L_31E27EC_a₂₇, L_31E27EC_b₁₈)\l"];
+  BB15 [label="BB15:\n# samples/branching2.lua 21,5:21,14\lL_184B673_a₂₄ = 10\lbr BB17\l"];
+  BB16 [label="BB16:\n# samples/branching2.lua 23,5:23,15\lL_184B673_a₂₆ = 11\l# samples/branching2.lua 24,5:24,11\lL_184B673_b₁₇ = 10\lbr BB17\l"];
+  BB17 [label="BB17:\nL_184B673_a₂₇ = ϕ([BB1: L_184B673_a₃], [BB3: L_184B673_a₆], [BB5: L_184B673_a₉], [BB7: L_184B673_a₁₂], [BB9: L_184B673_a₁₅], [BB11: L_184B673_a₁₈], [BB13: L_184B673_a₂₁], [BB15: L_184B673_a₂₄], [BB16: L_184B673_a₂₆])\lL_184B673_b₁₈ = ϕ([BB1: L_184B673_b₂], [BB3: L_184B673_b₁], [BB5: L_184B673_b₆], [BB7: L_184B673_b₁], [BB9: L_184B673_b₁₀], [BB11: L_184B673_b₁], [BB13: L_184B673_b₁₄], [BB15: L_184B673_b₁], [BB16: L_184B673_b₁₇])\l# samples/branching2.lua 26,1:26,12\lt₅₇ = $print(L_184B673_a₂₇, L_184B673_b₁₈)\l"];
 
   BB0 -> BB2;
   BB2 -> BB4;

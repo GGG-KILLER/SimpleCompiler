@@ -13,16 +13,16 @@
 <title>BB0</title>
 <polygon fill="#efefef" stroke="black" points="205,-115.25 0,-115.25 0,0 205,0 205,-115.25"/>
 <text text-anchor="middle" x="102.5" y="-103.65" font-family="Cascadia Code" font-size="8.00">BB0:</text>
-<text text-anchor="start" x="8" y="-93.9" font-family="Cascadia Code" font-size="8.00">L_31E27EC_b₁ = nil</text>
+<text text-anchor="start" x="8" y="-93.9" font-family="Cascadia Code" font-size="8.00">L_184B673_b₁ = nil</text>
 <text text-anchor="start" x="8" y="-84.15" font-family="Cascadia Code" font-size="8.00"># samples/branching2.lua 2,4:2,14</text>
 <text text-anchor="start" x="8" y="-74.4" font-family="Cascadia Code" font-size="8.00"># samples/branching2.lua 23,5:23,15</text>
-<text text-anchor="start" x="8" y="-64.65" font-family="Cascadia Code" font-size="8.00">L_31E27EC_a₂₆ = 11</text>
+<text text-anchor="start" x="8" y="-64.65" font-family="Cascadia Code" font-size="8.00">L_184B673_a₂₆ = 11</text>
 <text text-anchor="start" x="8" y="-54.9" font-family="Cascadia Code" font-size="8.00"># samples/branching2.lua 24,5:24,11</text>
-<text text-anchor="start" x="8" y="-45.15" font-family="Cascadia Code" font-size="8.00">L_31E27EC_b₁₇ = 10</text>
-<text text-anchor="start" x="8" y="-35.4" font-family="Cascadia Code" font-size="8.00">L_31E27EC_a₂₇ = L_31E27EC_a₂₆</text>
-<text text-anchor="start" x="8" y="-25.65" font-family="Cascadia Code" font-size="8.00">L_31E27EC_b₁₈ = L_31E27EC_b₁₇</text>
+<text text-anchor="start" x="8" y="-45.15" font-family="Cascadia Code" font-size="8.00">L_184B673_b₁₇ = 10</text>
+<text text-anchor="start" x="8" y="-35.4" font-family="Cascadia Code" font-size="8.00">L_184B673_a₂₇ = L_184B673_a₂₆</text>
+<text text-anchor="start" x="8" y="-25.65" font-family="Cascadia Code" font-size="8.00">L_184B673_b₁₈ = L_184B673_b₁₇</text>
 <text text-anchor="start" x="8" y="-15.9" font-family="Cascadia Code" font-size="8.00"># samples/branching2.lua 26,1:26,12</text>
-<text text-anchor="start" x="8" y="-6.15" font-family="Cascadia Code" font-size="8.00">t₅₇ = $print(L_31E27EC_a₂₇, L_31E27EC_b₁₈)</text>
+<text text-anchor="start" x="8" y="-6.15" font-family="Cascadia Code" font-size="8.00">t₅₇ = $print(L_184B673_a₂₇, L_184B673_b₁₈)</text>
 </g>
 </g>
 </svg>

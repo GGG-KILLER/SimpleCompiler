@@ -1,0 +1,21 @@
+BB0:
+
+ldsfld SimpleCompiler.Runtime.LuaFunction PrintFunction
+ldc.i4.1
+newarr SimpleCompiler.Runtime.LuaValue
+dup
+ldc.i4.0
+ldc.i8 1
+newobj Void .ctor(Int64)
+stelem SimpleCompiler.Runtime.LuaValue
+newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
+callvirt SimpleCompiler.Runtime.LuaValue Invoke(System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
+stloc.0 // SimpleCompiler.Runtime.LuaValue t₂
+newobj Void .ctor()
+ret
+
+----------- .NET Entry Point ----------
+newobj Void .ctor()
+call TopLevel
+pop
+ret
