@@ -25,15 +25,7 @@ internal sealed class SymbolData(NameValue name)
 {
     public NameValue Name { get; } = name;
     public SymbolType Types { get; set; } = SymbolType.All;
-    public LocalType LocalType => Types switch
-    {
-        SymbolType.Boolean => LocalType.Bool,
-        SymbolType.Long => LocalType.Long,
-        SymbolType.Double => LocalType.Double,
-        SymbolType.String => LocalType.String,
-        SymbolType.Function => LocalType.LuaFunction,
-        _ => LocalType.LuaValue,
-    };
+    public LocalType LocalType => Types.ToLocalType();
 
     public override string ToString() => $"{Name} (Types: [{Types}], Local Type: {LocalType})";
     private string GetDebuggerDisplay() => ToString();
@@ -57,4 +49,15 @@ internal static class SymbolTypeExtensions
 {
     public static bool IsMixed(this SymbolType type) =>
         type is not (SymbolType.Nil or SymbolType.Boolean or SymbolType.Long or SymbolType.Double or SymbolType.String or SymbolType.Function);
+
+    public static LocalType ToLocalType(this SymbolType type) =>
+        type switch
+        {
+            SymbolType.Boolean => LocalType.Bool,
+            SymbolType.Long => LocalType.Long,
+            SymbolType.Double => LocalType.Double,
+            SymbolType.String => LocalType.String,
+            SymbolType.Function => LocalType.LuaFunction,
+            _ => LocalType.LuaValue,
+        };
 }

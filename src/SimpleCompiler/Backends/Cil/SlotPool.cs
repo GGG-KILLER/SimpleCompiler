@@ -93,4 +93,15 @@ internal static class LocalTypeExtensions
             LocalType.LuaValue => typeof(LuaValue),
             _ => throw new UnreachableException()
         };
+
+    public static ValueKind ToValueKind(this LocalType type) =>
+        type switch
+        {
+            LocalType.Bool => ValueKind.Boolean,
+            LocalType.Long => ValueKind.Long,
+            LocalType.Double => ValueKind.Double,
+            LocalType.String => ValueKind.String,
+            LocalType.LuaFunction => ValueKind.String,
+            _ => throw new NotImplementedException()
+        };
 }
