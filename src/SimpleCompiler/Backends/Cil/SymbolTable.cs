@@ -9,7 +9,7 @@ internal sealed class SymbolTable : IReadOnlyDictionary<NameValue, SymbolData>
 {
     private readonly Dictionary<NameValue, SymbolData> _data = [];
 
-    public SymbolData this[NameValue name] => _data[name] ??= new SymbolData(name);
+    public SymbolData this[NameValue name] => _data.TryGetValue(name, out var data) ? data : _data[name] = new SymbolData(name);
     public IEnumerable<NameValue> Keys => _data.Keys;
     public IEnumerable<SymbolData> Values => _data.Values;
     public int Count => _data.Count;
