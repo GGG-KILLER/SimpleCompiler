@@ -1,4 +1,5 @@
 ﻿using System.CodeDom.Compiler;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
 using Cocona;
@@ -17,10 +18,17 @@ using Tsu.Numerics;
 await CoconaLiteApp.RunAsync(async (
     [Argument][FileExists] string path,
     [Option("lua")] string luaVersion,
-    [Option('d')] bool debug,
-    [Option('O')] bool optimize,
+    [Option("debug", ['d'])] string? debugOptionsRaw,
+    [Option("optimize", ['O'])] bool optimize,
     CoconaAppContext ctx) =>
 {
+    var debugOptions = debugOptionsRaw?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                      .ToImmutableHashSet()
+        ?? [];
+    var irDebug = debugOptions.Contains("ir") || debugOptions.Contains("all");
+    var dotDebug = debugOptions.Contains("dot") || debugOptions.Contains("all");
+    var cilDebug = debugOptions.Contains("cil") || debugOptions.Contains("all");
+
     SourceText sourceText;
     using (var stream = File.OpenRead(path))
         sourceText = SourceText.From(stream, throwIfBinaryDetected: true);
@@ -52,7 +60,7 @@ await CoconaLiteApp.RunAsync(async (
 
     var luaFrontend = new LuaFrontend();
     TextWriter? cilDebugWriter = null;
-    if (debug)
+    if (cilDebug)
         cilDebugWriter = objDir.CreateText(name + ".cil");
     var cilBackend = new CilBackend(cilDebugWriter);
 
@@ -62,37 +70,48 @@ await CoconaLiteApp.RunAsync(async (
     var ir = compilation.GetIrGraph(syntaxTree);
     Console.WriteLine($"Syntax lowering done in {Duration.Format(s.Elapsed.Ticks)}");
 
-    if (debug)
-    {
+    if (irDebug)
         await dumpIr(objDir, name, 1, ir, ctx.CancellationToken);
+    if (dotDebug)
         await dumpIrAsDot(objDir, name, 1, ir, ctx.CancellationToken);
-    }
 
     var c = 2;
     if (optimize)
     {
         s.Restart();
         Console.WriteLine($"Optimizing...");
-        ir = compilation.GetOptimizedIrGraph(syntaxTree, debug ? (ir, stage) =>
+        ir = compilation.GetOptimizedIrGraph(syntaxTree, (irDebug || dotDebug) ? (ir, stage) =>
         {
             Console.WriteLine($"  {c}: {stage}");
 
-            dumpIr(objDir, name, c, ir, ctx.CancellationToken)
-                .GetAwaiter()
-                .GetResult();
-            dumpIrAsDot(objDir, name, c++, ir, ctx.CancellationToken)
-                .GetAwaiter()
-                .GetResult();
+            if (irDebug)
+            {
+                dumpIr(objDir, name, c, ir, ctx.CancellationToken)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+
+            if (dotDebug)
+            {
+                dumpIrAsDot(objDir, name, c, ir, ctx.CancellationToken)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+
+            c++;
         }
         : (ir, stage) => { });
         Console.WriteLine($"  Done in {Duration.Format(s.Elapsed.Ticks)}");
     }
 
-    if (debug)
+    if (irDebug || dotDebug)
     {
         SsaDestructor.DestructSsa(ir);
-        await dumpIr(objDir, name, c, ir, ctx.CancellationToken);
-        await dumpIrAsDot(objDir, name, c++, ir, ctx.CancellationToken);
+        if (irDebug)
+            await dumpIr(objDir, name, c, ir, ctx.CancellationToken);
+        if (dotDebug)
+            await dumpIrAsDot(objDir, name, c, ir, ctx.CancellationToken);
+        c++;
     }
 
     var outputDir = Path.GetDirectoryName(path);
