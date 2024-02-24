@@ -41,7 +41,7 @@ internal static class InformationCollector
                     case InstructionKind.PhiAssignment:
                     {
                         var assignment = CastHelper.FastCast<PhiAssignment>(instruction);
-                        table[assignment.Name].Types = assignment.Phi.Values.Aggregate(SymbolType.None, (acc, value) => acc | table[value.Value].Types);
+                        table[assignment.Name].Types = assignment.Phi.Values.Aggregate(SymbolType.None, (acc, value) => acc | GetOperandType(value.Value, table));
                         break;
                     }
                 }

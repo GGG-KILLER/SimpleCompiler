@@ -162,7 +162,6 @@ public sealed class DeadBlockElimination : IOptimizationPass
 
                 firstBlock.Instructions.RemoveLast(); // Remove jump to 2nd block
 
-                var phi = firstBlock.Instructions.FindLastPhi();
                 foreach (var instruction in secondBlock.Instructions)
                 {
                     if (instruction.Kind == InstructionKind.PhiAssignment)

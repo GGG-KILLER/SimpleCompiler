@@ -54,7 +54,7 @@ public sealed partial class SsaRewriter
                     foreach (var name in instruction.Operands.OfType<NameValue>().Where(x => x.IsUnversioned).Except(assigned))
                     {
                         // Initialize the phi assignment
-                        var values = new List<(int SourceBlockOrdinal, NameValue Value)>(_source.Edges.GetPredecessors(block.Ordinal).Count());
+                        var values = new List<(int SourceBlockOrdinal, Operand Value)>(_source.Edges.GetPredecessors(block.Ordinal).Count());
                         var assignment = new PhiAssignment(name, new Phi(values));
 
                         // Insert phi and mark as assigned.
@@ -182,7 +182,8 @@ public sealed partial class SsaRewriter
             for (var idx = 0; idx < values.Length; idx++)
             {
                 ref var value = ref values[idx];
-                value = value with { Value = findDefName(value.SourceBlockOrdinal, value.Value.Name) };
+                if (value.Value is NameValue name)
+                    value = value with { Value = findDefName(value.SourceBlockOrdinal, name.Name) };
             }
         }
 

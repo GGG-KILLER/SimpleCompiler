@@ -132,7 +132,8 @@ public static class GraphRewriter
                         //   2. Rename the references to the old phi to the name that it had in its predecessor.
                         var (sourceBlockOrdinal, value) = instruction.Phi.Values.DistinctBy(x => x.Value).Single();
                         value = findFinalValue(value);
-                        redirects[instruction.Name] = value;
+                        if (value is NameValue valueAsName)
+                            redirects[instruction.Name] = valueAsName;
 
                         // Replace the name with the final value.
                         graph.ReplaceOperand(instruction.Name, value);
@@ -148,11 +149,11 @@ public static class GraphRewriter
         }
         while (replaced);
 
-        NameValue findFinalValue(NameValue name)
+        Operand findFinalValue(Operand operand)
         {
-            while (redirects.TryGetValue(name, out var newName))
-                name = newName;
-            return name;
+            while (operand is NameValue name && redirects.TryGetValue(name, out var newName))
+                operand = newName;
+            return operand;
         }
     }
 }
