@@ -688,7 +688,8 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                 // }
                 // else
                 {
-                    Debug.Assert(ConvertTo(argumentType, LocalType.LuaValue, "", true), $"Should be able to convert from {argumentType} to LuaValue.");
+                    if (!ConvertTo(argumentType, LocalType.LuaValue, "", true))
+                        Debug.Assert(false, $"Should be able to convert from {argumentType} to LuaValue.");
                     method.StoreElement<LuaValue>();
                 }
             }
