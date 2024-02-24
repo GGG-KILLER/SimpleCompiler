@@ -13,6 +13,7 @@ using SimpleCompiler.Cli.Validation;
 using SimpleCompiler.FileSystem;
 using SimpleCompiler.Frontends.Lua;
 using SimpleCompiler.IR;
+using SimpleCompiler.Optimizations;
 using Tsu.Numerics;
 
 await CoconaLiteApp.RunAsync(async (
@@ -20,14 +21,17 @@ await CoconaLiteApp.RunAsync(async (
     [Option("lua")] string luaVersion,
     [Option("debug", ['d'])] string? debugOptionsRaw,
     [Option("optimize", ['O'])] bool optimize,
+    [Option("optimizations", ['g'])] string? optimizationsRaw,
     CoconaAppContext ctx) =>
 {
     var debugOptions = debugOptionsRaw?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                                       .ToImmutableHashSet()
         ?? [];
+    var optimizations = optimizationsRaw?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     var irDebug = debugOptions.Contains("ir") || debugOptions.Contains("all");
     var dotDebug = debugOptions.Contains("dot") || debugOptions.Contains("all");
     var cilDebug = debugOptions.Contains("cil") || debugOptions.Contains("all");
+    optimize = optimize || optimizations is not null;
 
     SourceText sourceText;
     using (var stream = File.OpenRead(path))
@@ -64,7 +68,15 @@ await CoconaLiteApp.RunAsync(async (
         cilDebugWriter = objDir.CreateText(name + ".cil");
     var cilBackend = new CilBackend(cilDebugWriter);
 
-    var compilation = new Compilation<SyntaxTree>(luaFrontend, cilBackend);
+    var passes = optimizations?.Select(x => x.ToLowerInvariant() switch
+    {
+        "inlining" or "folding" or "inliningandfolding" or "iaf" => (IOptimizationPass) new InliningAndFolding(),
+        "code" or "deadcode" or "deadcodeelimination" or "dce" => new DeadCodeElimination(),
+        "block" or "deadblock" or "deadblockelimination" or "dbe" => new DeadBlockElimination(),
+        _ => throw new ArgumentException($"Invalid optimization pass {x}.")
+    }) ?? OptimizationPasses.All;
+
+    var compilation = new Compilation<SyntaxTree>(luaFrontend, passes, cilBackend);
 
     s.Restart();
     var ir = compilation.GetIrGraph(syntaxTree);
