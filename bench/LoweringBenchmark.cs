@@ -7,12 +7,16 @@ using SimpleCompiler.IR;
 
 namespace SimpleCompiler.Benchmarks;
 
-[MemoryDiagnoser]
+[DryJob(RuntimeMoniker.NativeAot80)]
+[SimpleJob(RuntimeMoniker.NativeAot80)]
 [DryJob(RuntimeMoniker.Net80)]
 [SimpleJob(RuntimeMoniker.Net80)]
 public class LoweringBenchmark
 {
-    private readonly SyntaxTree _syntaxTree = LuaSyntaxTree.ParseText("""
+    private SyntaxTree _syntaxTree = null!;
+
+    [GlobalSetup]
+    public void Setup() => _syntaxTree = LuaSyntaxTree.ParseText("""
         local a, b = 1
         if a % 2 == 0 then
             a = a + 2

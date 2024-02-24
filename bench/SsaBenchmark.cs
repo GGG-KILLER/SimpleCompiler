@@ -6,7 +6,8 @@ using SimpleCompiler.IR;
 
 namespace SimpleCompiler.Benchmarks;
 
-[MemoryDiagnoser]
+[DryJob(RuntimeMoniker.NativeAot80)]
+[SimpleJob(RuntimeMoniker.NativeAot80)]
 [DryJob(RuntimeMoniker.Net80)]
 [SimpleJob(RuntimeMoniker.Net80)]
 public class SsaBenchmark
@@ -47,7 +48,7 @@ public class SsaBenchmark
         _refGraph = LuaFrontend.LowerWithoutSsa(syntaxTree);
     }
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public IrGraph Rewrite()
     {
         var graph = _refGraph.Clone();
