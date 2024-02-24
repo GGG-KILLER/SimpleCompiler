@@ -1,22 +1,45 @@
 #! /usr/bin/env bash
 set -euo pipefail
 
-OPTIMIZE=false
-if [ "$1" = "-O" ]; then
-    shift 1
-    OPTIMIZE=true
-fi
-
 VERSION="AllWithIntegers"
-if [ "$1" = "--lua" ]; then
-    VERSION=$2
-    shift 2
-fi
+FLAGS=()
+FILES=()
 
-while [ $# -gt 0 ]; do
-    FILE_DIR=$(dirname "$1")
-    FILE_NAME=$(basename -s.lua "$1")
-    shift 1
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+    --lua)
+        VERSION="$2"
+        shift 2
+        ;;
+    --lua=*)
+        VERSION="${1#--lua=}"
+        shift 1
+        ;;
+    --*=*)
+        FLAGS+=("$1")
+        shift 1
+        ;;
+    --*)
+        FLAGS+=("$1")
+        FLAGS+=("$2")
+        shift 2
+        ;;
+    -*)
+        FLAGS+=("$1")
+        shift 1
+        ;;
+    *)
+        FILES+=("$1")
+        shift 1
+        ;;
+    esac
+done
+
+echo Version: "$VERSION"
+
+for FILE in "${FILES[@]}"; do
+    FILE_DIR=$(dirname "$FILE")
+    FILE_NAME=$(basename -s.lua "$FILE")
 
     for trash in "$FILE_DIR/obj/$FILE_NAME".*; do
         if [ -e "$trash" ]; then
@@ -24,13 +47,9 @@ while [ $# -gt 0 ]; do
         fi
     done
 
-    if [ "$OPTIMIZE" = true ]; then
-        echo "$FILE_DIR/$FILE_NAME.lua (Release):"
-        dotnet run -c Debug -v quiet -- -Od --lua "$VERSION"  "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
-        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /' || true
-    else
-        echo "$FILE_DIR/$FILE_NAME.lua (Debug):"
-        dotnet run -c Debug -v quiet -- -d --lua "$VERSION" "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
-        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /' || true
-    fi
+    {
+        echo "$FILE_DIR/$FILE_NAME.lua:"
+        dotnet run -c Debug -v quiet -- --lua "$VERSION" "${FLAGS[@]}" "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
+        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
+    } || true
 done
