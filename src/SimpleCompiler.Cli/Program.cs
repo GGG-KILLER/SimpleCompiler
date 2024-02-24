@@ -127,7 +127,7 @@ await CoconaLiteApp.RunAsync(async (
 
 static async Task dumpIr(ObjectFileManager objectFileManager, string name, int num, IrGraph ir, CancellationToken cancellationToken = default)
 {
-    using var writer = objectFileManager.CreateText(Path.ChangeExtension(name, $"{num}.mir"));
+    using var writer = objectFileManager.CreateText(Path.ChangeExtension(name, $"{num}.ir"));
 
     var indentedWriter = new IndentedTextWriter(writer, "  ");
     await indentedWriter.WriteLineAsync("Edges:");

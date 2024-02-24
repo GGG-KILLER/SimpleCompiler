@@ -1,6 +1,6 @@
 {
     "git.repositoryScanMaxDepth": 0,
     "files.associations": {
-        "*.mir": "ini"
+        "*.ir": "ini"
     }
 }
