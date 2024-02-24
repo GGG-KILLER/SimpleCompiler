@@ -1,11 +1,11 @@
 digraph {
   node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
   BB0 [label="BB0:\n# samples/branching.lua 3,4:3,9\lt₂ = mod nil, 2\l# samples/branching.lua 3,4:3,14\lt₄ = eq t₂, 0\l# samples/branching.lua 3,4:3,14\lbr BB1 if t₄ else BB2\l"];
-  BB1 [label="BB1:\n# samples/branching.lua 4,5:4,10\lL_1DE93AF_a₂ = 3\lbr BB5\l"];
+  BB1 [label="BB1:\nbr BB5\l"];
   BB2 [label="BB2:\n# samples/branching.lua 5,8:5,13\lt₇ = mod nil, 3\l# samples/branching.lua 5,8:5,18\lt₉ = eq t₇, 0\l# samples/branching.lua 5,8:5,18\lbr BB3 if t₉ else BB4\l"];
-  BB3 [label="BB3:\n# samples/branching.lua 6,5:6,10\lL_1DE93AF_a₄ = 5\lbr BB5\l"];
-  BB4 [label="BB4:\n# samples/branching.lua 8,5:8,10\lL_1DE93AF_a₅ = 7\lbr BB5\l"];
-  BB5 [label="BB5:\nL_1DE93AF_a₆ = ϕ([BB1: L_1DE93AF_a₂], [BB3: L_1DE93AF_a₄], [BB4: L_1DE93AF_a₅])\l# samples/branching.lua 11,1:11,9\lt₁₂ = $print(L_1DE93AF_a₆)\l"];
+  BB3 [label="BB3:\nbr BB5\l"];
+  BB4 [label="BB4:\nbr BB5\l"];
+  BB5 [label="BB5:\nL_1DE93AF_a₆ = ϕ([BB1: 3], [BB3: 5], [BB4: 7])\l# samples/branching.lua 11,1:11,9\lt₁₂ = $print(L_1DE93AF_a₆)\l"];
 
   BB0 -> BB1;
   BB0 -> BB2;

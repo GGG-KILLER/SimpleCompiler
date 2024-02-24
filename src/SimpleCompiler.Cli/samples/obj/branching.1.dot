@@ -1,11 +1,11 @@
 digraph {
   node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
-  BB0 [label="BB0:\nL_1CB3A6F_print₁ = nil\lL_1CB3A6F_print₂ = $print\l# samples/branching.lua 1,1:1,8\lL_302F24_a₁ = nil\l# samples/branching.lua 3,8:3,9\lt₁ = 2\l# samples/branching.lua 3,4:3,9\lt₂ = mod L_302F24_a₁, t₁\l# samples/branching.lua 3,13:3,14\lt₃ = 0\l# samples/branching.lua 3,4:3,14\lt₄ = eq t₂, t₃\l# samples/branching.lua 3,4:3,14\lbr BB1 if t₄ else BB2\l"];
-  BB1 [label="BB1:\n# samples/branching.lua 4,9:4,10\lt₅ = 3\l# samples/branching.lua 4,5:4,10\lL_302F24_a₂ = t₅\lbr BB5\l"];
-  BB2 [label="BB2:\n# samples/branching.lua 5,12:5,13\lt₆ = 3\l# samples/branching.lua 5,8:5,13\lt₇ = mod L_302F24_a₁, t₆\l# samples/branching.lua 5,17:5,18\lt₈ = 0\l# samples/branching.lua 5,8:5,18\lt₉ = eq t₇, t₈\l# samples/branching.lua 5,8:5,18\lbr BB3 if t₉ else BB4\l"];
-  BB3 [label="BB3:\n# samples/branching.lua 6,9:6,10\lt₁₀ = 5\l# samples/branching.lua 6,5:6,10\lL_302F24_a₄ = t₁₀\lbr BB5\l"];
-  BB4 [label="BB4:\n# samples/branching.lua 8,9:8,10\lt₁₁ = 7\l# samples/branching.lua 8,5:8,10\lL_302F24_a₅ = t₁₁\lbr BB5\l"];
-  BB5 [label="BB5:\nL_302F24_a₆ = ϕ([BB1: L_302F24_a₂], [BB3: L_302F24_a₄], [BB4: L_302F24_a₅])\l# samples/branching.lua 11,1:11,9\lt₁₂ = L_1CB3A6F_print₂(L_302F24_a₆)\l"];
+  BB0 [label="BB0:\nL_1ABCB2D_print₁ = nil\lL_1ABCB2D_print₂ = $print\l# samples/branching.lua 1,1:1,8\lL_3F3DE01_a₁ = nil\l# samples/branching.lua 3,8:3,9\lt₁ = 2\l# samples/branching.lua 3,4:3,9\lt₂ = mod L_3F3DE01_a₁, t₁\l# samples/branching.lua 3,13:3,14\lt₃ = 0\l# samples/branching.lua 3,4:3,14\lt₄ = eq t₂, t₃\l# samples/branching.lua 3,4:3,14\lbr BB1 if t₄ else BB2\l"];
+  BB1 [label="BB1:\n# samples/branching.lua 4,9:4,10\lt₅ = 3\l# samples/branching.lua 4,5:4,10\lL_3F3DE01_a₂ = t₅\lbr BB5\l"];
+  BB2 [label="BB2:\n# samples/branching.lua 5,12:5,13\lt₆ = 3\l# samples/branching.lua 5,8:5,13\lt₇ = mod L_3F3DE01_a₁, t₆\l# samples/branching.lua 5,17:5,18\lt₈ = 0\l# samples/branching.lua 5,8:5,18\lt₉ = eq t₇, t₈\l# samples/branching.lua 5,8:5,18\lbr BB3 if t₉ else BB4\l"];
+  BB3 [label="BB3:\n# samples/branching.lua 6,9:6,10\lt₁₀ = 5\l# samples/branching.lua 6,5:6,10\lL_3F3DE01_a₄ = t₁₀\lbr BB5\l"];
+  BB4 [label="BB4:\n# samples/branching.lua 8,9:8,10\lt₁₁ = 7\l# samples/branching.lua 8,5:8,10\lL_3F3DE01_a₅ = t₁₁\lbr BB5\l"];
+  BB5 [label="BB5:\nL_3F3DE01_a₆ = ϕ([BB1: L_3F3DE01_a₂], [BB3: L_3F3DE01_a₄], [BB4: L_3F3DE01_a₅])\l# samples/branching.lua 11,1:11,9\lt₁₂ = L_1ABCB2D_print₂(L_3F3DE01_a₆)\l"];
 
   BB0 -> BB1;
   BB0 -> BB2;

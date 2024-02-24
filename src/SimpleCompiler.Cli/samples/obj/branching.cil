@@ -20,11 +20,7 @@ br BB2
 BB1:
 
 ldc.i8 3
-stloc.2 // System.Int64 L_2882FAF_a₂
-
-ldloc.2 // System.Int64 L_2882FAF_a₂
-newobj Void .ctor(Int64)
-stloc.3 // SimpleCompiler.Runtime.LuaValue L_2882FAF_a₆
+stloc.2 // System.Int64 L_A2E605_a₆
 br BB5
 
 BB2:
@@ -34,34 +30,26 @@ call Double ToNumber()
 ldc.i8 3
 conv.r8
 rem
-stloc.s 4 // System.Double t₇
+stloc.3 // System.Double t₇
 
-ldloc.s 4 // System.Double t₇
+ldloc.3 // System.Double t₇
 newobj Void .ctor(Double)
 ldc.i8 0
 newobj Void .ctor(Int64)
 call Boolean op_Equality(SimpleCompiler.Runtime.LuaValue, SimpleCompiler.Runtime.LuaValue)
-stloc.s 5 // System.Boolean t₉
-ldloc.s 5 // System.Boolean t₉
+stloc.s 4 // System.Boolean t₉
+ldloc.s 4 // System.Boolean t₉
 brtrue BB3
 br BB4
 
 BB3:
-
 ldc.i8 5
-stloc.s 6 // System.Int64 L_2882FAF_a₄
-ldloc.s 6 // System.Int64 L_2882FAF_a₄
-newobj Void .ctor(Int64)
-stloc.3 // SimpleCompiler.Runtime.LuaValue L_2882FAF_a₆
+stloc.2 // System.Int64 L_A2E605_a₆
 br BB5
 
 BB4:
-
 ldc.i8 7
-stloc.s 7 // System.Int64 L_2882FAF_a₅
-ldloc.s 7 // System.Int64 L_2882FAF_a₅
-newobj Void .ctor(Int64)
-stloc.3 // SimpleCompiler.Runtime.LuaValue L_2882FAF_a₆
+stloc.2 // System.Int64 L_A2E605_a₆
 br BB5
 
 BB5:
@@ -71,11 +59,12 @@ ldc.i4.1
 newarr SimpleCompiler.Runtime.LuaValue
 dup
 ldc.i4.0
-ldloc.3 // SimpleCompiler.Runtime.LuaValue L_2882FAF_a₆
+ldloc.2 // System.Int64 L_A2E605_a₆
+newobj Void .ctor(Int64)
 stelem SimpleCompiler.Runtime.LuaValue
 newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
 callvirt SimpleCompiler.Runtime.LuaValue Invoke(System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
-stloc.s 8 // SimpleCompiler.Runtime.LuaValue t₁₂
+stloc.s 5 // SimpleCompiler.Runtime.LuaValue t₁₂
 newobj Void .ctor()
 ret
 

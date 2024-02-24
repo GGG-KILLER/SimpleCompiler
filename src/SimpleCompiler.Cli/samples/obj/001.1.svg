@@ -13,14 +13,14 @@
 <title>BB0</title>
 <polygon fill="#efefef" stroke="black" points="173.5,-95.75 0,-95.75 0,0 173.5,0 173.5,-95.75"/>
 <text text-anchor="middle" x="86.75" y="-84.15" font-family="Cascadia Code" font-size="8.00">BB0:</text>
-<text text-anchor="start" x="8" y="-74.4" font-family="Cascadia Code" font-size="8.00">L_39CE30F_print₁ = nil</text>
-<text text-anchor="start" x="8" y="-64.65" font-family="Cascadia Code" font-size="8.00">L_39CE30F_print₂ = $print</text>
+<text text-anchor="start" x="8" y="-74.4" font-family="Cascadia Code" font-size="8.00">L_3DEA045_print₁ = nil</text>
+<text text-anchor="start" x="8" y="-64.65" font-family="Cascadia Code" font-size="8.00">L_3DEA045_print₂ = $print</text>
 <text text-anchor="start" x="8" y="-54.9" font-family="Cascadia Code" font-size="8.00"># samples/001.lua 1,11:1,12</text>
 <text text-anchor="start" x="8" y="-45.15" font-family="Cascadia Code" font-size="8.00">t₁ = 1</text>
 <text text-anchor="start" x="8" y="-35.4" font-family="Cascadia Code" font-size="8.00"># samples/001.lua 1,1:1,12</text>
-<text text-anchor="start" x="8" y="-25.65" font-family="Cascadia Code" font-size="8.00">L_34D5664_a₁ = t₁</text>
+<text text-anchor="start" x="8" y="-25.65" font-family="Cascadia Code" font-size="8.00">L_158163F_a₁ = t₁</text>
 <text text-anchor="start" x="8" y="-15.9" font-family="Cascadia Code" font-size="8.00"># samples/001.lua 2,1:2,9</text>
-<text text-anchor="start" x="8" y="-6.15" font-family="Cascadia Code" font-size="8.00">t₂ = L_39CE30F_print₂(L_34D5664_a₁)</text>
+<text text-anchor="start" x="8" y="-6.15" font-family="Cascadia Code" font-size="8.00">t₂ = L_3DEA045_print₂(L_158163F_a₁)</text>
 </g>
 </g>
 </svg>
