@@ -1,6 +1,0 @@
-Edges:
-
-BB0:
-  # samples/branching2.lua 26,1:26,12
-  t₅₇ = $print(11, 10)
-

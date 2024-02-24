@@ -1,6 +1,0 @@
-Edges:
-
-BB0:
-  # samples/002.lua 4,1:4,33
-  t₇ = $print(1, 2, 3, 3, 6)
-

@@ -1,8 +1,0 @@
-Edges:
-
-BB0:
-  # samples/simple.lua 12,5:12,13
-  t₁₂ = $print(22)
-  # samples/simple.lua 15,1:15,24
-  t₁₃ = $print(7, 4, 11, nil, 11, 15)
-

@@ -1,6 +1,0 @@
-Edges:
-
-BB0:
-  # samples/001.lua 2,1:2,9
-  t₂ = $print(1)
-

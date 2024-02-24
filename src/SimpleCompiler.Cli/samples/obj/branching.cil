@@ -20,11 +20,11 @@ br BB2
 BB1:
 
 ldc.i8 3
-stloc.2 // System.Int64 L_A2E605_a₂
+stloc.2 // System.Int64 L_2882FAF_a₂
 
-ldloc.2 // System.Int64 L_A2E605_a₂
+ldloc.2 // System.Int64 L_2882FAF_a₂
 newobj Void .ctor(Int64)
-stloc.3 // SimpleCompiler.Runtime.LuaValue L_A2E605_a₆
+stloc.3 // SimpleCompiler.Runtime.LuaValue L_2882FAF_a₆
 br BB5
 
 BB2:
@@ -49,19 +49,19 @@ br BB4
 BB3:
 
 ldc.i8 5
-stloc.s 6 // System.Int64 L_A2E605_a₄
-ldloc.s 6 // System.Int64 L_A2E605_a₄
+stloc.s 6 // System.Int64 L_2882FAF_a₄
+ldloc.s 6 // System.Int64 L_2882FAF_a₄
 newobj Void .ctor(Int64)
-stloc.3 // SimpleCompiler.Runtime.LuaValue L_A2E605_a₆
+stloc.3 // SimpleCompiler.Runtime.LuaValue L_2882FAF_a₆
 br BB5
 
 BB4:
 
 ldc.i8 7
-stloc.s 7 // System.Int64 L_A2E605_a₅
-ldloc.s 7 // System.Int64 L_A2E605_a₅
+stloc.s 7 // System.Int64 L_2882FAF_a₅
+ldloc.s 7 // System.Int64 L_2882FAF_a₅
 newobj Void .ctor(Int64)
-stloc.3 // SimpleCompiler.Runtime.LuaValue L_A2E605_a₆
+stloc.3 // SimpleCompiler.Runtime.LuaValue L_2882FAF_a₆
 br BB5
 
 BB5:
@@ -71,7 +71,7 @@ ldc.i4.1
 newarr SimpleCompiler.Runtime.LuaValue
 dup
 ldc.i4.0
-ldloc.3 // SimpleCompiler.Runtime.LuaValue L_A2E605_a₆
+ldloc.3 // SimpleCompiler.Runtime.LuaValue L_2882FAF_a₆
 stelem SimpleCompiler.Runtime.LuaValue
 newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
 callvirt SimpleCompiler.Runtime.LuaValue Invoke(System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
