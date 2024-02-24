@@ -74,9 +74,8 @@ public static class GraphRewriter
                 if (newOperand is NameValue newName)
                 {
                     assignment.Name = assignment.Name == oldOperand ? newName : assignment.Name;
-                    if (oldOperand is NameValue oldName)
-                        assignment.Phi.ReplaceOperand(oldName, newName);
                 }
+                assignment.Phi.ReplaceOperand(oldOperand, newOperand);
                 break;
             }
             case InstructionKind.ConditionalBranch:
@@ -91,7 +90,7 @@ public static class GraphRewriter
         }
     }
 
-    public static void ReplaceOperand(this Phi phi, NameValue oldOperand, NameValue newOperand)
+    public static void ReplaceOperand(this Phi phi, Operand oldOperand, Operand newOperand)
     {
         if (!phi.Values.Any(x => x.Value == oldOperand))
             return;

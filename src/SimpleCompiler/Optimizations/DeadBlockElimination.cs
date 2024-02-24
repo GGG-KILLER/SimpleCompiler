@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using SimpleCompiler.Helpers;
@@ -63,8 +64,19 @@ public sealed class DeadBlockElimination : IOptimizationPass
         {
             toRemove.Clear();
 
+            var phiReferencedBlocks = graph.BasicBlocks.SelectMany(x => x.Instructions)
+                                                       .Where(x => x.Kind == InstructionKind.PhiAssignment)
+                                                       .Select(x => CastHelper.FastCast<PhiAssignment>(x))
+                                                       .SelectMany(x => x.Phi.Values.Select(y => y.SourceBlockOrdinal))
+                                                       .OrderBy(x => x)
+                                                       .ToArray();
+
             for (var ordinal = 0; ordinal < graph.BasicBlocks.Count; ordinal++)
             {
+                // We can have an implicit reference through a constant-only phi.
+                if (phiReferencedBlocks.AsSpan().BinarySearch(ordinal) >= 0)
+                    continue;
+
                 var block = graph.BasicBlocks[ordinal];
                 if (block.Instructions.NonDebugCount() == 1 && block.Instructions.FirstNonDebug()?.Kind == InstructionKind.Branch)
                 {

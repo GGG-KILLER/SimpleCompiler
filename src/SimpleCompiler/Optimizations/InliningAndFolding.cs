@@ -15,7 +15,7 @@ public sealed class InliningAndFolding : IOptimizationPass
             while (node is not null)
             {
                 var instruction = node.Value;
-                bool hasUses = false, isUsedInPhi = false;
+                bool hasUses = false;
 
                 if (instruction.IsAssignment)
                 {
@@ -25,11 +25,7 @@ public sealed class InliningAndFolding : IOptimizationPass
                             continue;
 
                         hasUses = true;
-                        if (use.Kind == InstructionKind.PhiAssignment)
-                        {
-                            isUsedInPhi = true;
-                            break; // No more info to collect, abort here.
-                        }
+                        break; // No more info to collect, abort here.
                     }
                 }
 
@@ -40,17 +36,13 @@ public sealed class InliningAndFolding : IOptimizationPass
                     if (hasUses)
                         graph.ReplaceOperand(assignment.Name, assignment.Value);
 
-                    // We don't remove values used in phis because those only support names as values.
-                    if (!isUsedInPhi)
-                    {
-                        // Remove the instruction before we replace it.
-                        var next = node.Next;
-                        if (node.Previous?.Value is DebugLocation)
-                            instructions.Remove(node.Previous);
-                        instructions.Remove(node);
-                        node = next; // We need to use the next from before removing otherwise it's lost.
-                        continue; // Do not set next at the end.
-                    }
+                    // Remove the instruction before we replace it.
+                    var next = node.Next;
+                    if (node.Previous?.Value is DebugLocation)
+                        instructions.Remove(node.Previous);
+                    instructions.Remove(node);
+                    node = next; // We need to use the next from before removing otherwise it's lost.
+                    continue; // Do not set next at the end.
                 }
                 else if (instruction.Kind == InstructionKind.UnaryAssignment)
                 {
@@ -65,18 +57,14 @@ public sealed class InliningAndFolding : IOptimizationPass
                         graph.ReplaceOperand(assignment.Name, foldedConstant);
                     }
 
-                    // We don't remove values used in phis because those only support names as values.
-                    if (!isUsedInPhi)
-                    {
-                        // Remove the instruction before we replace it.
-                        var next = node.Next;
+                    // Remove the instruction before we replace it.
+                    var next = node.Next;
 
-                        if (node.Previous?.Value is DebugLocation)
-                            instructions.Remove(node.Previous);
-                        instructions.Remove(node);
-                        node = next; // We need to use the next from before removing otherwise it's lost.
-                        continue;
-                    }
+                    if (node.Previous?.Value is DebugLocation)
+                        instructions.Remove(node.Previous);
+                    instructions.Remove(node);
+                    node = next; // We need to use the next from before removing otherwise it's lost.
+                    continue;
                 }
                 else if (instruction.Kind == InstructionKind.BinaryAssignment)
                 {
@@ -91,18 +79,14 @@ public sealed class InliningAndFolding : IOptimizationPass
                         graph.ReplaceOperand(assignment.Name, foldedConstant);
                     }
 
-                    // We don't remove values used in phis because those only support names as values.
-                    if (!isUsedInPhi)
-                    {
-                        // Remove the instruction before we replace it.
-                        var next = node.Next;
+                    // Remove the instruction before we replace it.
+                    var next = node.Next;
 
-                        if (node.Previous?.Value is DebugLocation)
-                            instructions.Remove(node.Previous);
-                        instructions.Remove(node);
-                        node = next; // We need to use the next from before removing otherwise it's lost.
-                        continue;
-                    }
+                    if (node.Previous?.Value is DebugLocation)
+                        instructions.Remove(node.Previous);
+                    instructions.Remove(node);
+                    node = next; // We need to use the next from before removing otherwise it's lost.
+                    continue;
                 }
 
             next:
