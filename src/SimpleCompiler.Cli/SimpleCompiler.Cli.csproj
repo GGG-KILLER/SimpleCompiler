@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleCompiler\SimpleCompiler.csproj" />
+    <ProjectReference Include="..\SimpleCompiler.Backends.Cil\SimpleCompiler.Backends.Cil.csproj" />
   </ItemGroup>
 
   <ItemGroup>

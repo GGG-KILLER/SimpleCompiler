@@ -7,14 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SimpleCompiler.Backends.Cil" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.12-nightly.24" />
     <PackageReference Include="Loretta.CodeAnalysis.Lua.Experimental" Version="0.2.12-nightly.24" />
-    <PackageReference Include="Sigil" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleCompiler.Runtime\SimpleCompiler.Runtime.csproj" />
-    <ProjectReference Include="..\ILPack\src\Lokad.ILPack.csproj" />
   </ItemGroup>
 
 </Project>
