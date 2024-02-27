@@ -70,9 +70,8 @@ await CoconaLiteApp.RunAsync(async (
 
     var passes = optimizations?.Select(x => x.ToLowerInvariant() switch
     {
-        "inlining" or "folding" or "inliningandfolding" or "iaf" => (IOptimizationPass) new InliningAndFolding(),
+        "constantfolding" or "constant" or "constantpropagation" or "cf" => (IOptimizationPass) new ConstantFoldingAndPropagation(),
         "code" or "deadcode" or "deadcodeelimination" or "dce" => new DeadCodeElimination(),
-        "block" or "deadblock" or "deadblockelimination" or "dbe" => new DeadBlockElimination(),
         _ => throw new ArgumentException($"Invalid optimization pass {x}.")
     }) ?? OptimizationPasses.All;
 

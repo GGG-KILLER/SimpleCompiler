@@ -4,7 +4,7 @@ using SimpleCompiler.IR;
 
 namespace SimpleCompiler.Optimizations;
 
-public sealed class InliningAndFolding : IOptimizationPass
+public sealed class ConstantFoldingAndPropagation : IOptimizationPass
 {
     public void Execute(IrGraph graph)
     {
