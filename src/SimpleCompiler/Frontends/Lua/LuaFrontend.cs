@@ -39,6 +39,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
         private readonly List<BasicBlock> _basicBlocks = [];
         private readonly List<IrEdge> _edges = [];
         private readonly List<List<Action<BasicBlock>>> _targetQueue = [];
+        private readonly DebugData _debugData = new();
 
         // Current block state
         private readonly ImmutableArray<Instruction>.Builder _instructions = ImmutableArray.CreateBuilder<Instruction>();
@@ -53,6 +54,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             if (!_variableNames.TryGetValue(variable, out var name))
             {
                 _variableNames[variable] = name = NameValue.Unversioned($"L_{variable.ContainingScope.GetHashCode():X}_{variable.Name}");
+                _debugData.OriginalValueNames[name] = variable.Name;
             }
             return name;
         }

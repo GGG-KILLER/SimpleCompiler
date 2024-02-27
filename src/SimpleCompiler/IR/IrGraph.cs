@@ -6,11 +6,13 @@ namespace SimpleCompiler.IR;
 public sealed class IrGraph(
     List<BasicBlock> basicBlocks,
     List<IrEdge> edges,
-    BasicBlock entryBlock)
+    BasicBlock entryBlock,
+    DebugData? debugData = null)
 {
     public List<BasicBlock> BasicBlocks { get; } = basicBlocks;
     public List<IrEdge> Edges { get; } = edges;
     public BasicBlock EntryBlock { get; set; } = entryBlock;
+    public DebugData? DebugData { get; } = debugData;
 
     public IEnumerable<BasicBlock> GetPredecessors(int blockOrdinal) =>
         Edges.Where(x => x.TargetBlockOrdinal == blockOrdinal).Select(x => BasicBlocks[x.SourceBlockOrdinal]);

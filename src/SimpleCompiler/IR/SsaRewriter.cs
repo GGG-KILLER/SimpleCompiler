@@ -12,6 +12,7 @@ public sealed partial class SsaRewriter
         new SsaRewriter(source).Rewrite();
 
     private readonly IrGraph _source;
+    private readonly List<NameValue> _renamedNames = [];
 
     private SsaRewriter(IrGraph source)
     {
@@ -24,6 +25,9 @@ public sealed partial class SsaRewriter
         RenameVariables();
         FixPhis();
         _source.CleanupPhis();
+
+        foreach (var key in _renamedNames)
+            _source.DebugData!.OriginalValueNames.Remove(key);
     }
 
     private void InsertPhis()
@@ -158,7 +162,14 @@ public sealed partial class SsaRewriter
 
                 if (instruction.IsAssignment && instruction.Name is not null && instruction.Name.IsUnversioned)
                 {
-                    instruction.Name = tracker.NewValue(instruction.Name.Name);
+                    var newName = tracker.NewValue(instruction.Name.Name);
+                    if (_source.DebugData is not null && _source.DebugData.OriginalValueNames.TryGetValue(instruction.Name, out var originalName))
+                    {
+                        _source.DebugData.OriginalValueNames[newName] = originalName;
+                        _renamedNames.Add(instruction.Name);
+                    }
+
+                    instruction.Name = newName;
                     versions[instruction.Name!.Name] = instruction.Name;
                 }
             }
