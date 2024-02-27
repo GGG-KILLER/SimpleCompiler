@@ -19,14 +19,14 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
             "Program",
             TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
 
-        var luaEntryPoint = EmitLuaEntryPoint(moduleBuilder, programBuilder, ir);
+        var luaEntryPoint = EmitLuaEntryPoint(programBuilder, ir);
         var dotnetEntryPoint = EmitDotnetEntryPoint(programBuilder, luaEntryPoint);
 
         var type = programBuilder.CreateType();
         entryPoint = type.GetMethod(dotnetEntryPoint.Name, dotnetEntryPoint.GetParameters().Select(x => x.ParameterType).ToArray())!;
     }
 
-    private Emit<Func<LuaValue, LuaValue>> EmitLuaEntryPoint(ModuleBuilder moduleBuilder, TypeBuilder programBuilder, IrGraph ir)
+    private Emit<Func<LuaValue, LuaValue>> EmitLuaEntryPoint(TypeBuilder programBuilder, IrGraph ir)
     {
         var symbolTable = InformationCollector.CollectSymbolInfomation(ir);
         SsaDestructor.DestructSsa(ir);
