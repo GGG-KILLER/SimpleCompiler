@@ -20,7 +20,7 @@ br BB2
 BB1:
 
 ldc.i8 3
-stloc.2 // System.Int64 L_A2E605_a₆
+stloc.2 // System.Int64 L_12BE968_a₆
 br BB5
 
 BB2:
@@ -44,12 +44,12 @@ br BB4
 
 BB3:
 ldc.i8 5
-stloc.2 // System.Int64 L_A2E605_a₆
+stloc.2 // System.Int64 L_12BE968_a₆
 br BB5
 
 BB4:
 ldc.i8 7
-stloc.2 // System.Int64 L_A2E605_a₆
+stloc.2 // System.Int64 L_12BE968_a₆
 br BB5
 
 BB5:
@@ -59,7 +59,7 @@ ldc.i4.1
 newarr SimpleCompiler.Runtime.LuaValue
 dup
 ldc.i4.0
-ldloc.2 // System.Int64 L_A2E605_a₆
+ldloc.2 // System.Int64 L_12BE968_a₆
 newobj Void .ctor(Int64)
 stelem SimpleCompiler.Runtime.LuaValue
 newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])

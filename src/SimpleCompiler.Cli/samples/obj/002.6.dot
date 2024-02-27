@@ -1,5 +1,0 @@
-digraph {
-  node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
-  BB0 [label="BB0:\n# samples/002.lua 4,1:4,33\lt₇ = $print(1, 2, 3, 3, 6)\l"];
-
-}

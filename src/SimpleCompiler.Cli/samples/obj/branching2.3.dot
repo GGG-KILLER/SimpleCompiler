@@ -1,39 +1,5 @@
 digraph {
   node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
-  BB0 [label="BB0:\n# samples/branching2.lua 2,4:2,14\lbr BB2\l"];
-  BB1 [label="BB1:\nbr BB17\l"];
-  BB2 [label="BB2:\n# samples/branching2.lua 5,8:5,18\lbr BB4\l"];
-  BB3 [label="BB3:\nbr BB17\l"];
-  BB4 [label="BB4:\n# samples/branching2.lua 7,8:7,18\lbr BB6\l"];
-  BB5 [label="BB5:\nbr BB17\l"];
-  BB6 [label="BB6:\n# samples/branching2.lua 10,8:10,18\lbr BB8\l"];
-  BB7 [label="BB7:\nbr BB17\l"];
-  BB8 [label="BB8:\n# samples/branching2.lua 12,8:12,18\lbr BB10\l"];
-  BB9 [label="BB9:\nbr BB17\l"];
-  BB10 [label="BB10:\n# samples/branching2.lua 15,8:15,18\lbr BB12\l"];
-  BB11 [label="BB11:\nbr BB17\l"];
-  BB12 [label="BB12:\n# samples/branching2.lua 17,8:17,18\lbr BB14\l"];
-  BB13 [label="BB13:\nbr BB17\l"];
-  BB14 [label="BB14:\n# samples/branching2.lua 20,8:20,18\lbr BB16\l"];
-  BB15 [label="BB15:\nbr BB17\l"];
-  BB16 [label="BB16:\nbr BB17\l"];
-  BB17 [label="BB17:\nL_EF627A_a₂₇ = ϕ([BB1: 3], [BB3: 4], [BB5: 5], [BB7: 6], [BB9: 7], [BB11: 8], [BB13: 9], [BB15: 10], [BB16: 11])\lL_EF627A_b₁₈ = ϕ([BB1: 2], [BB3: nil], [BB5: 4], [BB7: nil], [BB9: 6], [BB11: nil], [BB13: 8], [BB15: nil], [BB16: 10])\l# samples/branching2.lua 26,1:26,12\lt₅₇ = $print(L_EF627A_a₂₇, L_EF627A_b₁₈)\l"];
+  BB0 [label="BB0:\nL_EF627A_a₂₇ = 11\lL_EF627A_b₁₈ = 10\l# samples/branching2.lua 26,1:26,12\lt₅₇ = $print(L_EF627A_a₂₇, L_EF627A_b₁₈)\l"];
 
-  BB0 -> BB2;
-  BB2 -> BB4;
-  BB4 -> BB6;
-  BB6 -> BB8;
-  BB8 -> BB10;
-  BB10 -> BB12;
-  BB12 -> BB14;
-  BB14 -> BB16;
-  BB1 -> BB17;
-  BB3 -> BB17;
-  BB5 -> BB17;
-  BB7 -> BB17;
-  BB9 -> BB17;
-  BB11 -> BB17;
-  BB13 -> BB17;
-  BB15 -> BB17;
-  BB16 -> BB17;
 }

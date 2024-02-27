@@ -1,5 +1,0 @@
-digraph {
-  node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
-  BB0 [label="BB0:\n# samples/branching2.lua 26,1:26,12\lt₅₇ = $print(11, 10)\l"];
-
-}
