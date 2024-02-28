@@ -1,9 +1,22 @@
 #! /usr/bin/env bash
 set -euo pipefail
 
+DOTNET_PATH=$(dirname "$(realpath "$(which dotnet)")")
 VERSION="AllWithIntegers"
 FLAGS=()
 FILES=()
+
+DOTNET_TOOL_COMMAND="install"
+if [ -e "$HOME/.dotnet/tools/ilverify" ]; then
+    DOTNET_TOOL_COMMAND="update"
+fi
+dotnet tool $DOTNET_TOOL_COMMAND --global dotnet-ilverify
+
+DOT=""
+# shellcheck disable=SC2016
+if DOT=$(nix-shell -p graphviz --run 'realpath $(which dot)'); then
+    :;
+fi
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -49,7 +62,19 @@ for FILE in "${FILES[@]}"; do
 
     {
         echo "$FILE_DIR/$FILE_NAME.lua:"
-        dotnet run -c Debug -v quiet -- --lua "$VERSION" "${FLAGS[@]}" "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build: /'
-        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run: /'
+        dotnet run -c Debug -v quiet -- --lua "$VERSION" "${FLAGS[@]}" "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build:    /'
+
+        if [ -n "$DOT" ]; then
+            for f in "$FILE_DIR/obj/$FILE_NAME".*.dot; do
+                "$DOT" -Tsvg "$f" > "${f/.dot/.svg}";
+            done
+        fi
+
+        "$HOME/.dotnet/tools/ilverify" -ct \
+            -r "$DOTNET_PATH"'/shared/Microsoft.NETCore.App/8.0.1/*.dll' \
+            -r "$FILE_DIR/SimpleCompiler.Runtime.dll" \
+            "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  validate: /'
+
+        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run:     /'
     } || true
 done
