@@ -19,7 +19,7 @@ dotnet tool $DOTNET_TOOL_COMMAND --global dotnet-ilverify
 DOT=""
 # shellcheck disable=SC2016
 if DOT=$(nix-shell -p graphviz --run 'realpath $(which dot)'); then
-    :;
+    :
 fi
 
 while [ "$#" -gt 0 ]; do
@@ -64,21 +64,19 @@ for FILE in "${FILES[@]}"; do
         fi
     done
 
-    {
-        echo "$FILE_DIR/$FILE_NAME.lua:"
-        dotnet run -c Debug -v quiet -- --lua "$VERSION" "${FLAGS[@]}" "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build:    /'
+    echo "$FILE_DIR/$FILE_NAME.lua:"
+    dotnet run -c Debug -v quiet -- --lua "$VERSION" "${FLAGS[@]}" "$FILE_DIR/$FILE_NAME.lua" 2>&1 | sed -e 's/^/  build:    /'
 
-        if [ -n "$DOT" ]; then
-            for f in "$FILE_DIR/obj/$FILE_NAME".*.dot; do
-                "$DOT" -Tsvg "$f" > "${f/.dot/.svg}";
-            done
-        fi
+    if [ -n "$DOT" ]; then
+        for f in "$FILE_DIR/obj/$FILE_NAME".*.dot; do
+            "$DOT" -Tsvg "$f" >"${f/.dot/.svg}"
+        done
+    fi
 
-        "$HOME/.dotnet/tools/ilverify" -ct \
-            -r "$_RUNTIME_PATH"'/*.dll' \
-            -r "$FILE_DIR/SimpleCompiler.Runtime.dll" \
-            "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  validate: /'
+    "$HOME/.dotnet/tools/ilverify" -ct \
+        -r "$_RUNTIME_PATH"'/*.dll' \
+        -r "$FILE_DIR/SimpleCompiler.Runtime.dll" \
+        "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  validate: /'
 
-        dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run:     /'
-    } || true
+    dotnet "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  run:     /' || true
 done
