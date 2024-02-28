@@ -54,34 +54,6 @@ namespace SimpleCompiler.Backend.Cil.Emit
 
         protected abstract ModuleBuilder? GetDynamicModuleCore(string name);
 
-        /// <summary>
-        /// Serializes the assembly to <see cref="Stream"/>.
-        /// </summary>
-        /// <param name="stream">The <see cref="Stream"/> to which the assembly serialized.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
-        /// <exception cref="NotSupportedException">The AssemblyBuilder instance doesn't support saving.</exception>
-        public void Save(Stream stream) => SaveCore(stream);
-
-        /// <summary>
-        /// Saves the assembly to disk.
-        /// </summary>
-        /// <param name="assemblyFileName">The file name of the assembly.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="assemblyFileName"/> is null.</exception>
-        /// <exception cref="NotSupportedException">The AssemblyBuilder instance doesn't support saving.</exception>
-        public void Save(string assemblyFileName)
-        {
-            ArgumentNullException.ThrowIfNull(assemblyFileName);
-
-            using var peStream = new FileStream(assemblyFileName, FileMode.Create, FileAccess.Write);
-            SaveCore(peStream);
-        }
-
-        /// <summary>
-        /// When implemented in a derived type, serializes the assembly to a stream.
-        /// </summary>
-        /// <param name="stream">The stream to which the assembly serialized.</param>
-        protected virtual void SaveCore(Stream stream) => throw new NotSupportedException("TODO: Fill in with result of SR.NotSupported_AssemblySave");
-
         public void SetCustomAttribute(ConstructorInfo con, byte[] binaryAttribute)
         {
             ArgumentNullException.ThrowIfNull(con);

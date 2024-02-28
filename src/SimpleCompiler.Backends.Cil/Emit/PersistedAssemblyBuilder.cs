@@ -8,7 +8,7 @@ using System.Reflection.PortableExecutable;
 
 namespace SimpleCompiler.Backend.Cil.Emit
 {
-    internal sealed class AssemblyBuilderImpl : AssemblyBuilder
+    internal sealed class PersistedAssemblyBuilder : AssemblyBuilder
     {
         private readonly AssemblyName _assemblyName;
         private readonly Assembly _coreAssembly;
@@ -18,9 +18,9 @@ namespace SimpleCompiler.Backend.Cil.Emit
 
         internal List<CustomAttributeWrapper>? _customAttributes;
 
-        internal AssemblyBuilderImpl(AssemblyName name, Assembly coreAssembly, IEnumerable<CustomAttributeBuilder>? assemblyAttributes = null)
+        internal PersistedAssemblyBuilder(AssemblyName name, Assembly coreAssembly, IEnumerable<CustomAttributeBuilder>? assemblyAttributes = null)
         {
-            _assemblyName = (AssemblyName)name.Clone();
+            _assemblyName = (AssemblyName) name.Clone();
             _coreAssembly = coreAssembly;
             _metadataBuilder = new MetadataBuilder();
 
@@ -53,10 +53,35 @@ namespace SimpleCompiler.Backend.Cil.Emit
             peBlob.WriteContentTo(peStream);
         }
 
-        protected override void SaveCore(Stream stream)
+        /// <summary>
+        /// Serializes the assembly to <see cref="Stream"/>.
+        /// </summary>
+        /// <param name="stream">The <see cref="Stream"/> to which the assembly serialized.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+        /// <exception cref="NotSupportedException">The AssemblyBuilder instance doesn't support saving.</exception>
+        public void Save(Stream stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
+            GenerateMetadata(out var ilStream, out var mappedFieldData);
+            WritePEImage(stream, ilStream, mappedFieldData);
+        }
 
+        /// <summary>
+        /// Saves the assembly to disk.
+        /// </summary>
+        /// <param name="assemblyFileName">The file name of the assembly.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="assemblyFileName"/> is null.</exception>
+        /// <exception cref="NotSupportedException">The AssemblyBuilder instance doesn't support saving.</exception>
+        public void Save(string assemblyFileName)
+        {
+            ArgumentNullException.ThrowIfNull(assemblyFileName);
+
+            using var peStream = new FileStream(assemblyFileName, FileMode.Create, FileAccess.Write);
+            Save(peStream);
+        }
+
+        public MetadataBuilder GenerateMetadata(out BlobBuilder ilStream, out BlobBuilder mappedFieldData)
+        {
             if (_module == null)
             {
                 throw new InvalidOperationException("TODO: Fill in with result of SR.InvalidOperation_AModuleRequired");
@@ -73,24 +98,23 @@ namespace SimpleCompiler.Backend.Cil.Emit
                version: _assemblyName.Version ?? new Version(0, 0, 0, 0),
                culture: _assemblyName.CultureName == null ? default : _metadataBuilder.GetOrAddString(value: _assemblyName.CultureName),
                publicKey: _assemblyName.GetPublicKey() is byte[] publicKey ? _metadataBuilder.GetOrAddBlob(value: publicKey) : default,
-               flags: AddContentType((AssemblyFlags)_assemblyName.Flags, _assemblyName.ContentType),
+               flags: AddContentType((AssemblyFlags) _assemblyName.Flags, _assemblyName.ContentType),
 #pragma warning disable SYSLIB0037 // Type or member is obsolete
-               hashAlgorithm: (AssemblyHashAlgorithm)_assemblyName.HashAlgorithm
+               hashAlgorithm: (AssemblyHashAlgorithm) _assemblyName.HashAlgorithm
 #pragma warning restore SYSLIB0037
                );
             _module.WriteCustomAttributes(_customAttributes, assemblyHandle);
 
-            var ilBuilder = new BlobBuilder();
-            var fieldDataBuilder = new BlobBuilder();
-            MethodBodyStreamEncoder methodBodyEncoder = new MethodBodyStreamEncoder(ilBuilder);
-            _module.AppendMetadata(methodBodyEncoder, fieldDataBuilder);
-
-            WritePEImage(stream, ilBuilder, fieldDataBuilder);
+            ilStream = new BlobBuilder();
+            mappedFieldData = new BlobBuilder();
+            MethodBodyStreamEncoder methodBodyEncoder = new MethodBodyStreamEncoder(ilStream);
+            _module.AppendMetadata(methodBodyEncoder, mappedFieldData);
             _previouslySaved = true;
+            return _metadataBuilder;
         }
 
         private static AssemblyFlags AddContentType(AssemblyFlags flags, AssemblyContentType contentType)
-            => (AssemblyFlags)((int)contentType << 9) | flags;
+            => (AssemblyFlags) ((int) contentType << 9) | flags;
 
         protected override ModuleBuilder DefineDynamicModuleCore(string name)
         {
@@ -123,6 +147,6 @@ namespace SimpleCompiler.Backend.Cil.Emit
 
         public override Module ManifestModule => _module ?? throw new InvalidOperationException("TODO: Fill in with result of SR.InvalidOperation_AModuleRequired");
 
-        public override AssemblyName GetName(bool copiedName) => (AssemblyName)_assemblyName.Clone();
+        public override AssemblyName GetName(bool copiedName) => (AssemblyName) _assemblyName.Clone();
     }
 }
