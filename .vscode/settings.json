@@ -1,6 +1,8 @@
 {
     "git.repositoryScanMaxDepth": 0,
     "files.associations": {
-        "*.ir": "ini"
-    }
+        "*.ir": "ini",
+        "*.cil": "ildasm"
+    },
+    "nixEnvSelector.suggestion": false
 }
