@@ -8,12 +8,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleCompiler\SimpleCompiler.csproj" />
-    <ProjectReference Include="..\ILPack\src\Lokad.ILPack.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ICSharpCode.Decompiler" Version="8.2.0.7535" />
-    <PackageReference Include="Sigil" Version="5.0.0" />
   </ItemGroup>
 
 </Project>
