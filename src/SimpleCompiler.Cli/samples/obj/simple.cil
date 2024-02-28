@@ -1,57 +1,94 @@
-BB0:
+.assembly simple
+{
+	.ver 0:0:0:0
+}
 
-ldsfld SimpleCompiler.Runtime.LuaFunction PrintFunction
-ldc.i4.1
-newarr SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.0
-ldc.i8 22
-newobj Void .ctor(Int64)
-stelem SimpleCompiler.Runtime.LuaValue
-newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
-callvirt SimpleCompiler.Runtime.LuaValue Invoke(System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
-stloc.0 // SimpleCompiler.Runtime.LuaValue t₁₂
+.class private auto ansi '<Module>'
+{
+} // end of class <Module>
 
-ldsfld SimpleCompiler.Runtime.LuaFunction PrintFunction
-ldc.i4.6
-newarr SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.0
-ldc.i8 7
-newobj Void .ctor(Int64)
-stelem SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.1
-ldc.i8 4
-newobj Void .ctor(Int64)
-stelem SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.2
-ldc.i8 11
-newobj Void .ctor(Int64)
-stelem SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.3
-newobj Void .ctor()
-stelem SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.4
-ldc.i8 11
-newobj Void .ctor(Int64)
-stelem SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.5
-ldc.i8 15
-newobj Void .ctor(Int64)
-stelem SimpleCompiler.Runtime.LuaValue
-newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
-callvirt SimpleCompiler.Runtime.LuaValue Invoke(System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
-stloc.1 // SimpleCompiler.Runtime.LuaValue t₁₃
-newobj Void .ctor()
-ret
+.class public auto ansi abstract sealed beforefieldinit Program
+	extends [System.Private.CoreLib]System.Object
+{
+	// Methods
+	.method public hidebysig static 
+		valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue TopLevel (
+			valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue> ''
+		) cil managed 
+	{
+		// Method begins at RVA 0x2050
+		// Header size: 12
+		// Code size: 188 (0xbc)
+		.maxstack 6
+		.locals init (
+			[0] valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue,
+			[1] valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		)
 
------------ .NET Entry Point ----------
-newobj Void .ctor()
-call TopLevel
-pop
-ret
+		IL_0000: ldsfld class [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaFunction [SimpleCompiler.Runtime]SimpleCompiler.Runtime.Stdlib::PrintFunction
+		IL_0005: ldc.i4.1
+		IL_0006: newarr [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_000b: dup
+		IL_000c: ldc.i4.0
+		IL_000d: ldc.i8 22
+		IL_0016: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor(int64)
+		IL_001b: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_0020: newobj instance void valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>::.ctor(!0[])
+		IL_0025: callvirt instance valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaFunction::Invoke(valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>)
+		IL_002a: stloc.0
+		IL_002b: ldsfld class [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaFunction [SimpleCompiler.Runtime]SimpleCompiler.Runtime.Stdlib::PrintFunction
+		IL_0030: ldc.i4.6
+		IL_0031: newarr [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_0036: dup
+		IL_0037: ldc.i4.0
+		IL_0038: ldc.i8 7
+		IL_0041: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor(int64)
+		IL_0046: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_004b: dup
+		IL_004c: ldc.i4.1
+		IL_004d: ldc.i8 4
+		IL_0056: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor(int64)
+		IL_005b: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_0060: dup
+		IL_0061: ldc.i4.2
+		IL_0062: ldc.i8 11
+		IL_006b: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor(int64)
+		IL_0070: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_0075: dup
+		IL_0076: ldc.i4.3
+		IL_0077: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor()
+		IL_007c: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_0081: dup
+		IL_0082: ldc.i4.4
+		IL_0083: ldc.i8 11
+		IL_008c: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor(int64)
+		IL_0091: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_0096: dup
+		IL_0097: ldc.i4.5
+		IL_0098: ldc.i8 15
+		IL_00a1: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor(int64)
+		IL_00a6: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_00ab: newobj instance void valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>::.ctor(!0[])
+		IL_00b0: callvirt instance valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaFunction::Invoke(valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>)
+		IL_00b5: stloc.1
+		IL_00b6: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor()
+		IL_00bb: ret
+	} // end of method Program::TopLevel
+
+	.method public hidebysig static 
+		void Main () cil managed 
+	{
+		// Method begins at RVA 0x2118
+		// Header size: 1
+		// Code size: 12 (0xc)
+		.maxstack 8
+		.entrypoint
+
+		IL_0000: call valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<!0> valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>::get_Empty()
+		IL_0005: call valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue Program::TopLevel(valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>)
+		IL_000a: pop
+		IL_000b: ret
+	} // end of method Program::Main
+
+} // end of class Program
+

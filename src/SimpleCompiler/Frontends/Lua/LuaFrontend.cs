@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Loretta.CodeAnalysis;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Syntax;
@@ -34,6 +35,8 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
     private sealed class Walker(Script script)
     {
         // Global state
+        private int _scopeCounter = 1;
+        private readonly ConditionalWeakTable<IScope, object> _scopeNumber = [];
         private readonly NameTracker _nameTracker = new();
         private readonly Dictionary<IVariable, NameValue> _variableNames = [];
         private readonly List<BasicBlock> _basicBlocks = [];
@@ -53,7 +56,8 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
         {
             if (!_variableNames.TryGetValue(variable, out var name))
             {
-                _variableNames[variable] = name = NameValue.Unversioned($"L_{variable.ContainingScope.GetHashCode():X}_{variable.Name}");
+                var num = _scopeNumber.GetValue(variable.ContainingScope, _ => Interlocked.Increment(ref _scopeCounter));
+                _variableNames[variable] = name = NameValue.Unversioned($"L_{CastHelper.FastUnbox<int>(num):X}_{variable.Name}");
                 _debugData.OriginalValueNames[name] = variable.Name;
             }
             return name;

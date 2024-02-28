@@ -1,26 +1,63 @@
-BB0:
+.assembly branching2
+{
+	.ver 0:0:0:0
+}
 
-ldsfld SimpleCompiler.Runtime.LuaFunction PrintFunction
-ldc.i4.2
-newarr SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.0
-ldc.i8 11
-newobj Void .ctor(Int64)
-stelem SimpleCompiler.Runtime.LuaValue
-dup
-ldc.i4.1
-ldc.i8 10
-newobj Void .ctor(Int64)
-stelem SimpleCompiler.Runtime.LuaValue
-newobj Void .ctor(SimpleCompiler.Runtime.LuaValue[])
-callvirt SimpleCompiler.Runtime.LuaValue Invoke(System.ReadOnlySpan`1[SimpleCompiler.Runtime.LuaValue])
-stloc.0 // SimpleCompiler.Runtime.LuaValue t₅₇
-newobj Void .ctor()
-ret
+.class private auto ansi '<Module>'
+{
+} // end of class <Module>
 
------------ .NET Entry Point ----------
-newobj Void .ctor()
-call TopLevel
-pop
-ret
+.class public auto ansi abstract sealed beforefieldinit Program
+	extends [System.Private.CoreLib]System.Object
+{
+	// Methods
+	.method public hidebysig static 
+		valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue TopLevel (
+			valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue> ''
+		) cil managed 
+	{
+		// Method begins at RVA 0x2050
+		// Header size: 12
+		// Code size: 70 (0x46)
+		.maxstack 6
+		.locals init (
+			[0] valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		)
+
+		IL_0000: ldsfld class [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaFunction [SimpleCompiler.Runtime]SimpleCompiler.Runtime.Stdlib::PrintFunction
+		IL_0005: ldc.i4.2
+		IL_0006: newarr [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_000b: dup
+		IL_000c: ldc.i4.0
+		IL_000d: ldc.i8 11
+		IL_0016: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor(int64)
+		IL_001b: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_0020: dup
+		IL_0021: ldc.i4.1
+		IL_0022: ldc.i8 10
+		IL_002b: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor(int64)
+		IL_0030: stelem [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue
+		IL_0035: newobj instance void valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>::.ctor(!0[])
+		IL_003a: callvirt instance valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaFunction::Invoke(valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>)
+		IL_003f: stloc.0
+		IL_0040: newobj instance void [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue::.ctor()
+		IL_0045: ret
+	} // end of method Program::TopLevel
+
+	.method public hidebysig static 
+		void Main () cil managed 
+	{
+		// Method begins at RVA 0x20a2
+		// Header size: 1
+		// Code size: 12 (0xc)
+		.maxstack 8
+		.entrypoint
+
+		IL_0000: call valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<!0> valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>::get_Empty()
+		IL_0005: call valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue Program::TopLevel(valuetype [System.Private.CoreLib]System.ReadOnlySpan`1<valuetype [SimpleCompiler.Runtime]SimpleCompiler.Runtime.LuaValue>)
+		IL_000a: pop
+		IL_000b: ret
+	} // end of method Program::Main
+
+} // end of class Program
+

@@ -1,5 +1,5 @@
 digraph {
   node[shape=box style=filled fontsize=8 fontname="Cascadia Code" fillcolor="#efefef"];
-  BB0 [label="BB0:\nL_3DEA045_print₁ = nil\lL_3DEA045_print₂ = $print\l# samples/001.lua 1,11:1,12\lt₁ = 1\l# samples/001.lua 1,1:1,12\lL_158163F_a₁ = t₁\l# samples/001.lua 2,1:2,9\lt₂ = L_3DEA045_print₂(L_158163F_a₁)\l"];
+  BB0 [label="BB0:\nL_2_print₁ = nil\lL_2_print₂ = $print\l# samples/001.lua 1,11:1,12\lt₁ = 1\l# samples/001.lua 1,1:1,12\lL_3_a₁ = t₁\l# samples/001.lua 2,1:2,9\lt₂ = L_2_print₂(L_3_a₁)\l"];
 
 }

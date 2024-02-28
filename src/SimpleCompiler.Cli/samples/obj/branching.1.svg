@@ -13,14 +13,14 @@
 <title>BB0</title>
 <polygon fill="#efefef" stroke="black" points="252.25,-491 87.75,-491 87.75,-336.75 252.25,-336.75 252.25,-491"/>
 <text text-anchor="middle" x="170" y="-479.4" font-family="Cascadia Code" font-size="8.00">BB0:</text>
-<text text-anchor="start" x="95.75" y="-469.65" font-family="Cascadia Code" font-size="8.00">L_1ABCB2D_print₁ = nil</text>
-<text text-anchor="start" x="95.75" y="-459.9" font-family="Cascadia Code" font-size="8.00">L_1ABCB2D_print₂ = $print</text>
+<text text-anchor="start" x="95.75" y="-469.65" font-family="Cascadia Code" font-size="8.00">L_2_print₁ = nil</text>
+<text text-anchor="start" x="95.75" y="-459.9" font-family="Cascadia Code" font-size="8.00">L_2_print₂ = $print</text>
 <text text-anchor="start" x="95.75" y="-450.15" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 1,1:1,8</text>
-<text text-anchor="start" x="95.75" y="-440.4" font-family="Cascadia Code" font-size="8.00">L_3F3DE01_a₁ = nil</text>
+<text text-anchor="start" x="95.75" y="-440.4" font-family="Cascadia Code" font-size="8.00">L_3_a₁ = nil</text>
 <text text-anchor="start" x="95.75" y="-430.65" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 3,8:3,9</text>
 <text text-anchor="start" x="95.75" y="-420.9" font-family="Cascadia Code" font-size="8.00">t₁ = 2</text>
 <text text-anchor="start" x="95.75" y="-411.15" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 3,4:3,9</text>
-<text text-anchor="start" x="95.75" y="-401.4" font-family="Cascadia Code" font-size="8.00">t₂ = mod L_3F3DE01_a₁, t₁</text>
+<text text-anchor="start" x="95.75" y="-401.4" font-family="Cascadia Code" font-size="8.00">t₂ = mod L_3_a₁, t₁</text>
 <text text-anchor="start" x="95.75" y="-391.65" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 3,13:3,14</text>
 <text text-anchor="start" x="95.75" y="-381.9" font-family="Cascadia Code" font-size="8.00">t₃ = 0</text>
 <text text-anchor="start" x="95.75" y="-372.15" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 3,4:3,14</text>
@@ -36,7 +36,7 @@
 <text text-anchor="start" x="8" y="-255.03" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 4,9:4,10</text>
 <text text-anchor="start" x="8" y="-245.28" font-family="Cascadia Code" font-size="8.00">t₅ = 3</text>
 <text text-anchor="start" x="8" y="-235.53" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 4,5:4,10</text>
-<text text-anchor="start" x="8" y="-225.78" font-family="Cascadia Code" font-size="8.00">L_3F3DE01_a₂ = t₅</text>
+<text text-anchor="start" x="8" y="-225.78" font-family="Cascadia Code" font-size="8.00">L_3_a₂ = t₅</text>
 <text text-anchor="start" x="8" y="-216.03" font-family="Cascadia Code" font-size="8.00">br BB5</text>
 </g>
 <!-- BB0&#45;&gt;BB1 -->
@@ -53,7 +53,7 @@
 <text text-anchor="start" x="185.75" y="-279.4" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 5,12:5,13</text>
 <text text-anchor="start" x="185.75" y="-269.65" font-family="Cascadia Code" font-size="8.00">t₆ = 3</text>
 <text text-anchor="start" x="185.75" y="-259.9" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 5,8:5,13</text>
-<text text-anchor="start" x="185.75" y="-250.15" font-family="Cascadia Code" font-size="8.00">t₇ = mod L_3F3DE01_a₁, t₆</text>
+<text text-anchor="start" x="185.75" y="-250.15" font-family="Cascadia Code" font-size="8.00">t₇ = mod L_3_a₁, t₆</text>
 <text text-anchor="start" x="185.75" y="-240.4" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 5,17:5,18</text>
 <text text-anchor="start" x="185.75" y="-230.65" font-family="Cascadia Code" font-size="8.00">t₈ = 0</text>
 <text text-anchor="start" x="185.75" y="-220.9" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 5,8:5,18</text>
@@ -70,11 +70,11 @@
 <!-- BB5 -->
 <g id="node6" class="node">
 <title>BB5</title>
-<polygon fill="#efefef" stroke="black" points="374.12,-47 1.88,-47 1.88,0 374.12,0 374.12,-47"/>
+<polygon fill="#efefef" stroke="black" points="320.12,-47 55.88,-47 55.88,0 320.12,0 320.12,-47"/>
 <text text-anchor="middle" x="188" y="-35.4" font-family="Cascadia Code" font-size="8.00">BB5:</text>
-<text text-anchor="start" x="9.88" y="-25.65" font-family="Cascadia Code" font-size="8.00">L_3F3DE01_a₆ = ϕ([BB1: L_3F3DE01_a₂], [BB3: L_3F3DE01_a₄], [BB4: L_3F3DE01_a₅])</text>
-<text text-anchor="start" x="9.88" y="-15.9" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 11,1:11,9</text>
-<text text-anchor="start" x="9.88" y="-6.15" font-family="Cascadia Code" font-size="8.00">t₁₂ = L_1ABCB2D_print₂(L_3F3DE01_a₆)</text>
+<text text-anchor="start" x="63.88" y="-25.65" font-family="Cascadia Code" font-size="8.00">L_3_a₆ = ϕ([BB1: L_3_a₂], [BB3: L_3_a₄], [BB4: L_3_a₅])</text>
+<text text-anchor="start" x="63.88" y="-15.9" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 11,1:11,9</text>
+<text text-anchor="start" x="63.88" y="-6.15" font-family="Cascadia Code" font-size="8.00">t₁₂ = L_2_print₂(L_3_a₆)</text>
 </g>
 <!-- BB1&#45;&gt;BB5 -->
 <g id="edge5" class="edge">
@@ -90,7 +90,7 @@
 <text text-anchor="start" x="116" y="-128.15" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 6,9:6,10</text>
 <text text-anchor="start" x="116" y="-118.4" font-family="Cascadia Code" font-size="8.00">t₁₀ = 5</text>
 <text text-anchor="start" x="116" y="-108.65" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 6,5:6,10</text>
-<text text-anchor="start" x="116" y="-98.9" font-family="Cascadia Code" font-size="8.00">L_3F3DE01_a₄ = t₁₀</text>
+<text text-anchor="start" x="116" y="-98.9" font-family="Cascadia Code" font-size="8.00">L_3_a₄ = t₁₀</text>
 <text text-anchor="start" x="116" y="-89.15" font-family="Cascadia Code" font-size="8.00">br BB5</text>
 </g>
 <!-- BB2&#45;&gt;BB3 -->
@@ -107,7 +107,7 @@
 <text text-anchor="start" x="294" y="-128.15" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 8,9:8,10</text>
 <text text-anchor="start" x="294" y="-118.4" font-family="Cascadia Code" font-size="8.00">t₁₁ = 7</text>
 <text text-anchor="start" x="294" y="-108.65" font-family="Cascadia Code" font-size="8.00"># samples/branching.lua 8,5:8,10</text>
-<text text-anchor="start" x="294" y="-98.9" font-family="Cascadia Code" font-size="8.00">L_3F3DE01_a₅ = t₁₁</text>
+<text text-anchor="start" x="294" y="-98.9" font-family="Cascadia Code" font-size="8.00">L_3_a₅ = t₁₁</text>
 <text text-anchor="start" x="294" y="-89.15" font-family="Cascadia Code" font-size="8.00">br BB5</text>
 </g>
 <!-- BB2&#45;&gt;BB4 -->
