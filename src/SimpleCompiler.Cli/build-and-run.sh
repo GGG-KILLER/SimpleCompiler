@@ -1,7 +1,11 @@
 #! /usr/bin/env bash
 set -euo pipefail
 
-DOTNET_PATH=$(dirname "$(realpath "$(which dotnet)")")
+_RUNTIME_PATH=$(dirname "$(realpath "$(which dotnet)")")
+for appDir in "$_RUNTIME_PATH"/shared/Microsoft.NETCore.App/8.*; do
+    _RUNTIME_PATH="$appDir"
+    break
+done
 VERSION="AllWithIntegers"
 FLAGS=()
 FILES=()
@@ -71,7 +75,7 @@ for FILE in "${FILES[@]}"; do
         fi
 
         "$HOME/.dotnet/tools/ilverify" -ct \
-            -r "$DOTNET_PATH"'/shared/Microsoft.NETCore.App/8.0.1/*.dll' \
+            -r "$_RUNTIME_PATH"'/*.dll' \
             -r "$FILE_DIR/SimpleCompiler.Runtime.dll" \
             "$FILE_DIR/$FILE_NAME.dll" 2>&1 | sed -e 's/^/  validate: /'
 
