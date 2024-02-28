@@ -1,9 +1,7 @@
 
 using System.Reflection;
-using Sigil;
 using SimpleCompiler.Runtime;
 using SimpleCompiler.IR;
-using Lokad.ILPack;
 using SimpleCompiler.FileSystem;
 using System.Text;
 using System.Runtime.Loader;
@@ -11,12 +9,15 @@ using SimpleCompiler.Backend.Cil.Emit;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.Disassembler;
 using ICSharpCode.Decompiler.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.Metadata;
 
 namespace SimpleCompiler.Backends.Cil;
 
 public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBackend
 {
-    private void CompileProgram(ModuleBuilder moduleBuilder, IrGraph ir, out int entryPointToken)
+    private static void CompileProgram(ModuleBuilder moduleBuilder, IrGraph ir, out MethodBuilder entryPointToken)
     {
         var programBuilder = moduleBuilder.DefineType(
             "Program",
@@ -28,20 +29,17 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
         programBuilder.CreateType();
     }
 
-    private MethodBuilder EmitLuaEntryPoint(TypeBuilder programBuilder, IrGraph ir)
+    private static MethodBuilder EmitLuaEntryPoint(TypeBuilder programBuilder, IrGraph ir)
     {
         var symbolTable = InformationCollector.CollectSymbolInfomation(ir);
         SsaDestructor.DestructSsa(ir);
+
         var compiler = MethodCompiler.Create(programBuilder, ir, symbolTable, "TopLevel");
-
         compiler.Compile();
-        cilDebugWriter?.WriteLine(compiler.Method.Instructions());
-
-        compiler.CreateMethod();
         return compiler.Method;
     }
 
-    private int EmitDotnetEntryPoint(TypeBuilder programBuilder, MethodBuilder luaEntryPoint)
+    private static MethodBuilder EmitDotnetEntryPoint(TypeBuilder programBuilder, MethodBuilder luaEntryPoint)
     {
         var method = programBuilder.DefineMethod(
             "Main",
@@ -49,7 +47,7 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
         var builder = method.GetILGenerator();
 
         // TODO: When we have tables, implement args conversion.
-        builder.Emit(OpCodes.Newobj, typeof(LuaValue));
+        builder.EmitCall(OpCodes.Call, ReflectionData.ArgumentSpan_Empty, null);
 
         builder.EmitCall(OpCodes.Call, luaEntryPoint, null);
 
@@ -59,33 +57,49 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
         // End method with return.
         builder.Emit(OpCodes.Ret);
 
-        return method.MetadataToken;
+        return method;
     }
 
     public async Task EmitToDirectory(EmitOptions emitOptions, IrGraph ir, IOutputManager output, CancellationToken cancellationToken = default)
     {
-        byte[] bytes;
+        using var memStream = new MemoryStream();
         {
             var assemblyName = new AssemblyName(emitOptions.OutputName);
-            var assemblyBuilder = new AssemblyBuilderImpl(assemblyName, typeof(object).Assembly);
+            var assemblyBuilder = new PersistedAssemblyBuilder(assemblyName, typeof(object).Assembly);
             var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName.Name + ".dll");
 
             CompileProgram(moduleBuilder, ir, out var entryPoint);
 
-            using var memStream = new MemoryStream();
-            assemblyBuilder.Save(memStream);
-            bytes = memStream.ToArray();
+            var metadataBuilder = assemblyBuilder.GenerateMetadata(out var ilStream, out var mappedFieldData);
 
+            var peHeaderBuilder = new PEHeaderBuilder(
+                // For now only support DLL, DLL files are considered executable files
+                // for almost all purposes, although they cannot be directly run.
+                imageCharacteristics: Characteristics.ExecutableImage | Characteristics.Dll);
+
+            var peBuilder = new ManagedPEBuilder(
+                header: peHeaderBuilder,
+                metadataRootBuilder: new MetadataRootBuilder(metadataBuilder),
+                ilStream: ilStream,
+                mappedFieldData: mappedFieldData,
+                entryPoint: MetadataTokens.MethodDefinitionHandle(entryPoint.MetadataToken));
+
+            // Write executable into the specified stream.
+            var peBlob = new BlobBuilder();
+            peBuilder.Serialize(peBlob);
+            peBlob.WriteContentTo(memStream);
             memStream.Seek(0, SeekOrigin.Begin);
+
             if (cilDebugWriter is not null)
             {
-                var file = new PEFile(moduleBuilder.Name, memStream);
+                using var file = new PEFile(moduleBuilder.Name, new PEReader(memStream, PEStreamOptions.LeaveOpen));
                 var outputWriter = new PlainTextOutput(cilDebugWriter);
                 var disassembler = new ReflectionDisassembler(outputWriter, cancellationToken);
 
                 disassembler.WriteAssemblyHeader(file);
                 outputWriter.WriteLine();
                 disassembler.WriteModuleContents(file);
+                await cilDebugWriter.FlushAsync(cancellationToken);
 
                 memStream.Seek(0, SeekOrigin.Begin);
             }
@@ -120,9 +134,8 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
         // Copy all referenced assemblies.
         {
             var ctx = new AssemblyLoadContext("ExportContext", true);
-            Assembly compiled;
-            using (var stream = new MemoryStream(bytes, false))
-                compiled = ctx.LoadFromStream(stream);
+            memStream.Seek(0, SeekOrigin.Begin);
+            Assembly compiled = ctx.LoadFromStream(memStream);
 
             foreach (var referenced in compiled.GetReferencedAssemblies())
             {

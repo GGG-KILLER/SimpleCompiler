@@ -12,19 +12,18 @@ internal static class ReflectionData
     public static readonly MethodInfo string_Concat2 = StaticMethod(() => string.Concat("", ""));
     public static readonly MethodInfo Math_Pow = StaticMethod(Math.Pow);
 
-    // TODO: Uncomment once kevin-montrose/Sigil#67 gets fixed.
-    // public static readonly ConstructorInfo LuaValue_NilCtor = typeof(LuaValue).GetConstructor(Type.EmptyTypes)
-    //     ?? throw new InvalidOperationException("Couldn't find nil constructor for LuaValue.");
-    // public static readonly ConstructorInfo LuaValue_BoolCtor = typeof(LuaValue).GetConstructor([typeof(bool)])
-    //     ?? throw new InvalidOperationException("Couldn't find bool constructor for LuaValue.");
-    // public static readonly ConstructorInfo LuaValue_DoubleCtor = typeof(LuaValue).GetConstructor([typeof(double)])
-    //     ?? throw new InvalidOperationException("Couldn't find double constructor for LuaValue.");
-    // public static readonly ConstructorInfo LuaValue_LongCtor = typeof(LuaValue).GetConstructor([typeof(long)])
-    //     ?? throw new InvalidOperationException("Couldn't find long constructor for LuaValue.");
-    // public static readonly ConstructorInfo LuaValue_StringCtor = typeof(LuaValue).GetConstructor([typeof(string)])
-    //     ?? throw new InvalidOperationException("Couldn't find string constructor for LuaValue.");
-    // public static readonly ConstructorInfo LuaValue_FunctionCtor = typeof(LuaValue).GetConstructor([typeof(LuaFunction)])
-    //     ?? throw new InvalidOperationException("Couldn't find LuaFunction constructor for LuaValue.");
+    public static readonly ConstructorInfo LuaValue_NilCtor = typeof(LuaValue).GetConstructor([])
+        ?? throw new InvalidOperationException("Couldn't find bool constructor for LuaValue.");
+    public static readonly ConstructorInfo LuaValue_BoolCtor = typeof(LuaValue).GetConstructor([typeof(bool)])
+        ?? throw new InvalidOperationException("Couldn't find bool constructor for LuaValue.");
+    public static readonly ConstructorInfo LuaValue_DoubleCtor = typeof(LuaValue).GetConstructor([typeof(double)])
+        ?? throw new InvalidOperationException("Couldn't find double constructor for LuaValue.");
+    public static readonly ConstructorInfo LuaValue_LongCtor = typeof(LuaValue).GetConstructor([typeof(long)])
+        ?? throw new InvalidOperationException("Couldn't find long constructor for LuaValue.");
+    public static readonly ConstructorInfo LuaValue_StringCtor = typeof(LuaValue).GetConstructor([typeof(string)])
+        ?? throw new InvalidOperationException("Couldn't find string constructor for LuaValue.");
+    public static readonly ConstructorInfo LuaValue_FunctionCtor = typeof(LuaValue).GetConstructor([typeof(LuaFunction)])
+        ?? throw new InvalidOperationException("Couldn't find LuaFunction constructor for LuaValue.");
     public static readonly MethodInfo LuaValue_Equality = BinaryOperator<LuaValue, bool>((a, b) => a == b);
     public static readonly MethodInfo LuaValue_Inequality = BinaryOperator<LuaValue, bool>((a, b) => a != b);
     public static readonly FieldInfo LuaValue_Nil = StaticField(() => LuaValue.Nil);
@@ -53,7 +52,13 @@ internal static class ReflectionData
     public static readonly FieldInfo Stdlib_ErrorFunction = StaticField(() => Stdlib.ErrorFunction);
     public static readonly FieldInfo Stdlib_ToStringFunction = StaticField(() => Stdlib.ToStringFunction);
 
-    public static readonly ConstructorInfo ArgumentSpan_ctor =
+    public static readonly ConstructorInfo LuaException_StringCtor = typeof(LuaException).GetConstructor([typeof(string)])
+        ?? throw new InvalidOperationException("Unable to get LuaException(string).");
+
+    public static readonly MethodInfo ArgumentSpan_Empty =
+        typeof(ReadOnlySpan<LuaValue>).GetProperty(nameof(ReadOnlySpan<LuaValue>.Empty))?.GetMethod
+        ?? throw new InvalidOperationException("Cannot get ReadOnlySpan<LuaValue>() ctor.");
+    public static readonly ConstructorInfo ArgumentSpan_ArrayCtor =
         typeof(ReadOnlySpan<LuaValue>).GetConstructor([typeof(LuaValue[])])
         ?? throw new InvalidOperationException("Cannot get ReadOnlySpan<LuaValue>(LuaValue[]) ctor.");
     public static readonly MethodInfo LuaFunction_Invoke =

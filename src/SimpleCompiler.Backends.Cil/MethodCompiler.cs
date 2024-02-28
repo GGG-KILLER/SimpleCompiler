@@ -1,54 +1,48 @@
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
-using System.Reflection.Emit;
-using Sigil;
+using SimpleCompiler.Backend.Cil.Emit;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.IR;
 using SimpleCompiler.Runtime;
 
 namespace SimpleCompiler.Backends.Cil;
 
-internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<Func<LuaValue, LuaValue>> method)
+internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, MethodBuilder method)
 {
     private readonly SymbolTable _symbolTable = symbolTable;
     private readonly SlotPool _slots = new(method);
-    public Emit<Func<LuaValue, LuaValue>> Method => method;
+    private readonly ILGenerator _il = method.GetILGenerator();
+    private readonly Dictionary<int, Label> _blockLabels = [];
+    private readonly Dictionary<NameValue, LocalBuilder> _locals = [];
+    public MethodBuilder Method => method;
 
     public static MethodCompiler Create(TypeBuilder typeBuilder, IrGraph ir, SymbolTable symbolTable, string name)
     {
         return new MethodCompiler(
             ir,
             symbolTable,
-            Emit<Func<LuaValue, LuaValue>>.BuildStaticMethod(
-                typeBuilder,
+            typeBuilder.DefineMethod(
                 name,
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
-                allowUnverifiableCode: true)
+                typeof(LuaValue), [typeof(ReadOnlySpan<LuaValue>)])
         );
-    }
-
-    public void AddNilReturn()
-    {
-        method.NewObject<LuaValue>();
-        method.Return();
     }
 
     public void Compile()
     {
         foreach (var block in ir.BasicBlocks)
-            method.DefineLabel($"BB{block.Ordinal}");
+            _blockLabels[block.Ordinal] = _il.DefineLabel();
 
         foreach (var block in ir.BasicBlocks)
         {
-            method.MarkLabel($"BB{block.Ordinal}");
+            _il.MarkLabel(_blockLabels[block.Ordinal]);
             foreach (var instruction in block.Instructions)
                 EmitInstruction(instruction);
         }
 
         // Return nil by default.
-        method.NewObject<LuaValue>();
-        method.Return();
+        _il.Emit(OpCodes.Newobj, ReflectionData.LuaValue_NilCtor);
+        _il.Emit(OpCodes.Ret);
     }
 
     private void EmitInstruction(Instruction instruction)
@@ -67,8 +61,8 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                 if (assignment.Value is Constant { Kind: ConstantKind.Nil })
                 {
                     // Fast method of initializing a nil local.
-                    method.LoadLocalAddress(local);
-                    method.InitializeObject<LuaValue>();
+                    _il.LoadLocalAddress(local);
+                    _il.Emit(OpCodes.Initobj, typeof(LuaValue));
                 }
                 else
                 {
@@ -104,15 +98,15 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
             case InstructionKind.Branch:
             {
                 var branch = CastHelper.FastCast<Branch>(instruction);
-                method.Branch($"BB{branch.Target.BlockOrdinal}");
+                _il.Emit(OpCodes.Br, _blockLabels[branch.Target.BlockOrdinal]);
                 break;
             }
             case InstructionKind.ConditionalBranch:
             {
                 var branch = CastHelper.FastCast<ConditionalBranch>(instruction);
                 EmitOperand(branch.Condition);
-                method.BranchIfTrue($"BB{branch.TargetIfTrue.BlockOrdinal}");
-                method.Branch($"BB{branch.TargetIfFalse.BlockOrdinal}");
+                _il.Emit(OpCodes.Brtrue, _blockLabels[branch.TargetIfTrue.BlockOrdinal]);
+                _il.Emit(OpCodes.Br, _blockLabels[branch.TargetIfFalse.BlockOrdinal]);
                 break;
             }
         }
@@ -134,27 +128,27 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                     switch (operandType)
                     {
                         case LocalType.Bool:
-                            method.Not();
+                            _il.Emit(OpCodes.Not);
                             break;
                         case LocalType.Long:
-                            method.Pop();
+                            _il.Emit(OpCodes.Pop);
                             EmitOperand(Constant.False);
                             break;
                         case LocalType.Double:
-                            method.Pop();
+                            _il.Emit(OpCodes.Pop);
                             EmitOperand(Constant.False);
                             break;
                         case LocalType.String:
-                            method.Pop();
+                            _il.Emit(OpCodes.Pop);
                             EmitOperand(Constant.False);
                             break;
                         case LocalType.LuaFunction:
-                            method.Pop();
+                            _il.Emit(OpCodes.Pop);
                             EmitOperand(Constant.False);
                             break;
                         case LocalType.LuaValue:
-                            method.Call(ReflectionData.LuaValue_IsTruthy);
-                            method.Negate();
+                            _il.Emit(OpCodes.Call, ReflectionData.LuaValue_IsTruthy);
+                            _il.Emit(OpCodes.Not);
                             break;
                     }
                     break;
@@ -162,13 +156,13 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                     EmitOperand(assignment.Operand, true);
                     if (!ConvertTo(operandType, LocalType.Long, "Value does not have an integer representation.", true))
                     {
-                        method.Pop();
-                        method.LoadConstant((int) operandType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowBitwiseError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant((int) operandType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowBitwiseError, null);
                     }
                     else
                     {
-                        method.Not();
+                        _il.Emit(OpCodes.Not);
                     }
                     break;
                 case UnaryOperationKind.NumericalNegation:
@@ -178,39 +172,37 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                         case LocalType.Bool:
                         case LocalType.String:
                         case LocalType.LuaFunction:
-                            method.Pop();
-                            method.LoadConstant((int) operandType.ToValueKind());
-                            method.Call(ReflectionData.LuaOperations_ThrowArithmeticError);
+                            _il.Emit(OpCodes.Pop);
+                            _il.LoadConstant((int) operandType.ToValueKind());
+                            _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowBitwiseError, null);
                             break;
                         case LocalType.Long:
-                            method.Negate();
-                            break;
                         case LocalType.Double:
-                            method.Negate();
+                            _il.Emit(OpCodes.Neg);
                             break;
                         case LocalType.LuaValue:
-                            var ifTrue = method.DefineLabel();
-                            var end = method.DefineLabel();
+                            var ifTrue = _il.DefineLabel();
+                            var end = _il.DefineLabel();
 
-                            // stack = [*, LuaValue]
-                            method.Duplicate();
-                            // stack = [*.Kind, LuaValue]
-                            method.LoadField(ReflectionData.LuaValue_Kind);
-                            // stack = [ValueKind.Long, *.Kind, LuaValue]
-                            method.LoadConstant((int) ValueKind.Long);
-                            // stack = [LuaValue]
+                            // stack = [*, LuaValue*]
+                            _il.Emit(OpCodes.Dup);
+                            // stack = [*.Kind, LuaValue*]
+                            _il.Emit(OpCodes.Ldfld, ReflectionData.LuaValue_Kind);
+                            // stack = [ValueKind.Long, *.Kind, LuaValue*]
+                            _il.LoadConstant((int) ValueKind.Long);
+                            // stack = [LuaValue*]
                             // if (x.Kind != ValueKind.Long)
-                            method.BranchIfEqual(ifTrue);
+                            _il.Emit(OpCodes.Brtrue, ifTrue);
                             //   stack = [LuaValue.AsLong()]
-                            method.Call(ReflectionData.LuaValue_AsLong);
-                            method.Branch(end);
+                            _il.Emit(OpCodes.Call, ReflectionData.LuaValue_AsLong);
+                            _il.Emit(OpCodes.Br, end);
                             // else
-                            method.MarkLabel(ifTrue);
+                            _il.MarkLabel(ifTrue);
                             //   stack = [x.AsDouble()]
-                            method.Call(ReflectionData.LuaValue_AsDouble);
-                            method.MarkLabel(end);
+                            _il.Emit(OpCodes.Call, ReflectionData.LuaValue_AsDouble);
+                            _il.MarkLabel(end);
                             // stack = [-top]
-                            method.Negate();
+                            _il.Emit(OpCodes.Neg);
                             break;
                     }
                     break;
@@ -218,13 +210,13 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                     EmitOperand(assignment.Operand, true);
                     if (!ConvertTo(operandType, LocalType.String, "", true))
                     {
-                        method.Pop();
-                        method.LoadConstant((int) operandType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowLengthError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant((int) operandType.ToValueKind());
+                        _il.Emit(OpCodes.Call, ReflectionData.LuaOperations_ThrowLengthError);
                     }
                     else
                     {
-                        method.CallVirtual(ReflectionData.string_Length);
+                        _il.EmitCall(OpCodes.Callvirt, ReflectionData.string_Length, null);
                     }
                     break;
             }
@@ -247,271 +239,271 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                 case BinaryOperationKind.Addition:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, localType, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, localType, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, localType, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, localType, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowArithmeticError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowArithmeticError, null);
                         if (localType == LocalType.Double)
-                            method.Convert<double>();
+                            _il.Emit(OpCodes.Conv_R8);
                     }
                     else
                     {
-                        method.Add();
+                        _il.Emit(OpCodes.Add);
                     }
                     break;
                 }
                 case BinaryOperationKind.Subtraction:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, localType, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, localType, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, localType, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, localType, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowArithmeticError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowArithmeticError, null);
                         if (localType == LocalType.Double)
-                            method.Convert<double>();
+                            _il.Emit(OpCodes.Conv_R8);
                     }
                     else
                     {
-                        method.Subtract();
+                        _il.Emit(OpCodes.Sub);
                     }
                     break;
                 }
                 case BinaryOperationKind.Multiplication:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, localType, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, localType, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, localType, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, localType, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowArithmeticError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowArithmeticError, null);
                         if (localType == LocalType.Double)
-                            method.Convert<double>();
+                            _il.Emit(OpCodes.Conv_R8);
                     }
                     else
                     {
-                        method.Multiply();
+                        _il.Emit(OpCodes.Mul);
                     }
                     break;
                 }
                 case BinaryOperationKind.Division:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, LocalType.Double, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, LocalType.Double, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, LocalType.Double, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, LocalType.Double, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowArithmeticError);
-                        method.Convert<double>();
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowArithmeticError, null);
+                        _il.Emit(OpCodes.Conv_R8);
                     }
                     else
                     {
-                        method.Divide();
+                        _il.Emit(OpCodes.Div);
                     }
                     break;
                 }
                 case BinaryOperationKind.IntegerDivision:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, LocalType.Double, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, LocalType.Double, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, LocalType.Double, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, LocalType.Double, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowArithmeticError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowArithmeticError, null);
                     }
                     else
                     {
-                        method.Divide();
-                        method.Convert<long>();
+                        _il.Emit(OpCodes.Div);
+                        _il.Emit(OpCodes.Conv_I8);
                     }
                     break;
                 }
                 case BinaryOperationKind.Exponentiation:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, LocalType.Double, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, LocalType.Double, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, LocalType.Double, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, LocalType.Double, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowArithmeticError);
-                        method.Convert<double>();
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowArithmeticError, null);
+                        _il.Emit(OpCodes.Conv_R8);
                     }
                     else
                     {
-                        method.Call(ReflectionData.Math_Pow);
+                        _il.EmitCall(OpCodes.Call, ReflectionData.Math_Pow, null);
                     }
                     break;
                 }
                 case BinaryOperationKind.Modulo:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, localType, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, localType, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, localType, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, localType, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowArithmeticError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowArithmeticError, null);
                         if (localType == LocalType.Double)
-                            method.Convert<double>();
+                            _il.Emit(OpCodes.Conv_R8);
                     }
                     else
                     {
-                        method.Remainder();
+                        _il.Emit(OpCodes.Rem);
                     }
                     break;
                 }
                 case BinaryOperationKind.Concatenation:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, localType, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, localType, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, localType, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, localType, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowConcatError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowConcatError, null);
                     }
                     else
                     {
-                        method.Call(ReflectionData.string_Concat2);
+                        _il.EmitCall(OpCodes.Call, ReflectionData.string_Concat2, null);
                     }
                     break;
                 }
                 case BinaryOperationKind.BitwiseAnd:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowBitwiseError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowBitwiseError, null);
                     }
                     else
                     {
-                        method.And();
+                        _il.Emit(OpCodes.And);
                     }
                     break;
                 }
                 case BinaryOperationKind.BitwiseOr:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowBitwiseError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowBitwiseError, null);
                     }
                     else
                     {
-                        method.Or();
+                        _il.Emit(OpCodes.Or);
                     }
                     break;
                 }
                 case BinaryOperationKind.BitwiseXor:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowBitwiseError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowBitwiseError, null);
                     }
                     else
                     {
-                        method.Xor();
+                        _il.Emit(OpCodes.Xor);
                     }
                     break;
                 }
                 case BinaryOperationKind.LeftShift:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowBitwiseError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowBitwiseError, null);
                     }
                     else
                     {
-                        method.ShiftLeft();
+                        _il.Emit(OpCodes.Shl);
                     }
                     break;
                 }
                 case BinaryOperationKind.RightShift:
                 {
                     var conversionSuccessful = true;
-                    EmitOperand(assignment.Left, true);
-                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", true);
-                    EmitOperand(assignment.Right, true);
-                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", true);
+                    var gotAddress = EmitOperand(assignment.Left, true);
+                    conversionSuccessful &= ConvertTo(leftType, LocalType.Long, "", gotAddress);
+                    gotAddress = EmitOperand(assignment.Right, true);
+                    conversionSuccessful &= ConvertTo(rightType, LocalType.Long, "", gotAddress);
                     if (!conversionSuccessful)
                     {
-                        method.Pop();
-                        method.Pop();
-                        method.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
-                        method.Call(ReflectionData.LuaOperations_ThrowBitwiseError);
+                        _il.Emit(OpCodes.Pop);
+                        _il.Emit(OpCodes.Pop);
+                        _il.LoadConstant(leftType != LocalType.LuaValue ? (int) leftType.ToValueKind() : (int) rightType.ToValueKind());
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_ThrowBitwiseError, null);
                     }
                     else
                     {
-                        method.ShiftRight();
+                        _il.Emit(OpCodes.Shr);
                     }
                     break;
                 }
@@ -523,17 +515,17 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                         case (LocalType.Double, LocalType.Double):
                             EmitOperand(assignment.Left);
                             EmitOperand(assignment.Right);
-                            method.CompareEqual();
+                            _il.Emit(OpCodes.Ceq);
                             break;
                         case (LocalType.String, LocalType.String):
                             EmitOperand(assignment.Left);
                             EmitOperand(assignment.Right);
-                            method.Call(ReflectionData.string_Equality);
+                            _il.EmitCall(OpCodes.Call, ReflectionData.string_Equality, null);
                             break;
                         case (LocalType.LuaValue, LocalType.LuaValue):
                             EmitOperand(assignment.Left);
                             EmitOperand(assignment.Right);
-                            method.Call(ReflectionData.LuaValue_Equality);
+                            _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_Equality, null);
                             break;
                         default:
                         {
@@ -544,11 +536,11 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                             converted &= ConvertTo(rightType, LocalType.LuaValue, "");
                             if (!converted)
                             {
-                                method.Pop();
-                                method.Pop();
-                                method.LoadConstant(false);
+                                _il.Emit(OpCodes.Pop);
+                                _il.Emit(OpCodes.Pop);
+                                _il.LoadConstant(false);
                             }
-                            method.Call(ReflectionData.LuaValue_Equality);
+                            _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_Equality, null);
                             break;
                         }
                     }
@@ -561,18 +553,18 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                         case (LocalType.Double, LocalType.Double):
                             EmitOperand(assignment.Left);
                             EmitOperand(assignment.Right);
-                            method.CompareEqual();
-                            method.Not();
+                            _il.Emit(OpCodes.Ceq);
+                            _il.Emit(OpCodes.Not);
                             break;
                         case (LocalType.String, LocalType.String):
                             EmitOperand(assignment.Left);
                             EmitOperand(assignment.Right);
-                            method.Call(ReflectionData.string_Inequality);
+                            _il.EmitCall(OpCodes.Call, ReflectionData.string_Inequality, null);
                             break;
                         case (LocalType.LuaValue, LocalType.LuaValue):
                             EmitOperand(assignment.Left);
                             EmitOperand(assignment.Right);
-                            method.Call(ReflectionData.LuaValue_Inequality);
+                            _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_Inequality, null);
                             break;
                         default:
                         {
@@ -583,11 +575,11 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                             converted &= ConvertTo(rightType, LocalType.LuaValue, "");
                             if (!converted)
                             {
-                                method.Pop();
-                                method.Pop();
-                                method.LoadConstant(false);
+                                _il.Emit(OpCodes.Pop);
+                                _il.Emit(OpCodes.Pop);
+                                _il.LoadConstant(true);
                             }
-                            method.Call(ReflectionData.LuaValue_Inequality);
+                            _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_Inequality, null);
                             break;
                         }
                     }
@@ -600,7 +592,7 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                     converted &= ConvertTo(rightType, LocalType.LuaValue, "");
                     if (!converted)
                         throw new UnreachableException("Couldn't convert inputs.");
-                    method.Call(ReflectionData.LuaOperations_LessThan);
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_LessThan, null);
                     break;
                 }
                 case BinaryOperationKind.LessThanOrEquals:
@@ -611,7 +603,7 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                     converted &= ConvertTo(rightType, LocalType.LuaValue, "");
                     if (!converted)
                         throw new UnreachableException("Couldn't convert inputs.");
-                    method.Call(ReflectionData.LuaOperations_LessThanOrEqual);
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_LessThanOrEqual, null);
                     break;
                 }
                 case BinaryOperationKind.GreaterThan:
@@ -622,7 +614,7 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                     converted &= ConvertTo(rightType, LocalType.LuaValue, "");
                     if (!converted)
                         throw new UnreachableException("Couldn't convert inputs.");
-                    method.Call(ReflectionData.LuaOperations_GreaterThan);
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_GreaterThan, null);
                     break;
                 }
                 case BinaryOperationKind.GreaterThanOrEquals:
@@ -633,7 +625,7 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                     converted &= ConvertTo(rightType, LocalType.LuaValue, "");
                     if (!converted)
                         throw new UnreachableException("Couldn't convert inputs.");
-                    method.Call(ReflectionData.LuaOperations_GreaterThanOrEqual);
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaOperations_GreaterThanOrEqual, null);
                     break;
                 }
             }
@@ -646,37 +638,36 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
         {
             EmitOperand(assignment.Callee);
 
-            method.LoadConstant(assignment.Arguments.Count);
-            method.NewArray<LuaValue>();
+            _il.LoadConstant(assignment.Arguments.Count);
+            _il.Emit(OpCodes.Newarr, typeof(LuaValue));
             for (var i = 0; i < assignment.Arguments.Count; i++)
             {
                 var argument = assignment.Arguments[i];
                 var argumentType = InformationCollector.GetOperandType(argument, _symbolTable).ToLocalType();
 
-                method.Duplicate();
-                method.LoadConstant(i);
-                // TODO: Uncomment once kevin-montrose/Sigil#67 gets fixed.
+                _il.Emit(OpCodes.Dup);
+                _il.LoadConstant(i);
                 // if (argumentType != LocalType.LuaValue)
-                //     method.LoadElementAddress<LuaValue>();
-                EmitOperand(argument, false);
+                //     _il.Emit(OpCodes.Ldelema, typeof(LuaValue));
+                var gotAddress = EmitOperand(argument);
                 // if (argumentType != LocalType.LuaValue)
                 // {
                 //     switch (argumentType)
                 //     {
                 //         case LocalType.Bool:
-                //             method.Call(ReflectionData.LuaValue_BoolCtor);
+                //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_BoolCtor);
                 //             break;
                 //         case LocalType.Long:
-                //             method.Call(ReflectionData.LuaValue_LongCtor);
+                //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_LongCtor);
                 //             break;
                 //         case LocalType.Double:
-                //             method.Call(ReflectionData.LuaValue_DoubleCtor);
+                //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_DoubleCtor);
                 //             break;
                 //         case LocalType.String:
-                //             method.Call(ReflectionData.LuaValue_StringCtor);
+                //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_StringCtor);
                 //             break;
                 //         case LocalType.LuaFunction:
-                //             method.Call(ReflectionData.LuaValue_FunctionCtor);
+                //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_FunctionCtor);
                 //             break;
                 //         case LocalType.None:
                 //             throw new UnreachableException("None shouldn't exist here.");
@@ -688,13 +679,13 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                 // }
                 // else
                 {
-                    if (!ConvertTo(argumentType, LocalType.LuaValue, "", true))
+                    if (!ConvertTo(argumentType, LocalType.LuaValue, ""))
                         Debug.Assert(false, $"Should be able to convert from {argumentType} to LuaValue.");
-                    method.StoreElement<LuaValue>();
+                    _il.Emit(OpCodes.Stelem, typeof(LuaValue));
                 }
             }
-            method.NewObject(ReflectionData.ArgumentSpan_ctor);
-            method.CallVirtual(ReflectionData.LuaFunction_Invoke);
+            _il.Emit(OpCodes.Newobj, ReflectionData.ArgumentSpan_ArrayCtor);
+            _il.EmitCall(OpCodes.Callvirt, ReflectionData.LuaFunction_Invoke, null);
         });
     }
 
@@ -703,28 +694,27 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
         var assigneeData = _symbolTable[name];
         var local = GetLocal(name);
 
-        // TODO: Uncomment once kevin-montrose/Sigil#67 gets fixed.
         // if (assigneeData.LocalType == LocalType.LuaValue && localType != LocalType.LuaValue)
-        //     method.LoadLocalAddress(local);
+        //     _il.LoadLocalAddress(local);
         emitValue();
         // if (assigneeData.LocalType == LocalType.LuaValue && localType != LocalType.LuaValue)
         // {
         //     switch (localType)
         //     {
         //         case LocalType.Bool:
-        //             method.Call(ReflectionData.LuaValue_BoolCtor);
+        //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_BoolCtor);
         //             break;
         //         case LocalType.Long:
-        //             method.Call(ReflectionData.LuaValue_LongCtor);
+        //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_LongCtor);
         //             break;
         //         case LocalType.Double:
-        //             method.Call(ReflectionData.LuaValue_DoubleCtor);
+        //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_DoubleCtor);
         //             break;
         //         case LocalType.String:
-        //             method.Call(ReflectionData.LuaValue_StringCtor);
+        //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_StringCtor);
         //             break;
         //         case LocalType.LuaFunction:
-        //             method.Call(ReflectionData.LuaValue_FunctionCtor);
+        //             _il.Emit(OpCodes.Call, ReflectionData.LuaValue_FunctionCtor);
         //             break;
         //         case LocalType.None:
         //             throw new UnreachableException("None shouldn't exist here.");
@@ -736,11 +726,11 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
         // }
         // else
         {
-            method.StoreLocal(local);
+            _il.StoreLocal(local);
         }
     }
 
-    private bool ConvertTo(LocalType sourceType, LocalType targetType, string failMessage, bool sourceIsAddress = false)
+    private bool ConvertTo(LocalType sourceType, LocalType targetType, string failMessage, bool luaValueIsAddress = false)
     {
         if (sourceType == targetType)
             return true;
@@ -748,85 +738,105 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
         switch (sourceType, targetType)
         {
             case (LocalType.Bool, LocalType.LuaValue):
-                method.NewObject<LuaValue, bool>();
+                _il.Emit(OpCodes.Newobj, ReflectionData.LuaValue_BoolCtor);
                 return true;
 
             case (LocalType.Double, LocalType.Long):
-                var end = method.DefineLabel();
-                method.Duplicate();
-                method.Duplicate();
-                method.Convert<long>();
-                method.Convert<double>();
-                method.BranchIfEqual(end);
-                method.LoadConstant(failMessage);
-                method.NewObject<LuaException, string>();
-                method.Throw();
-                method.MarkLabel(end);
-                method.Convert<long>();
+                var end = _il.DefineLabel();
+                _il.Emit(OpCodes.Dup);
+                _il.Emit(OpCodes.Dup);
+                _il.Emit(OpCodes.Conv_I8);
+                _il.Emit(OpCodes.Conv_R8);
+                _il.Emit(OpCodes.Brtrue, end);
+                _il.LoadConstant(failMessage);
+                _il.Emit(OpCodes.Newobj, ReflectionData.LuaException_StringCtor);
+                _il.Emit(OpCodes.Throw);
+                _il.MarkLabel(end);
+                _il.Emit(OpCodes.Conv_I8);
                 return true;
 
             case (LocalType.Long, LocalType.Double):
-                method.Convert<double>();
+                _il.Emit(OpCodes.Conv_R8);
                 return true;
 
             case (LocalType.LuaValue, LocalType.Bool):
-                if (!sourceIsAddress)
+                if (!luaValueIsAddress)
                 {
                     _slots.WithSlot(LocalType.LuaValue, (method, local) =>
                     {
-                        method.StoreLocal(local);
-                        method.LoadLocalAddress(local);
+                        _il.StoreLocal(local);
+                        _il.LoadLocalAddress(local);
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_AsBoolean, null);
                     });
                 }
-                method.Call(ReflectionData.LuaValue_AsBoolean);
+                else
+                {
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_AsBoolean, null);
+                }
                 return true;
 
             case (LocalType.LuaValue, LocalType.Long):
-                if (!sourceIsAddress)
+                if (!luaValueIsAddress)
                 {
                     _slots.WithSlot(LocalType.LuaValue, (method, local) =>
                     {
-                        method.StoreLocal(local);
-                        method.LoadLocalAddress(local);
+                        _il.StoreLocal(local);
+                        _il.LoadLocalAddress(local);
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_ToInteger, null);
                     });
                 }
-                method.Call(ReflectionData.LuaValue_ToInteger);
+                else
+                {
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_ToInteger, null);
+                }
                 return true;
 
             case (LocalType.LuaValue, LocalType.Double):
-                if (!sourceIsAddress)
+                if (!luaValueIsAddress)
                 {
                     _slots.WithSlot(LocalType.LuaValue, (method, local) =>
                     {
-                        method.StoreLocal(local);
-                        method.LoadLocalAddress(local);
+                        _il.StoreLocal(local);
+                        _il.LoadLocalAddress(local);
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_ToNumber, null);
                     });
                 }
-                method.Call(ReflectionData.LuaValue_ToNumber);
+                else
+                {
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_ToNumber, null);
+                }
                 return true;
 
             case (LocalType.LuaValue, LocalType.String):
-                if (!sourceIsAddress)
+                if (!luaValueIsAddress)
                 {
                     _slots.WithSlot(LocalType.LuaValue, (method, local) =>
                     {
-                        method.StoreLocal(local);
-                        method.LoadLocalAddress(local);
+                        _il.StoreLocal(local);
+                        _il.LoadLocalAddress(local);
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_AsString, null);
                     });
                 }
-                method.Call(ReflectionData.LuaValue_AsString);
+                else
+                {
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_AsString, null);
+                }
                 return true;
 
             case (LocalType.LuaValue, LocalType.LuaFunction):
-                if (!sourceIsAddress)
+                if (!luaValueIsAddress)
                 {
                     _slots.WithSlot(LocalType.LuaValue, (method, local) =>
                     {
-                        method.StoreLocal(local);
-                        method.LoadLocalAddress(local);
+                        _il.StoreLocal(local);
+                        _il.LoadLocalAddress(local);
+                        _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_AsFunction, null);
                     });
                 }
-                method.Call(ReflectionData.LuaValue_AsFunction);
+                else
+                {
+                    _il.EmitCall(OpCodes.Call, ReflectionData.LuaValue_AsFunction, null);
+                }
                 return true;
 
             default:
@@ -835,19 +845,19 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                     switch (sourceType)
                     {
                         case LocalType.Bool:
-                            method.NewObject<LuaValue, bool>();
+                            _il.Emit(OpCodes.Newobj, ReflectionData.LuaValue_BoolCtor);
                             return true;
                         case LocalType.Long:
-                            method.NewObject<LuaValue, long>();
+                            _il.Emit(OpCodes.Newobj, ReflectionData.LuaValue_LongCtor);
                             return true;
                         case LocalType.Double:
-                            method.NewObject<LuaValue, double>();
+                            _il.Emit(OpCodes.Newobj, ReflectionData.LuaValue_DoubleCtor);
                             return true;
                         case LocalType.String:
-                            method.NewObject<LuaValue, string>();
+                            _il.Emit(OpCodes.Newobj, ReflectionData.LuaValue_StringCtor);
                             return true;
                         case LocalType.LuaFunction:
-                            method.NewObject<LuaValue, LuaFunction>();
+                            _il.Emit(OpCodes.Newobj, ReflectionData.LuaValue_FunctionCtor);
                             return true;
                         default:
                             throw new UnreachableException($"There should be no requests to convert from {sourceType} to {targetType}.");
@@ -857,7 +867,7 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
         }
     }
 
-    private void EmitOperand(Operand operand, bool asAddress = false)
+    private bool EmitOperand(Operand operand, bool luaValueAsAddress = false)
     {
         switch (operand)
         {
@@ -866,22 +876,19 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                 switch (constant.Kind)
                 {
                     case ConstantKind.Nil:
-                        if (asAddress)
-                            method.LoadFieldAddress(ReflectionData.LuaValue_Nil);
-                        else
-                            method.NewObject<LuaValue>();
+                        _il.Emit(OpCodes.Newobj, ReflectionData.LuaValue_NilCtor);
                         break;
                     case ConstantKind.Boolean:
-                        method.LoadConstant(constant.Value is true);
+                        _il.LoadConstant(constant.Value is true);
                         break;
                     case ConstantKind.Number:
                         if (constant.Value is long i64)
-                            method.LoadConstant(i64);
+                            _il.LoadConstant(i64);
                         else
-                            method.LoadConstant(CastHelper.FastUnbox<double>(constant.Value!));
+                            _il.LoadConstant(CastHelper.FastUnbox<double>(constant.Value!));
                         break;
                     case ConstantKind.String:
-                        method.LoadConstant(CastHelper.FastCast<string>(constant.Value));
+                        _il.LoadConstant(CastHelper.FastCast<string>(constant.Value)!);
                         break;
                 }
                 break;
@@ -891,19 +898,19 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
                 switch (builtin.BuiltinId)
                 {
                     case KnownBuiltins.assert:
-                        method.LoadField(ReflectionData.Stdlib_AssertFunction);
+                        _il.Emit(OpCodes.Ldsfld, ReflectionData.Stdlib_AssertFunction);
                         break;
                     case KnownBuiltins.type:
-                        method.LoadField(ReflectionData.Stdlib_TypeFunction);
+                        _il.Emit(OpCodes.Ldsfld, ReflectionData.Stdlib_TypeFunction);
                         break;
                     case KnownBuiltins.print:
-                        method.LoadField(ReflectionData.Stdlib_PrintFunction);
+                        _il.Emit(OpCodes.Ldsfld, ReflectionData.Stdlib_PrintFunction);
                         break;
                     case KnownBuiltins.error:
-                        method.LoadField(ReflectionData.Stdlib_ErrorFunction);
+                        _il.Emit(OpCodes.Ldsfld, ReflectionData.Stdlib_ErrorFunction);
                         break;
                     case KnownBuiltins.tostring:
-                        method.LoadField(ReflectionData.Stdlib_ToStringFunction);
+                        _il.Emit(OpCodes.Ldsfld, ReflectionData.Stdlib_ToStringFunction);
                         break;
                 }
                 break;
@@ -911,21 +918,25 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Emit<F
             case NameValue name:
             {
                 var local = GetLocal(name);
-                if (asAddress && local.LocalType == typeof(LuaValue))
-                    method.LoadLocalAddress(local);
+                if (luaValueAsAddress && local.LocalType == typeof(LuaValue))
+                {
+                    _il.LoadLocalAddress(local);
+                    return true;
+                }
                 else
-                    method.LoadLocal(local);
-                break;
+                {
+                    _il.LoadLocal(local);
+                    break;
+                }
             }
         }
+        return false;
     }
 
-    private Local GetLocal(NameValue name)
+    private LocalBuilder GetLocal(NameValue name)
     {
-        if (method.Locals.Names.Contains(name.ToString()))
-            return method.Locals[name.ToString()];
-        return method.DeclareLocal(_symbolTable[name].LocalType.GetClrType(), name.ToString());
+        if (!_locals.TryGetValue(name, out var local))
+            _locals[name] = local = _il.DeclareLocal(_symbolTable[name].LocalType.GetClrType());
+        return local;
     }
-
-    public MethodBuilder CreateMethod() => method.CreateMethod(OptimizationOptions.All);
 }

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Sigil;
+using SimpleCompiler.Backend.Cil.Emit;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.Runtime;
 
@@ -8,34 +8,34 @@ namespace SimpleCompiler.Backends.Cil;
 
 internal sealed class SlotPool
 {
-    private static readonly ConditionalWeakTable<Local, SlotPool> s_localOwners = [];
-    private static readonly ConditionalWeakTable<Local, object> s_localTypes = [];
-    private readonly Stack<Local>[] _luaValueSlotPool;
-    private readonly Emit<Func<LuaValue, LuaValue>> _method;
+    private static readonly ConditionalWeakTable<LocalBuilder, SlotPool> s_localOwners = [];
+    private static readonly ConditionalWeakTable<LocalBuilder, object> s_localTypes = [];
+    private readonly Stack<LocalBuilder>[] _luaValueSlotPool;
+    private readonly MethodBuilder _method;
 
-    public SlotPool(Emit<Func<LuaValue, LuaValue>> method)
+    public SlotPool(MethodBuilder method)
     {
         _method = method;
-        _luaValueSlotPool = new Stack<Local>[5];
+        _luaValueSlotPool = new Stack<LocalBuilder>[Enum.GetValues<LocalType>().Select(x => (int) x).Max() + 1];
         for (var idx = 0; idx < _luaValueSlotPool.Length; idx++)
-            _luaValueSlotPool[idx] = new Stack<Local>();
+            _luaValueSlotPool[idx] = new Stack<LocalBuilder>();
     }
 
-    public Local DangerousRentSlot(LocalType type)
+    public LocalBuilder DangerousRentSlot(LocalType type)
     {
         if (type == LocalType.None)
             throw new ArgumentException("None is not a valid type for a local.", nameof(type));
 
         if (!_luaValueSlotPool[(int) type].TryPop(out var local))
         {
-            local = _method.DeclareLocal(type.GetClrType());
+            local = _method.GetILGenerator().DeclareLocal(type.GetClrType());
         }
 
         s_localOwners.Add(local, this);
         return local;
     }
 
-    public void ReturnSlot(Local local)
+    public void ReturnSlot(LocalBuilder local)
     {
         if (!s_localOwners.TryGetValue(local, out var owner) || !ReferenceEquals(this, owner))
             throw new InvalidOperationException("Slot returned to wrong owner.");
@@ -54,7 +54,7 @@ internal sealed class SlotPool
         _luaValueSlotPool[(int) type].Push(local);
     }
 
-    public void WithSlot(LocalType type, Action<Emit<Func<LuaValue, LuaValue>>, Local> body)
+    public void WithSlot(LocalType type, Action<MethodBuilder, LocalBuilder> body)
     {
         var local = DangerousRentSlot(type);
         try
