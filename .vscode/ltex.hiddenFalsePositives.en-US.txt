@@ -8,3 +8,5 @@
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx IR SSA rewriting.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Constant folding.\\E$"}
 {"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Dead code elimination.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx Constant folding and propagation.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qx CIL emitting.\\E$"}

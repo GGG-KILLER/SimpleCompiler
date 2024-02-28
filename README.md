@@ -20,14 +20,14 @@ Current status:
 - [x] IR SSA rewriting.
 - [ ] IR Optimizations:
     - [x] Variable inlining.
-    - [x] Constant folding.
+    - [x] Constant folding and propagation.
     - [ ] Invariant extraction.
     - [ ] Auto vectorization.
     - [x] Dead code elimination.
     - [ ] Value numbering.
     - [ ] Inter-procedural analysis.
     - [ ] Function inlining.
-- [ ] CIL emitting.
+- [x] CIL emitting.
 - [ ] PDB generation.
 
 ## References
