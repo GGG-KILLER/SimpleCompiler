@@ -1,9 +1,7 @@
-using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.IR;
-using Tsu.Buffers;
 
 namespace SimpleCompiler.Optimizations;
 
