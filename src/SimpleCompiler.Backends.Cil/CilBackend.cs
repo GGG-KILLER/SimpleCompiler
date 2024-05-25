@@ -12,6 +12,7 @@ using ICSharpCode.Decompiler.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.Metadata;
+using System.Reflection.Emit;
 
 namespace SimpleCompiler.Backends.Cil;
 

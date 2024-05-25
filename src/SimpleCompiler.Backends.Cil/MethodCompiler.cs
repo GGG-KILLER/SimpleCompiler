@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Reflection.Emit;
 using SimpleCompiler.Backend.Cil.Emit;
 using SimpleCompiler.Helpers;
 using SimpleCompiler.IR;
