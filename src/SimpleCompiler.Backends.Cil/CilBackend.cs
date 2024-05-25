@@ -13,6 +13,7 @@ using System.Reflection.PortableExecutable;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.Metadata;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 
 namespace SimpleCompiler.Backends.Cil;
 
@@ -119,7 +120,7 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
                 "tfm": "net{{Environment.Version.ToString(2)}}",
                 "framework": {
                   "name": "Microsoft.NETCore.App",
-                  "version": "{{Environment.Version.ToString(3)}}"
+                  "version": "{{RuntimeInformation.FrameworkDescription[".NET ".Length..]}}"
                 },
                 "configProperties": {
                   "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false
