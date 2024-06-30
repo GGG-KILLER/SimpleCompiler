@@ -19,24 +19,24 @@ namespace SimpleCompiler.Backends.Cil;
 
 public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBackend
 {
-    private static void CompileProgram(ModuleBuilder moduleBuilder, IrGraph ir, out MethodBuilder entryPointToken)
+    private static void CompileProgram(ModuleBuilder moduleBuilder, IrGraph ir, EmitContext emitContext, out MethodBuilder entryPointToken)
     {
         var programBuilder = moduleBuilder.DefineType(
             "Program",
             TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
 
-        var luaEntryPoint = EmitLuaEntryPoint(programBuilder, ir);
+        var luaEntryPoint = EmitLuaEntryPoint(emitContext, programBuilder, ir);
         entryPointToken = EmitDotnetEntryPoint(programBuilder, luaEntryPoint);
 
         programBuilder.CreateType();
     }
 
-    private static MethodBuilder EmitLuaEntryPoint(TypeBuilder programBuilder, IrGraph ir)
+    private static MethodBuilder EmitLuaEntryPoint(EmitContext emitContext, TypeBuilder programBuilder, IrGraph ir)
     {
         var symbolTable = InformationCollector.CollectSymbolInfomation(ir);
         SsaDestructor.DestructSsa(ir);
 
-        var compiler = MethodCompiler.Create(programBuilder, ir, symbolTable, "TopLevel");
+        var compiler = MethodCompiler.Create(emitContext, programBuilder, ir, symbolTable, "TopLevel");
         compiler.Compile();
         return compiler.Method;
     }
@@ -69,22 +69,33 @@ public sealed partial class CilBackend(TextWriter? cilDebugWriter = null) : IBac
             var assemblyName = new AssemblyName(emitOptions.OutputName);
             var assemblyBuilder = new PersistedAssemblyBuilder(assemblyName, typeof(object).Assembly);
             var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName.Name + ".dll");
+            var emitContext = new EmitContext(moduleBuilder, ir);
 
-            CompileProgram(moduleBuilder, ir, out var entryPoint);
+            CompileProgram(moduleBuilder, ir, emitContext, out var entryPoint);
 
-            var metadataBuilder = assemblyBuilder.GenerateMetadata(out var ilStream, out var mappedFieldData);
+            var metadataBuilder = assemblyBuilder.GenerateMetadata(out var ilStream, out var mappedFieldData, out var pdbBuilder);
+            var entryPointHandle = MetadataTokens.MethodDefinitionHandle(entryPoint.MetadataToken);
 
-            var peHeaderBuilder = new PEHeaderBuilder(
-                // For now only support DLL, DLL files are considered executable files
-                // for almost all purposes, although they cannot be directly run.
-                imageCharacteristics: Characteristics.ExecutableImage | Characteristics.Dll);
+            // Generate PDB
+            emitContext.EmbedSourceCode(pdbBuilder);
+            var rowCounts = metadataBuilder.GetRowCounts();
+
+            var portablePdbBlob = new BlobBuilder();
+            var portablePdbBuilder = new PortablePdbBuilder(pdbBuilder, rowCounts, entryPointHandle);
+            var pdbContentId = portablePdbBuilder.Serialize(portablePdbBlob);
+            using (var pdbStream = output.CreateFile($"{emitOptions.OutputName}.pdb"))
+                portablePdbBlob.WriteContentTo(pdbStream);
+
+            var debugDirectoryBuilder = new DebugDirectoryBuilder();
+            debugDirectoryBuilder.AddCodeViewEntry($"{emitOptions.OutputName}.pdb", pdbContentId, portablePdbBuilder.FormatVersion);
 
             var peBuilder = new ManagedPEBuilder(
-                header: peHeaderBuilder,
+                header: new PEHeaderBuilder(imageCharacteristics: Characteristics.ExecutableImage, subsystem: Subsystem.WindowsCui),
                 metadataRootBuilder: new MetadataRootBuilder(metadataBuilder),
                 ilStream: ilStream,
                 mappedFieldData: mappedFieldData,
-                entryPoint: MetadataTokens.MethodDefinitionHandle(entryPoint.MetadataToken));
+                debugDirectoryBuilder: debugDirectoryBuilder,
+                entryPoint: entryPointHandle);
 
             // Write executable into the specified stream.
             var peBlob = new BlobBuilder();

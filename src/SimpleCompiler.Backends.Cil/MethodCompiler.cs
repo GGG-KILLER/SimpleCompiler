@@ -8,7 +8,7 @@ using SimpleCompiler.Runtime;
 
 namespace SimpleCompiler.Backends.Cil;
 
-internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, MethodBuilder method)
+internal sealed class MethodCompiler(EmitContext emitContext, IrGraph ir, SymbolTable symbolTable, MethodBuilder method)
 {
     private readonly SymbolTable _symbolTable = symbolTable;
     private readonly SlotPool _slots = new(method);
@@ -17,9 +17,10 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Method
     private readonly Dictionary<NameValue, LocalBuilder> _locals = [];
     public MethodBuilder Method => method;
 
-    public static MethodCompiler Create(TypeBuilder typeBuilder, IrGraph ir, SymbolTable symbolTable, string name)
+    public static MethodCompiler Create(EmitContext emitContext, TypeBuilder typeBuilder, IrGraph ir, SymbolTable symbolTable, string name)
     {
         return new MethodCompiler(
+            emitContext,
             ir,
             symbolTable,
             typeBuilder.DefineMethod(
@@ -51,8 +52,19 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Method
         switch (instruction.Kind)
         {
             case InstructionKind.DebugLocation:
-                // TODO: Find out how to add debug data
+            {
+                if (emitContext.SymbolDocumentWriter is not null)
+                {
+                    var location = CastHelper.FastCast<DebugLocation>(instruction);
+                    _il.MarkSequencePoint(
+                        emitContext.SymbolDocumentWriter,
+                        location.Location.StartLine,
+                        location.Location.StartColumn,
+                        location.Location.EndLine,
+                        location.Location.EndColumn);
+                }
                 break;
+            }
             case InstructionKind.Assignment:
             {
                 var assignment = CastHelper.FastCast<Assignment>(instruction);
@@ -937,7 +949,13 @@ internal sealed class MethodCompiler(IrGraph ir, SymbolTable symbolTable, Method
     private LocalBuilder GetLocal(NameValue name)
     {
         if (!_locals.TryGetValue(name, out var local))
+        {
             _locals[name] = local = _il.DeclareLocal(_symbolTable[name].LocalType.GetClrType());
+            if (ir.DebugData != null && ir.DebugData.OriginalValueNames.TryGetValue(name, out var originalName))
+                local.SetLocalSymInfo(originalName);
+            else
+                local.SetLocalSymInfo(name.ToString());
+        }
         return local;
     }
 }
