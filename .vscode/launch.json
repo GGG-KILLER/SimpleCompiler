@@ -10,8 +10,8 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/SimpleCompiler.Cli/bin/Debug/net8.0/SimpleCompiler.Cli.dll",
-            "args": ["--lua", "AllWithIntegers", "-d", "samples/branching2.lua"],
+            "program": "${workspaceFolder}/src/SimpleCompiler.Cli/bin/Debug/net9.0/SimpleCompiler.Cli.dll",
+            "args": ["--lua", "AllWithIntegers", "-d", "dot,cil", "samples/branching2.lua"],
             "cwd": "${workspaceFolder}/src/SimpleCompiler.Cli",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
