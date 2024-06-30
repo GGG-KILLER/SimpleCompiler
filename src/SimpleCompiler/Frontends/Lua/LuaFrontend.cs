@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Loretta.CodeAnalysis;
 using Loretta.CodeAnalysis.Lua;
 using Loretta.CodeAnalysis.Lua.Syntax;
@@ -20,9 +21,10 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             input.GetCompilationUnitRoot(),
             out var basicBlocks,
             out var edges,
-            out var entryBlocks);
+            out var entryBlocks,
+            out var debugData);
 
-        return new IrGraph(basicBlocks, edges, entryBlocks);
+        return new IrGraph(basicBlocks, edges, entryBlocks, debugData);
     }
 
     public IrGraph Lower(SyntaxTree input)
@@ -108,8 +110,16 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             CompilationUnitSyntax node,
             out List<BasicBlock> basicBlocks,
             out List<IrEdge> edges,
-            out BasicBlock entryBlock)
+            out BasicBlock entryBlock,
+            out DebugData debugData)
         {
+            var syntaxTree = node.SyntaxTree;
+            var sourceText = syntaxTree.GetText();
+            _debugData.SourceFile = new SourceFile(
+                syntaxTree.FilePath,
+                sourceText.ToString(),
+                sourceText.Encoding ?? Encoding.UTF8);
+
             // Setup globals as locals in the entry point.
             foreach (var variable in script.RootScope.DeclaredVariables)
             {
@@ -135,6 +145,7 @@ public sealed class LuaFrontend : IFrontend<SyntaxTree>
             basicBlocks = _basicBlocks;
             edges = _edges;
             entryBlock = basicBlocks[0];
+            debugData = _debugData;
         }
 
         private void LowerStatementList(StatementListSyntax node, bool isBlock = true)
